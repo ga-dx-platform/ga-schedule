@@ -152,10 +152,10 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #right::-webkit-scrollbar{width:4px;height:4px}
 #right::-webkit-scrollbar-thumb{background:var(--bdr-mid);border-radius:2px}
 #gantt-wrap{position:relative;min-width:100%}
-#gantt-hdr{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#edf0f9,#e6eaf5);border-bottom:1px solid var(--bdr)}
-.g-month-row{display:flex}
-.g-month{font-size:9px;color:var(--txt2);padding:2px 6px;border-right:1px solid var(--bdr);text-align:center;font-weight:600;font-family:var(--mono)}
-.g-day-row{display:flex}
+#gantt-hdr{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#edf0f9,#e6eaf5);border-bottom:1px solid var(--bdr);height:28px;overflow:hidden;display:flex;flex-direction:column}
+.g-month-row{display:flex;height:13px;flex-shrink:0}
+.g-month{font-size:9px;color:var(--txt2);padding:0 6px;border-right:1px solid var(--bdr);text-align:center;font-weight:600;font-family:var(--mono);line-height:13px}
+.g-day-row{display:flex;height:15px;flex-shrink:0}
 .g-day{font-size:8px;color:var(--txt3);text-align:center;flex-shrink:0;border-right:1px solid rgba(0,0,0,.04);padding:1px 0;font-family:var(--mono)}
 .g-day.weekend{background:rgba(0,0,0,.025)}
 .g-day.today-d{background:rgba(225,29,72,.08);color:var(--red);font-weight:600}
@@ -177,13 +177,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .gb-test{background:linear-gradient(90deg,#059669,#10b981)}
 .gb-meeting{background:linear-gradient(90deg,#c05621,#d97706)}
 .gb-nt{background:var(--nt-grad);box-shadow:var(--nt-glow)}
-.gb-parent{
-  height: 8px !important;
-  background: #1e3a5f !important;
-  border-radius: 2px !important;
-  box-shadow: 0 1px 4px rgba(30,58,95,.4) !important;
-  opacity: 1 !important;
-}
+.gb-parent{height:8px!important;background:#1e3a5f!important;border-radius:2px!important;box-shadow:0 1px 4px rgba(30,58,95,.4)!important}
 .gb-cancel{background:rgba(0,0,0,.08)!important;border:1px dashed rgba(0,0,0,.14)!important;box-shadow:none!important}
 .gb-cancel .gbar-lbl{color:var(--txt3)}
 .gms{position:absolute;border-radius:2px;transform:rotate(45deg);cursor:pointer}
@@ -823,14 +817,9 @@ function renderGantt() {
         row.appendChild(ghost)
       }
       const bar=document.createElement('div')
-      bar.className = hasKids ? 'gbar' : `gbar ${catCls}`
+      bar.className = hasKids ? 'gbar gb-parent' : `gbar ${catCls}`
       if (isLateVsBaseline) bar.classList.add('baseline-late')
-      if (hasKids) {
-        bar.style.cssText = `left:${x}px;width:${w}px;height:8px;top:${bt}px;background:#1e3a5f;border-radius:2px;box-shadow:0 1px 4px rgba(30,58,95,.4)`
-        console.log(bar.style.cssText)
-      } else {
-        bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bt}px`
-      }
+      bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bt}px`
       if(!isCancelled&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
       if(w>40&&dayPx()>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=t.name;bar.appendChild(lbl)}
       if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${bt}px`;pl.textContent=pct+'%';row.appendChild(pl)}
