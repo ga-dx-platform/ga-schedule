@@ -103,8 +103,9 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #task-list::-webkit-scrollbar-thumb{background:var(--bdr-mid);border-radius:2px}
 .trow{
   display:grid;grid-template-columns:24px 18px 1fr 58px 58px 60px 34px 46px 86px 68px 74px;
-  gap:2px;padding:0 8px;min-height:34px;align-items:center;
+  gap:2px;padding:0 8px;height:34px;align-items:center;
   border-bottom:1px solid rgba(59,0,255,.05);transition:background .1s;cursor:pointer;
+  overflow:hidden;
 }
 .trow:hover{background:linear-gradient(90deg,rgba(0,245,170,.03),rgba(59,0,255,.02))}
 .trow.is-parent{background:linear-gradient(90deg,rgba(59,0,255,.05),rgba(0,245,170,.02))}
@@ -152,7 +153,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .g-day.weekend{background:rgba(0,0,0,.025)}
 .g-day.today-d{background:rgba(225,29,72,.08);color:var(--red);font-weight:600}
 #gantt-body{position:relative}
-.g-row{display:flex;align-items:center;min-height:34px;border-bottom:1px solid rgba(59,0,255,.04);position:relative}
+.g-row{display:flex;align-items:center;height:34px;border-bottom:1px solid rgba(59,0,255,.04);position:relative;overflow:visible}
 .g-row:hover{background:rgba(0,245,170,.015)}
 .g-wknd{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.02);pointer-events:none}
 .today-vline{position:absolute;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,transparent,var(--red),transparent);opacity:.65;z-index:4;pointer-events:none}
@@ -514,8 +515,7 @@ function renderTaskList() {
       <span class="r-date" style="font-size:9px;overflow:hidden;text-overflow:ellipsis">${t.assignee||'—'}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
       <span class="r-pct" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
-        ${pct}%
-        ${hasKids?`<div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div><div style="font-size:7px;color:var(--txt3)">(auto)</div>`:''}
+        ${pct}%${hasKids?'<span style="font-size:7px;color:var(--txt3);margin-left:2px">(a)</span>':''}
       </span>
       <span><span class="sbadge ${sc}">${STATUS_THAI[t.status]||t.status}</span></span>
       <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${t.category}</span></span>
