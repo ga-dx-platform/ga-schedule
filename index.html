@@ -214,6 +214,24 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .mbtn.save:hover{filter:brightness(1.07)}
 .mbtn.del-m{background:var(--red-s);color:var(--red);border:1px solid rgba(225,29,72,.2);margin-right:auto}
 
+/* DEPENDENCY MODAL */
+#dep-modal{width:560px;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);background:rgba(255,255,255,.92);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
+#dep-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90);z-index:1}
+.dep-grid{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dep-grid .full{grid-column:1/-1}
+.dep-hint{font-size:10px;color:var(--txt3);margin-top:3px;line-height:1.45}
+.dep-list-wrap{border-top:1px solid var(--bdr);background:linear-gradient(180deg,rgba(59,0,255,.02),transparent)}
+.dep-list{max-height:220px;overflow:auto;padding:10px 18px 14px}
+.dep-item{display:grid;grid-template-columns:1fr auto 1fr auto;align-items:center;gap:6px;background:rgba(255,255,255,.86);border:1px solid var(--bdr);border-radius:var(--r-sm);padding:7px 9px;margin-bottom:7px}
+.dep-task{font-size:11px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dep-type{font-size:10px;font-family:var(--mono);font-weight:600;border-radius:12px;padding:2px 7px}
+.dep-type.fs{background:rgba(59,0,255,.08);color:#3B00FF}
+.dep-type.ss{background:rgba(0,184,122,.12);color:#008a5e}
+.dep-type.ff{background:rgba(217,119,6,.15);color:#b45309}
+.dep-type.sf{background:rgba(225,29,72,.12);color:#be123c}
+.dep-del{width:24px;height:24px;border:1px solid rgba(225,29,72,.2);border-radius:6px;background:var(--red-s);color:var(--red);font-size:12px;cursor:pointer}
+.dep-empty{font-size:11px;color:var(--txt3);padding:14px 0;text-align:center}
+
 /* PROJECT MODAL */
 #proj-modal{width:380px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15)}
 #proj-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90)}
@@ -264,7 +282,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   <!-- TOOLBAR -->
   <div id="toolbar">
     <button class="tb add" onclick="openAddModal()">+ เพิ่ม Task</button>
-    <button class="tb link" id="btn-link" onclick="sendPrompt('เพิ่ม dependency link modal ใน GA Schedule')" disabled>→ Add Link</button>
+    <button class="tb link" id="btn-link" onclick="openDepModal()" disabled>→ เพิ่มลิงก์งาน</button>
     <div class="tb-sep"></div>
     <button class="tb save" onclick="saveAll()">💾 บันทึก</button>
     <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>🗑 ล้าง</button>
@@ -334,6 +352,44 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
       <button class="mbtn del-m" id="btn-del-task" style="display:none" onclick="deleteTask()">ลบ Task</button>
       <button class="mbtn cancel" onclick="closeTaskModal()">ยกเลิก</button>
       <button class="mbtn save" onclick="saveTask()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEPENDENCY MODAL -->
+<div class="modal-bd" id="dep-modal-bd">
+  <div id="dep-modal">
+    <div class="m-hdr">
+      <span class="m-title">🔗 จัดการ Dependency</span>
+      <button class="m-close" onclick="closeDepModal()">×</button>
+    </div>
+    <div class="dep-grid">
+      <div class="full">
+        <label class="flbl">งานต้นทาง (From Task)</label>
+        <select class="finput" id="dep-from"></select>
+      </div>
+      <div class="full">
+        <label class="flbl">งานปลายทาง (To Task)</label>
+        <select class="finput" id="dep-to"></select>
+      </div>
+      <div class="full">
+        <label class="flbl">ประเภทลิงก์</label>
+        <select class="finput" id="dep-type">
+          <option value="FS">FS — B เริ่มได้หลัง A เสร็จ</option>
+          <option value="SS">SS — B เริ่มพร้อม A</option>
+          <option value="FF">FF — B เสร็จหลัง A เสร็จ</option>
+          <option value="SF">SF — B เสร็จหลัง A เริ่ม</option>
+        </select>
+        <div class="dep-hint">เลือกงานต้นทางและปลายทาง จากนั้นกด “เพิ่มลิงก์” เพื่อบันทึกลงฐานข้อมูล</div>
+      </div>
+      <div class="full" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="mbtn cancel" onclick="closeDepModal()">ปิด</button>
+        <button class="mbtn save" onclick="saveDependency()">+ เพิ่มลิงก์</button>
+      </div>
+    </div>
+    <div class="dep-list-wrap">
+      <div class="m-hdr" style="padding:10px 18px"><span class="m-title" style="font-size:12px">ลิงก์ที่มีอยู่</span></div>
+      <div class="dep-list" id="dep-list"></div>
     </div>
   </div>
 </div>
@@ -737,6 +793,72 @@ async function createProject() {
   selectProject(data.id)
 }
 
+// ── DEPENDENCY MODAL ─────────────────────────────────────
+function openDepModal() {
+  if (!state.currentProjectId) { openProjModal(); return }
+  if (!state.tasks.length) { toast('⚠️ กรุณาเพิ่ม Task ก่อนสร้างลิงก์'); return }
+  populateDepTaskOptions()
+  renderDepList()
+  document.getElementById('dep-modal-bd').classList.add('show')
+}
+
+function closeDepModal() { document.getElementById('dep-modal-bd').classList.remove('show') }
+
+function populateDepTaskOptions() {
+  const from = document.getElementById('dep-from')
+  const to = document.getElementById('dep-to')
+  const opts = state.tasks.map(t => `<option value="${t.id}">${t.name}</option>`).join('')
+  from.innerHTML = opts
+  to.innerHTML = opts
+  if (state.tasks.length > 1) to.selectedIndex = 1
+}
+
+function renderDepList() {
+  const list = document.getElementById('dep-list')
+  if (!state.deps.length) {
+    list.innerHTML = '<div class="dep-empty">ยังไม่มีลิงก์ในโปรเจกต์นี้</div>'
+    return
+  }
+  list.innerHTML = state.deps.map(dep => {
+    const fromTask = state.tasks.find(t => t.id === dep.from_task_id)
+    const toTask = state.tasks.find(t => t.id === dep.to_task_id)
+    return `
+      <div class="dep-item">
+        <div class="dep-task" title="${fromTask?.name || '-'}">${fromTask?.name || '(ไม่พบงานต้นทาง)'}</div>
+        <div class="dep-type ${(dep.dep_type || '').toLowerCase()}">${dep.dep_type || 'FS'}</div>
+        <div class="dep-task" title="${toTask?.name || '-'}">${toTask?.name || '(ไม่พบงานปลายทาง)'}</div>
+        <button class="dep-del" onclick="deleteDependency('${dep.id}')" title="ลบลิงก์">×</button>
+      </div>`
+  }).join('')
+}
+
+async function saveDependency() {
+  const from_task_id = document.getElementById('dep-from').value
+  const to_task_id = document.getElementById('dep-to').value
+  const dep_type = document.getElementById('dep-type').value
+  if (!from_task_id || !to_task_id) { toast('⚠️ กรุณาเลือก Task ต้นทางและปลายทาง'); return }
+  if (from_task_id === to_task_id) { toast('⚠️ ไม่สามารถลิงก์ Task เดียวกันได้'); return }
+  const duplicated = state.deps.some(d => d.from_task_id===from_task_id && d.to_task_id===to_task_id && d.dep_type===dep_type)
+  if (duplicated) { toast('⚠️ ลิงก์นี้มีอยู่แล้ว'); return }
+  const { error } = await db.from('dependencies').insert({
+    project_id: state.currentProjectId, from_task_id, to_task_id, dep_type
+  })
+  if (error) { toast('❌ บันทึกลิงก์ไม่สำเร็จ: '+error.message); return }
+  await loadDeps()
+  render()
+  renderDepList()
+  toast('✅ เพิ่มลิงก์สำเร็จ')
+}
+
+async function deleteDependency(id) {
+  const { error } = await db.from('dependencies').delete().eq('id', id)
+  if (error) { toast('❌ ลบลิงก์ไม่สำเร็จ: '+error.message); return }
+  await loadDeps()
+  render()
+  renderDepList()
+  toast('🗑 ลบลิงก์สำเร็จ')
+}
+
 // ── TASK MODAL ────────────────────────────────────────────
 function openAddModal() {
   if (!state.currentProjectId) { openProjModal(); return }
@@ -894,11 +1016,12 @@ function hideLoading(){ document.getElementById('loading').style.display='none' 
 
 // Close modals on backdrop click
 document.getElementById('task-modal-bd').onclick = e=>{ if(e.target===e.currentTarget) closeTaskModal() }
+document.getElementById('dep-modal-bd').onclick = e=>{ if(e.target===e.currentTarget) closeDepModal() }
 document.getElementById('proj-modal-bd').onclick  = e=>{ if(e.target===e.currentTarget) closeProjModal() }
 
 // Keyboard shortcuts
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ closeTaskModal(); closeProjModal() }
+  if(e.key==='Escape'){ closeTaskModal(); closeDepModal(); closeProjModal() }
   if(e.key==='n'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); openAddModal() }
 })
 
