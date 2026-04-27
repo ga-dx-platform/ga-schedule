@@ -271,6 +271,15 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 /* TOAST */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:200;background:var(--txt);color:#fff;font-size:12px;padding:8px 18px;border-radius:20px;transition:transform .3s;pointer-events:none;font-family:var(--font)}
 #toast.show{transform:translateX(-50%) translateY(0)}
+
+/* LARGE SCREEN SCALING */
+#right{background:var(--bg-page)}
+@media (min-width: 1440px){
+  #app{zoom:1.15}
+}
+@media (min-width: 1920px){
+  #app{zoom:1.35}
+}
 </style>
 </head>
 <body>
@@ -489,6 +498,11 @@ function getMinMax() {
     if(!max||e>max) max=e
   })
   if (!min) { min=new Date(); max=new Date(); max.setDate(max.getDate()+30) }
+  const spanDays = daysBetween(min, max) + 1
+  const minTimelineDays = 60
+  if (spanDays < minTimelineDays) {
+    max.setDate(max.getDate() + (minTimelineDays - spanDays))
+  }
   const a=new Date(min); a.setDate(a.getDate()-4)
   const b=new Date(max); b.setDate(b.getDate()+8)
   return { min:a, max:b }
