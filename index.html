@@ -667,15 +667,16 @@ function renderGantt() {
     const w=Math.max((daysBetween(s,e)+1)*dayPx(),dayPx())
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
     const pct=hasKids?rollupPct(t.id):t.progress_pct
-    const cy=rowIdx*34+17
-    barPos[t.id]={x1:x,x2:x+w,y:cy}
+    const cyGlobal=rowIdx*34+17
+    const cyLocal=17
+    barPos[t.id]={x1:x,x2:x+w,y:cyGlobal}
 
     const isCancelled=t.status==='Cancelled'
     const catCls=isCancelled?'gb-cancel':(CAT_BAR[t.category]||'gb-general')
 
     if(t.type==='milestone'){
       const ms=document.createElement('div'); ms.className='gms'
-      const sz=12, bt=cy-sz/2
+      const sz=12, bt=cyLocal-sz/2
       ms.style.cssText=`left:${x-sz/2}px;top:${bt}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`
       ms.title=t.name
       ms.onclick=()=>openEditModal(t.id)
@@ -684,7 +685,7 @@ function renderGantt() {
       lbl.textContent=t.name
       row.appendChild(ms); row.appendChild(lbl)
     } else {
-      const bh=hasKids?7:14, bt=cy-bh/2
+      const bh=hasKids?7:14, bt=cyLocal-bh/2
       const bar=document.createElement('div'); bar.className=`gbar ${catCls}${hasKids?' gb-parent':''}`
       bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bt}px`
       if(!isCancelled&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
