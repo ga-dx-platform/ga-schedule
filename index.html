@@ -108,10 +108,14 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   overflow:hidden;
 }
 .trow:hover{background:linear-gradient(90deg,rgba(0,245,170,.03),rgba(59,0,255,.02))}
+.trow.drag-over{outline:1px dashed rgba(59,0,255,.35);outline-offset:-2px;background:rgba(59,0,255,.06)!important}
 .trow.is-parent{background:linear-gradient(90deg,rgba(59,0,255,.05),rgba(0,245,170,.02))}
 .trow.is-selected{background:rgba(59,0,255,.07)!important}
 .trow.is-cancelled{opacity:.5}
-.r-num{font-size:9px;color:var(--txt3);text-align:center;font-family:var(--mono)}
+.r-num{font-size:9px;color:var(--txt3);text-align:center;font-family:var(--mono);position:relative}
+.drag-handle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;color:#3B00FF;opacity:0;transition:opacity .1s;cursor:grab;user-select:none}
+.trow:hover .drag-handle{opacity:.85}
+.trow:active .drag-handle{cursor:grabbing}
 .r-exp{font-size:9px;color:var(--txt3);text-align:center;user-select:none;cursor:pointer}
 .r-name{display:flex;align-items:center;gap:3px;overflow:hidden;min-width:0}
 .r-name .lbl{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
@@ -431,6 +435,7 @@ let state = {
   holidays: []
 }
 let isSyncingScroll = false
+let dragTaskId = null
 
 const CAT_COLORS = { General:'#5a20ff', Develop:'#00b87a', Test:'#10b981', Meeting:'#d97706' }
 const CAT_BAR    = { General:'gb-general', Develop:'gb-develop', Test:'gb-test', Meeting:'gb-meeting' }
@@ -558,9 +563,11 @@ function renderTaskList() {
     const row = document.createElement('div')
     row.className = `trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCancelled?' is-cancelled':''}`
     row.dataset.id = t.id
+    row.dataset.parentId = t.parent_id || ''
+    row.draggable = true
 
     row.innerHTML = `
-      <span class="r-num">${ri[t.id]||''}</span>
+      <span class="r-num">${ri[t.id]||''}<span class="drag-handle" title="ลากเพื่อเรียงลำดับ">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
       <span class="r-name ${hasKids?'parent':'child'}${isCancelled?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
@@ -599,6 +606,86 @@ function renderTaskList() {
     const row = e.target.closest('.trow')
     if (row) openEditModal(row.dataset.id)
   }
+
+  // Drag & Drop reorder (same parent only)
+  tl.querySelectorAll('.trow').forEach(row => {
+    row.ondragstart = e => {
+      dragTaskId = row.dataset.id
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.setData('text/plain', dragTaskId)
+    }
+    row.ondragend = () => {
+      dragTaskId = null
+      tl.querySelectorAll('.trow.drag-over').forEach(el => el.classList.remove('drag-over'))
+    }
+    row.ondragover = e => {
+      if (!dragTaskId || dragTaskId === row.dataset.id) return
+      const dragRow = tl.querySelector(`.trow[data-id="${dragTaskId}"]`)
+      if (!dragRow) return
+      if ((dragRow.dataset.parentId || '') !== (row.dataset.parentId || '')) return
+      e.preventDefault()
+      row.classList.add('drag-over')
+    }
+    row.ondragleave = () => row.classList.remove('drag-over')
+    row.ondrop = async e => {
+      e.preventDefault()
+      row.classList.remove('drag-over')
+      if (!dragTaskId || dragTaskId === row.dataset.id) return
+      const dragRow = tl.querySelector(`.trow[data-id="${dragTaskId}"]`)
+      if (!dragRow) return
+      if ((dragRow.dataset.parentId || '') !== (row.dataset.parentId || '')) {
+        toast('⚠️ ลากได้เฉพาะงานระดับเดียวกันเท่านั้น')
+        return
+      }
+      const rect = row.getBoundingClientRect()
+      const placeAfter = e.clientY > rect.top + rect.height / 2
+      await reorderTasks(dragTaskId, row.dataset.id, placeAfter)
+    }
+  })
+}
+
+async function reorderTasks(dragId, targetId, placeAfter=false) {
+  const dragTask = state.tasks.find(t => t.id === dragId)
+  const targetTask = state.tasks.find(t => t.id === targetId)
+  if (!dragTask || !targetTask) return
+  if ((dragTask.parent_id || null) !== (targetTask.parent_id || null)) return
+
+  const parentId = targetTask.parent_id || null
+  const siblings = state.tasks
+    .filter(t => (t.parent_id || null) === parentId)
+    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+
+  const fromIdx = siblings.findIndex(t => t.id === dragId)
+  const targetIdx = siblings.findIndex(t => t.id === targetId)
+  if (fromIdx < 0 || targetIdx < 0 || fromIdx === targetIdx) return
+
+  const [moved] = siblings.splice(fromIdx, 1)
+  let insertIdx = targetIdx
+  if (fromIdx < targetIdx) insertIdx -= 1
+  if (placeAfter) insertIdx += 1
+  siblings.splice(insertIdx, 0, moved)
+
+  siblings.forEach((t, idx) => {
+    const nextOrder = (idx + 1) * 10
+    const ref = state.tasks.find(x => x.id === t.id)
+    if (ref) ref.sort_order = nextOrder
+  })
+
+  setSyncStatus('⟳ กำลังอัปเดตลำดับ...')
+  const updates = siblings.map((t, idx) =>
+    db.from('tasks').update({ sort_order: (idx + 1) * 10 }).eq('id', t.id)
+  )
+  const results = await Promise.all(updates)
+  const failed = results.find(r => r.error)
+  if (failed?.error) {
+    toast('❌ อัปเดตลำดับไม่สำเร็จ: ' + failed.error.message)
+    setSyncStatus('⚠️ Sync error')
+    await loadTasks()
+  } else {
+    setSyncStatus('✓ Synced')
+    toast('✅ จัดลำดับงานสำเร็จ')
+  }
+  render()
 }
 
 function renderGantt() {
