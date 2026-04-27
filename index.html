@@ -769,6 +769,7 @@ function renderGantt() {
   }
 
   // Bars
+  const ROW_H = 34
   const barPos={}
   visible.forEach(({task:t},rowIdx) => {
     const row=document.createElement('div'); row.className='g-row'; row.style.width=W+'px'
@@ -777,9 +778,8 @@ function renderGantt() {
     const w=Math.max((daysBetween(s,e)+1)*dayPx(),dayPx())
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
     const pct=hasKids?rollupPct(t.id):t.progress_pct
-    const cyGlobal=rowIdx*34+17
-    const cyLocal=17
-    barPos[t.id]={x1:x,x2:x+w,y:cyGlobal}
+    const rowMidY = ROW_H / 2
+    barPos[t.id]={x1:x,x2:x+w,y:rowIdx*ROW_H+rowMidY}
 
     const isCancelled=t.status==='Cancelled'
     const catCls=isCancelled?'gb-cancel':(CAT_BAR[t.category]||'gb-general')
@@ -789,13 +789,13 @@ function renderGantt() {
     if(t.type==='milestone'){
       if (baseTask?.type === 'milestone') {
         const bms=document.createElement('div'); bms.className='gms'
-        const bsz=10, bbt=cyLocal-bsz/2
+        const bsz=10, bbt=rowMidY-bsz/2
         const bx=daysBetween(min,pd(baseTask.start_date))*dayPx()
         bms.style.cssText=`left:${bx-bsz/2}px;top:${bbt}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);box-shadow:none;opacity:.65;pointer-events:none`
         row.appendChild(bms)
       }
       const ms=document.createElement('div'); ms.className='gms'
-      const sz=12, bt=cyLocal-sz/2
+      const sz=12, bt=rowMidY-sz/2
       ms.style.cssText=`left:${x-sz/2}px;top:${bt}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`
       ms.title=t.name
       ms.onclick=()=>openEditModal(t.id)
@@ -804,7 +804,8 @@ function renderGantt() {
       lbl.textContent=t.name
       row.appendChild(ms); row.appendChild(lbl)
     } else {
-      const bh=hasKids?8:14, bt=hasKids?13:(cyLocal-bh/2)
+      const bh=hasKids?8:14
+      const bt=(ROW_H-bh)/2
       if (baseTask && baseTask.type!=='milestone') {
         const bs = pd(baseTask.start_date)
         const be = taskEnd(baseTask)
@@ -829,7 +830,7 @@ function renderGantt() {
   })
 
   // Dep arrows SVG
-  const svgH=visible.length*34+10
+  const svgH=visible.length*ROW_H+10
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg')
   svg.className='dep-svg'; svg.style.cssText=`width:${W}px;height:${svgH}px`
   svg.setAttribute('viewBox',`0 0 ${W} ${svgH}`)
