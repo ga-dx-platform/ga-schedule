@@ -430,6 +430,7 @@ let state = {
   zoom: 1, collapsed: {}, editingTaskId: null,
   holidays: []
 }
+let isSyncingScroll = false
 
 const CAT_COLORS = { General:'#5a20ff', Develop:'#00b87a', Test:'#10b981', Meeting:'#d97706' }
 const CAT_BAR    = { General:'gb-general', Develop:'gb-develop', Test:'gb-test', Meeting:'gb-meeting' }
@@ -750,6 +751,24 @@ function renderStatusBar() {
   }
 }
 
+// ── SCROLL SYNC (TASK LIST ↔ GANTT) ──────────────────────
+function initScrollSync() {
+  const taskList = document.getElementById('task-list')
+  const right = document.getElementById('right')
+  taskList.addEventListener('scroll', () => {
+    if (isSyncingScroll) return
+    isSyncingScroll = true
+    right.scrollTop = taskList.scrollTop
+    isSyncingScroll = false
+  })
+  right.addEventListener('scroll', () => {
+    if (isSyncingScroll) return
+    isSyncingScroll = true
+    taskList.scrollTop = right.scrollTop
+    isSyncingScroll = false
+  })
+}
+
 // ── PROJECT MODAL ─────────────────────────────────────────
 function openProjModal() {
   renderProjList()
@@ -1031,6 +1050,7 @@ async function init() {
   await ensureAuth()
   await Promise.all([loadProjects(), loadHolidays()])
   hideLoading()
+  initScrollSync()
   render()
   // Auto-select first project if only one
   if (state.projects.length===1) {
