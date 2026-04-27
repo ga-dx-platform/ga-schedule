@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --nt-teal:   #00F5AA;
@@ -299,6 +300,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
     <div class="tb-sep"></div>
     <button class="tb" onclick="exportCSV()">📊 CSV</button>
     <button class="tb" onclick="exportPNG()">🖼 PNG</button>
+    <button class="tb" onclick="exportPDF()">📄 PDF</button>
     <div class="tb-sep"></div>
     <div style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</div>
   </div>
@@ -1159,6 +1161,78 @@ async function exportPNG() {
   } catch (err) {
     toast('❌ Export PNG ไม่สำเร็จ')
     setSyncStatus('⚠️ PNG export error')
+    console.error(err)
+  } finally {
+    hideLoading()
+  }
+}
+
+async function exportPDF() {
+  if (!window.html2canvas) { toast('❌ ไม่พบ html2canvas'); return }
+  if (!window.jspdf?.jsPDF) { toast('❌ ไม่พบ jsPDF'); return }
+  if (!state.currentProjectId) { openProjModal(); return }
+  const left = document.getElementById('left')
+  const right = document.getElementById('right')
+  const projectNameRaw = (state.projects.find(p => p.id === state.currentProjectId)?.name || 'project').trim()
+  const projectName = projectNameRaw.replace(/[^\wก-๙-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'project'
+  const dateStr = fmt(new Date())
+
+  showLoading()
+  setSyncStatus('⟳ กำลังสร้างไฟล์ PDF...')
+  try {
+    const stage = document.createElement('div')
+    stage.style.cssText = 'position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+    const leftClone = left.cloneNode(true)
+    const rightClone = right.cloneNode(true)
+
+    leftClone.style.width = `${left.offsetWidth}px`
+    leftClone.style.height = 'auto'
+    leftClone.style.overflow = 'visible'
+
+    rightClone.style.width = `${Math.max(right.clientWidth, right.scrollWidth)}px`
+    rightClone.style.height = 'auto'
+    rightClone.style.overflow = 'visible'
+    rightClone.scrollTop = 0
+    rightClone.scrollLeft = 0
+
+    stage.appendChild(leftClone)
+    stage.appendChild(rightClone)
+    document.body.appendChild(stage)
+
+    const canvas = await window.html2canvas(stage, {
+      backgroundColor: '#f5f7fc',
+      scale: 2,
+      useCORS: true
+    })
+    stage.remove()
+
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const pageW = pdf.internal.pageSize.getWidth()
+    const pageH = pdf.internal.pageSize.getHeight()
+    const margin = 8
+    const headerY = 8
+    const headerH = 8
+    const imgW = pageW - margin * 2
+    const imgH = (canvas.height * imgW) / canvas.width
+    const maxImgH = pageH - margin * 2 - headerH
+    const finalImgH = Math.min(imgH, maxImgH)
+    const imgY = margin + headerH
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(12)
+    pdf.text(`GA Schedule: ${projectNameRaw || 'Project'}`, margin, headerY + 4)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(9)
+    pdf.text(`Date: ${dateStr}`, pageW - margin, headerY + 4, { align: 'right' })
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, imgY, imgW, finalImgH)
+
+    pdf.save(`ga-schedule-${projectName}-${dateStr}.pdf`)
+    toast('📄 Export PDF สำเร็จ')
+    setSyncStatus('✓ Synced')
+  } catch (err) {
+    toast('❌ Export PDF ไม่สำเร็จ')
+    setSyncStatus('⚠️ PDF export error')
     console.error(err)
   } finally {
     hideLoading()
