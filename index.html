@@ -6,6 +6,8 @@
 <title>GA Schedule</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --nt-teal:   #00F5AA;
@@ -108,10 +110,14 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   overflow:hidden;
 }
 .trow:hover{background:linear-gradient(90deg,rgba(0,245,170,.03),rgba(59,0,255,.02))}
+.trow.drag-over{outline:1px dashed rgba(59,0,255,.35);outline-offset:-2px;background:rgba(59,0,255,.06)!important}
 .trow.is-parent{background:linear-gradient(90deg,rgba(59,0,255,.05),rgba(0,245,170,.02))}
 .trow.is-selected{background:rgba(59,0,255,.07)!important}
 .trow.is-cancelled{opacity:.5}
-.r-num{font-size:9px;color:var(--txt3);text-align:center;font-family:var(--mono)}
+.r-num{font-size:9px;color:var(--txt3);text-align:center;font-family:var(--mono);position:relative}
+.drag-handle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;color:#3B00FF;opacity:0;transition:opacity .1s;cursor:grab;user-select:none}
+.trow:hover .drag-handle{opacity:.85}
+.trow:active .drag-handle{cursor:grabbing}
 .r-exp{font-size:9px;color:var(--txt3);text-align:center;user-select:none;cursor:pointer}
 .r-name{display:flex;align-items:center;gap:3px;overflow:hidden;min-width:0}
 .r-name .lbl{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
@@ -120,12 +126,13 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .r-name.cancelled .lbl{text-decoration:line-through;color:var(--txt3)}
 .r-date{font-size:9px;color:var(--txt2);text-align:center;font-family:var(--mono)}
 .r-dur{font-size:9px;color:var(--txt2);text-align:center}
-.r-pct{font-size:9px;text-align:center;line-height:1.3}
-.pbar{width:36px;height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin:2px auto 0}
+.r-pct{font-size:9px;text-align:center;line-height:1.1;white-space:nowrap}
+.r-pct.parent{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pbar{width:36px;height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin:0 auto}
 .pbar-fill{height:100%;border-radius:2px;background:var(--nt-grad90)}
 .ms-icon{color:var(--amber);font-size:8px;flex-shrink:0}
 .dep-count{font-size:7px;padding:0 3px;border-radius:3px;flex-shrink:0;font-family:var(--mono);font-weight:600;background:rgba(59,0,255,.1);color:#3B00FF;border:1px solid var(--bdr-mid)}
-.sbadge{font-size:8px;padding:2px 6px;border-radius:20px;font-weight:600;white-space:nowrap;text-align:center;font-family:var(--mono);letter-spacing:.02em;display:inline-block}
+.sbadge{font-size:8px;padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap;text-align:center;font-family:var(--mono);letter-spacing:.02em;display:inline-block;max-width:82px;overflow:hidden;text-overflow:ellipsis}
 .s-done{background:var(--green-s);color:var(--green);border:1px solid rgba(5,150,105,.2)}
 .s-prog{background:rgba(59,0,255,.08);color:#3B00FF;border:1px solid var(--bdr-mid)}
 .s-none{background:#f1f5f9;color:var(--txt3);border:1px solid var(--bdr)}
@@ -160,6 +167,8 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .today-vlbl{position:absolute;top:1px;font-size:7px;color:var(--red);font-family:var(--mono);font-weight:600;transform:translateX(-50%);white-space:nowrap;z-index:5}
 .gbar{position:absolute;border-radius:3px;cursor:pointer;overflow:hidden;display:flex;align-items:center;transition:filter .12s}
 .gbar:hover{filter:brightness(.9)}
+.gbar-ghost{position:absolute;border-radius:3px;background:rgba(100,116,139,.22);border:1px dashed rgba(100,116,139,.45);pointer-events:none}
+.gbar.baseline-late{outline:1.5px solid rgba(225,29,72,.85);outline-offset:1px}
 .gbar-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.3)}
 .gbar-lbl{position:relative;font-size:8px;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;z-index:1;font-weight:500}
 .gbar-pct{position:absolute;font-size:8px;color:var(--txt3);white-space:nowrap;font-family:var(--mono)}
@@ -168,7 +177,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .gb-test{background:linear-gradient(90deg,#059669,#10b981)}
 .gb-meeting{background:linear-gradient(90deg,#c05621,#d97706)}
 .gb-nt{background:var(--nt-grad);box-shadow:var(--nt-glow)}
-.gb-parent{height:7px!important;background:linear-gradient(90deg,#0a0f1e,#2a3f6f);border-radius:2px!important}
+.gb-parent{height:8px!important;background:linear-gradient(90deg,#1a2e52,#3b6fd4);border-radius:2px!important}
 .gb-cancel{background:rgba(0,0,0,.08)!important;border:1px dashed rgba(0,0,0,.14)!important;box-shadow:none!important}
 .gb-cancel .gbar-lbl{color:var(--txt3)}
 .gms{position:absolute;border-radius:2px;transform:rotate(45deg);cursor:pointer}
@@ -213,6 +222,24 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .mbtn.save{background:var(--nt-grad);color:#fff;border:none;font-weight:600;box-shadow:var(--nt-glow)}
 .mbtn.save:hover{filter:brightness(1.07)}
 .mbtn.del-m{background:var(--red-s);color:var(--red);border:1px solid rgba(225,29,72,.2);margin-right:auto}
+
+/* DEPENDENCY MODAL */
+#dep-modal{width:560px;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);background:rgba(255,255,255,.92);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
+#dep-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90);z-index:1}
+.dep-grid{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dep-grid .full{grid-column:1/-1}
+.dep-hint{font-size:10px;color:var(--txt3);margin-top:3px;line-height:1.45}
+.dep-list-wrap{border-top:1px solid var(--bdr);background:linear-gradient(180deg,rgba(59,0,255,.02),transparent)}
+.dep-list{max-height:220px;overflow:auto;padding:10px 18px 14px}
+.dep-item{display:grid;grid-template-columns:1fr auto 1fr auto;align-items:center;gap:6px;background:rgba(255,255,255,.86);border:1px solid var(--bdr);border-radius:var(--r-sm);padding:7px 9px;margin-bottom:7px}
+.dep-task{font-size:11px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dep-type{font-size:10px;font-family:var(--mono);font-weight:600;border-radius:12px;padding:2px 7px}
+.dep-type.fs{background:rgba(59,0,255,.08);color:#3B00FF}
+.dep-type.ss{background:rgba(0,184,122,.12);color:#008a5e}
+.dep-type.ff{background:rgba(217,119,6,.15);color:#b45309}
+.dep-type.sf{background:rgba(225,29,72,.12);color:#be123c}
+.dep-del{width:24px;height:24px;border:1px solid rgba(225,29,72,.2);border-radius:6px;background:var(--red-s);color:var(--red);font-size:12px;cursor:pointer}
+.dep-empty{font-size:11px;color:var(--txt3);padding:14px 0;text-align:center}
 
 /* PROJECT MODAL */
 #proj-modal{width:380px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15)}
@@ -264,7 +291,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   <!-- TOOLBAR -->
   <div id="toolbar">
     <button class="tb add" onclick="openAddModal()">+ เพิ่ม Task</button>
-    <button class="tb link" id="btn-link" onclick="sendPrompt('เพิ่ม dependency link modal ใน GA Schedule')" disabled>→ Add Link</button>
+    <button class="tb link" id="btn-link" onclick="openDepModal()" disabled>→ เพิ่มลิงก์งาน</button>
     <div class="tb-sep"></div>
     <button class="tb save" onclick="saveAll()">💾 บันทึก</button>
     <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>🗑 ล้าง</button>
@@ -275,6 +302,11 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
     <button class="tb today" onclick="scrollToday()">📅 Today</button>
     <div class="tb-sep"></div>
     <button class="tb" onclick="exportCSV()">📊 CSV</button>
+    <button class="tb" onclick="exportPNG()">🖼 PNG</button>
+    <button class="tb" onclick="exportPDF()">📄 PDF</button>
+    <div class="tb-sep"></div>
+    <button class="tb" onclick="saveBaseline()">💾 Baseline</button>
+    <button class="tb" onclick="compareBaseline()">⚖️ เปรียบเทียบ Baseline</button>
     <div class="tb-sep"></div>
     <div style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</div>
   </div>
@@ -338,6 +370,44 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   </div>
 </div>
 
+<!-- DEPENDENCY MODAL -->
+<div class="modal-bd" id="dep-modal-bd">
+  <div id="dep-modal">
+    <div class="m-hdr">
+      <span class="m-title">🔗 จัดการ Dependency</span>
+      <button class="m-close" onclick="closeDepModal()">×</button>
+    </div>
+    <div class="dep-grid">
+      <div class="full">
+        <label class="flbl">งานต้นทาง (From Task)</label>
+        <select class="finput" id="dep-from"></select>
+      </div>
+      <div class="full">
+        <label class="flbl">งานปลายทาง (To Task)</label>
+        <select class="finput" id="dep-to"></select>
+      </div>
+      <div class="full">
+        <label class="flbl">ประเภทลิงก์</label>
+        <select class="finput" id="dep-type">
+          <option value="FS">FS — B เริ่มได้หลัง A เสร็จ</option>
+          <option value="SS">SS — B เริ่มพร้อม A</option>
+          <option value="FF">FF — B เสร็จหลัง A เสร็จ</option>
+          <option value="SF">SF — B เสร็จหลัง A เริ่ม</option>
+        </select>
+        <div class="dep-hint">เลือกงานต้นทางและปลายทาง จากนั้นกด “เพิ่มลิงก์” เพื่อบันทึกลงฐานข้อมูล</div>
+      </div>
+      <div class="full" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="mbtn cancel" onclick="closeDepModal()">ปิด</button>
+        <button class="mbtn save" onclick="saveDependency()">+ เพิ่มลิงก์</button>
+      </div>
+    </div>
+    <div class="dep-list-wrap">
+      <div class="m-hdr" style="padding:10px 18px"><span class="m-title" style="font-size:12px">ลิงก์ที่มีอยู่</span></div>
+      <div class="dep-list" id="dep-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- PROJECT MODAL -->
 <div class="modal-bd" id="proj-modal-bd">
   <div id="proj-modal">
@@ -371,14 +441,17 @@ async function ensureAuth() {
 let state = {
   projects: [], currentProjectId: null,
   tasks: [], deps: [],
+  baselines: [], comparedBaseline: null,
   zoom: 1, collapsed: {}, editingTaskId: null,
   holidays: []
 }
+let isSyncingScroll = false
+let dragTaskId = null
 
 const CAT_COLORS = { General:'#5a20ff', Develop:'#00b87a', Test:'#10b981', Meeting:'#d97706' }
 const CAT_BAR    = { General:'gb-general', Develop:'gb-develop', Test:'gb-test', Meeting:'gb-meeting' }
 const STATUS_CLASS = { 'Not Started':'s-none', 'In Progress':'s-prog', 'Completed':'s-done', 'Cancelled':'s-cancel' }
-const STATUS_THAI  = { 'Not Started':'ยังไม่เริ่ม', 'In Progress':'กำลังดำเนินการ', 'Completed':'เสร็จแล้ว', 'Cancelled':'ยกเลิก' }
+const STATUS_THAI  = { 'Not Started':'ยังไม่เริ่ม', 'In Progress':'ดำเนินการ', 'Completed':'เสร็จแล้ว', 'Cancelled':'ยกเลิก' }
 
 // ── UTILS ─────────────────────────────────────────────────
 const pd = s => new Date(s + 'T00:00:00')
@@ -402,7 +475,9 @@ function dayPx() { return 18 * state.zoom }
 
 function getMinMax() {
   let min=null, max=null
-  state.tasks.forEach(t => {
+  const allTasks = [...state.tasks, ...((state.comparedBaseline?.tasks || []))]
+  allTasks.forEach(t => {
+    if (!t?.start_date) return
     const s=pd(t.start_date), e=taskEnd(t)
     if(!min||s<min) min=s
     if(!max||e>max) max=e
@@ -469,6 +544,13 @@ async function loadDeps() {
   state.deps = data || []
 }
 
+async function loadBaselines() {
+  if (!state.currentProjectId) return
+  const { data } = await db.from('baselines').select('*')
+    .eq('project_id', state.currentProjectId).order('created_at', { ascending: false })
+  state.baselines = data || []
+}
+
 // ── RENDER ────────────────────────────────────────────────
 function render() {
   renderLegend()
@@ -501,9 +583,11 @@ function renderTaskList() {
     const row = document.createElement('div')
     row.className = `trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCancelled?' is-cancelled':''}`
     row.dataset.id = t.id
+    row.dataset.parentId = t.parent_id || ''
+    row.draggable = true
 
     row.innerHTML = `
-      <span class="r-num">${ri[t.id]||''}</span>
+      <span class="r-num">${ri[t.id]||''}<span class="drag-handle" title="ลากเพื่อเรียงลำดับ">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
       <span class="r-name ${hasKids?'parent':'child'}${isCancelled?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
@@ -514,8 +598,9 @@ function renderTaskList() {
       <span class="r-date">${t.type==='milestone'?'—':fmtShort(e)}</span>
       <span class="r-date" style="font-size:9px;overflow:hidden;text-overflow:ellipsis">${t.assignee||'—'}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
-      <span class="r-pct" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
-        ${pct}%${hasKids?'<span style="font-size:7px;color:var(--txt3);margin-left:2px">(a)</span>':''}
+      <span class="r-pct${hasKids?' parent':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
+        <span>${pct}%</span>
+        ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
       <span><span class="sbadge ${sc}">${STATUS_THAI[t.status]||t.status}</span></span>
       <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${t.category}</span></span>
@@ -542,11 +627,92 @@ function renderTaskList() {
     const row = e.target.closest('.trow')
     if (row) openEditModal(row.dataset.id)
   }
+
+  // Drag & Drop reorder (same parent only)
+  tl.querySelectorAll('.trow').forEach(row => {
+    row.ondragstart = e => {
+      dragTaskId = row.dataset.id
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.setData('text/plain', dragTaskId)
+    }
+    row.ondragend = () => {
+      dragTaskId = null
+      tl.querySelectorAll('.trow.drag-over').forEach(el => el.classList.remove('drag-over'))
+    }
+    row.ondragover = e => {
+      if (!dragTaskId || dragTaskId === row.dataset.id) return
+      const dragRow = tl.querySelector(`.trow[data-id="${dragTaskId}"]`)
+      if (!dragRow) return
+      if ((dragRow.dataset.parentId || '') !== (row.dataset.parentId || '')) return
+      e.preventDefault()
+      row.classList.add('drag-over')
+    }
+    row.ondragleave = () => row.classList.remove('drag-over')
+    row.ondrop = async e => {
+      e.preventDefault()
+      row.classList.remove('drag-over')
+      if (!dragTaskId || dragTaskId === row.dataset.id) return
+      const dragRow = tl.querySelector(`.trow[data-id="${dragTaskId}"]`)
+      if (!dragRow) return
+      if ((dragRow.dataset.parentId || '') !== (row.dataset.parentId || '')) {
+        toast('⚠️ ลากได้เฉพาะงานระดับเดียวกันเท่านั้น')
+        return
+      }
+      const rect = row.getBoundingClientRect()
+      const placeAfter = e.clientY > rect.top + rect.height / 2
+      await reorderTasks(dragTaskId, row.dataset.id, placeAfter)
+    }
+  })
+}
+
+async function reorderTasks(dragId, targetId, placeAfter=false) {
+  const dragTask = state.tasks.find(t => t.id === dragId)
+  const targetTask = state.tasks.find(t => t.id === targetId)
+  if (!dragTask || !targetTask) return
+  if ((dragTask.parent_id || null) !== (targetTask.parent_id || null)) return
+
+  const parentId = targetTask.parent_id || null
+  const siblings = state.tasks
+    .filter(t => (t.parent_id || null) === parentId)
+    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+
+  const fromIdx = siblings.findIndex(t => t.id === dragId)
+  const targetIdx = siblings.findIndex(t => t.id === targetId)
+  if (fromIdx < 0 || targetIdx < 0 || fromIdx === targetIdx) return
+
+  const [moved] = siblings.splice(fromIdx, 1)
+  let insertIdx = targetIdx
+  if (fromIdx < targetIdx) insertIdx -= 1
+  if (placeAfter) insertIdx += 1
+  siblings.splice(insertIdx, 0, moved)
+
+  siblings.forEach((t, idx) => {
+    const nextOrder = (idx + 1) * 10
+    const ref = state.tasks.find(x => x.id === t.id)
+    if (ref) ref.sort_order = nextOrder
+  })
+
+  setSyncStatus('⟳ กำลังอัปเดตลำดับ...')
+  const updates = siblings.map((t, idx) =>
+    db.from('tasks').update({ sort_order: (idx + 1) * 10 }).eq('id', t.id)
+  )
+  const results = await Promise.all(updates)
+  const failed = results.find(r => r.error)
+  if (failed?.error) {
+    toast('❌ อัปเดตลำดับไม่สำเร็จ: ' + failed.error.message)
+    setSyncStatus('⚠️ Sync error')
+    await loadTasks()
+  } else {
+    setSyncStatus('✓ Synced')
+    toast('✅ จัดลำดับงานสำเร็จ')
+  }
+  render()
 }
 
 function renderGantt() {
   const visible = getVisible()
   const { min, max } = getMinMax()
+  const baselineMap = new Map((state.comparedBaseline?.tasks || []).map(t => [t.id, t]))
   const totalDays = daysBetween(min, max) + 1
   const W = totalDays * dayPx()
   const today = new Date()
@@ -554,6 +720,7 @@ function renderGantt() {
   // Header
   const gh = document.getElementById('gantt-hdr')
   gh.innerHTML = ''
+  gh.style.width = W + 'px'
   const mr = document.createElement('div'); mr.className='g-month-row'
   const dr = document.createElement('div'); dr.className='g-day-row'
   let cur=new Date(min), cm='', cpx=0
@@ -610,15 +777,25 @@ function renderGantt() {
     const w=Math.max((daysBetween(s,e)+1)*dayPx(),dayPx())
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
     const pct=hasKids?rollupPct(t.id):t.progress_pct
-    const cy=rowIdx*34+17
-    barPos[t.id]={x1:x,x2:x+w,y:cy}
+    const cyGlobal=rowIdx*34+17
+    const cyLocal=17
+    barPos[t.id]={x1:x,x2:x+w,y:cyGlobal}
 
     const isCancelled=t.status==='Cancelled'
     const catCls=isCancelled?'gb-cancel':(CAT_BAR[t.category]||'gb-general')
+    const baseTask = baselineMap.get(t.id)
+    const isLateVsBaseline = !!(baseTask && taskEnd(t) > taskEnd(baseTask))
 
     if(t.type==='milestone'){
+      if (baseTask?.type === 'milestone') {
+        const bms=document.createElement('div'); bms.className='gms'
+        const bsz=10, bbt=cyLocal-bsz/2
+        const bx=daysBetween(min,pd(baseTask.start_date))*dayPx()
+        bms.style.cssText=`left:${bx-bsz/2}px;top:${bbt}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);box-shadow:none;opacity:.65;pointer-events:none`
+        row.appendChild(bms)
+      }
       const ms=document.createElement('div'); ms.className='gms'
-      const sz=12, bt=cy-sz/2
+      const sz=12, bt=cyLocal-sz/2
       ms.style.cssText=`left:${x-sz/2}px;top:${bt}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`
       ms.title=t.name
       ms.onclick=()=>openEditModal(t.id)
@@ -627,8 +804,19 @@ function renderGantt() {
       lbl.textContent=t.name
       row.appendChild(ms); row.appendChild(lbl)
     } else {
-      const bh=hasKids?7:14, bt=cy-bh/2
+      const bh=hasKids?8:14, bt=hasKids?13:(cyLocal-bh/2)
+      if (baseTask && baseTask.type!=='milestone') {
+        const bs = pd(baseTask.start_date)
+        const be = taskEnd(baseTask)
+        const bx = daysBetween(min, bs) * dayPx()
+        const bw = Math.max((daysBetween(bs, be)+1)*dayPx(), dayPx())
+        const ghost=document.createElement('div')
+        ghost.className='gbar-ghost'
+        ghost.style.cssText=`left:${bx}px;width:${bw}px;height:${bh}px;top:${bt}px`
+        row.appendChild(ghost)
+      }
       const bar=document.createElement('div'); bar.className=`gbar ${catCls}${hasKids?' gb-parent':''}`
+      if (isLateVsBaseline) bar.classList.add('baseline-late')
       bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bt}px`
       if(!isCancelled&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
       if(w>40&&dayPx()>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=t.name;bar.appendChild(lbl)}
@@ -675,7 +863,9 @@ function renderGantt() {
   })
   gb.appendChild(svg)
 
-  document.getElementById('gantt-wrap').style.width = W+'px'
+  const gw = document.getElementById('gantt-wrap')
+  gw.style.width = W+'px'
+  gw.style.minWidth = W+'px'
 }
 
 function renderStatusBar() {
@@ -692,6 +882,24 @@ function renderStatusBar() {
     const minD=new Date(Math.min(...dates))
     document.getElementById('sb-range').textContent=`${fmtShort(minD)} – ${fmtShort(taskEnd(state.tasks.reduce((a,b)=>taskEnd(b)>taskEnd(a)?b:a,state.tasks[0])))}`
   }
+}
+
+// ── SCROLL SYNC (TASK LIST ↔ GANTT) ──────────────────────
+function initScrollSync() {
+  const taskList = document.getElementById('task-list')
+  const right = document.getElementById('right')
+  taskList.addEventListener('scroll', () => {
+    if (isSyncingScroll) return
+    isSyncingScroll = true
+    right.scrollTop = taskList.scrollTop
+    isSyncingScroll = false
+  })
+  right.addEventListener('scroll', () => {
+    if (isSyncingScroll) return
+    isSyncingScroll = true
+    taskList.scrollTop = right.scrollTop
+    isSyncingScroll = false
+  })
 }
 
 // ── PROJECT MODAL ─────────────────────────────────────────
@@ -713,6 +921,7 @@ function renderProjList() {
 
 async function selectProject(id) {
   state.currentProjectId = id
+  state.comparedBaseline = null
   const p = state.projects.find(x=>x.id===id)
   document.getElementById('proj-name').textContent = p?.name || '—'
   document.getElementById('btn-link').disabled = false
@@ -721,6 +930,7 @@ async function selectProject(id) {
   showLoading()
   await loadTasks()
   await loadDeps()
+  await loadBaselines()
   hideLoading()
   render()
 }
@@ -735,6 +945,125 @@ async function createProject() {
   renderProjList()
   toast('✅ สร้างโปรเจกต์ '+name+' สำเร็จ')
   selectProject(data.id)
+}
+
+// ── BASELINE ──────────────────────────────────────────────
+async function saveBaseline() {
+  if (!state.currentProjectId) { openProjModal(); return }
+  if (!state.tasks.length) { toast('⚠️ ไม่มี Task สำหรับบันทึก Baseline'); return }
+  const defaultName = `Baseline ${fmt(new Date())}`
+  const name = prompt('ตั้งชื่อ Baseline', defaultName)
+  if (name === null) return
+  const trimmed = name.trim()
+  if (!trimmed) { toast('⚠️ กรุณาระบุชื่อ Baseline'); return }
+  const { error } = await db.from('baselines').insert({
+    project_id: state.currentProjectId,
+    name: trimmed,
+    snapshot_json: JSON.stringify(state.tasks)
+  })
+  if (error) { toast('❌ บันทึก Baseline ไม่สำเร็จ: ' + error.message); return }
+  await loadBaselines()
+  toast('✅ บันทึก Baseline สำเร็จ')
+}
+
+function compareBaseline() {
+  if (!state.currentProjectId) { openProjModal(); return }
+  if (!state.baselines.length) { toast('⚠️ ยังไม่มี Baseline ในโปรเจกต์นี้'); return }
+  const options = state.baselines
+    .map((b, i) => {
+      const d = b.created_at ? new Date(b.created_at) : new Date()
+      return `${i + 1}. ${b.name} (${fmtShort(d)})`
+    })
+    .join('\n')
+  const pick = prompt(`เลือก Baseline ที่ต้องการเปรียบเทียบ\n0. ไม่เปรียบเทียบ\n${options}`, '1')
+  if (pick === null) return
+  const idx = Number(pick)
+  if (idx === 0) {
+    state.comparedBaseline = null
+    render()
+    toast('ℹ️ ปิดการเปรียบเทียบ Baseline')
+    return
+  }
+  if (!Number.isInteger(idx) || idx < 1 || idx > state.baselines.length) {
+    toast('⚠️ เลือกหมายเลข Baseline ไม่ถูกต้อง')
+    return
+  }
+  const selected = state.baselines[idx - 1]
+  try {
+    const tasks = JSON.parse(selected.snapshot_json || '[]')
+    if (!Array.isArray(tasks)) throw new Error('invalid snapshot')
+    state.comparedBaseline = { id: selected.id, name: selected.name, tasks }
+    render()
+    toast(`✅ เปรียบเทียบกับ ${selected.name}`)
+  } catch {
+    toast('❌ อ่านข้อมูล Baseline ไม่สำเร็จ')
+  }
+}
+
+// ── DEPENDENCY MODAL ─────────────────────────────────────
+function openDepModal() {
+  if (!state.currentProjectId) { openProjModal(); return }
+  if (!state.tasks.length) { toast('⚠️ กรุณาเพิ่ม Task ก่อนสร้างลิงก์'); return }
+  populateDepTaskOptions()
+  renderDepList()
+  document.getElementById('dep-modal-bd').classList.add('show')
+}
+
+function closeDepModal() { document.getElementById('dep-modal-bd').classList.remove('show') }
+
+function populateDepTaskOptions() {
+  const from = document.getElementById('dep-from')
+  const to = document.getElementById('dep-to')
+  const opts = state.tasks.map(t => `<option value="${t.id}">${t.name}</option>`).join('')
+  from.innerHTML = opts
+  to.innerHTML = opts
+  if (state.tasks.length > 1) to.selectedIndex = 1
+}
+
+function renderDepList() {
+  const list = document.getElementById('dep-list')
+  if (!state.deps.length) {
+    list.innerHTML = '<div class="dep-empty">ยังไม่มีลิงก์ในโปรเจกต์นี้</div>'
+    return
+  }
+  list.innerHTML = state.deps.map(dep => {
+    const fromTask = state.tasks.find(t => t.id === dep.from_task_id)
+    const toTask = state.tasks.find(t => t.id === dep.to_task_id)
+    return `
+      <div class="dep-item">
+        <div class="dep-task" title="${fromTask?.name || '-'}">${fromTask?.name || '(ไม่พบงานต้นทาง)'}</div>
+        <div class="dep-type ${(dep.dep_type || '').toLowerCase()}">${dep.dep_type || 'FS'}</div>
+        <div class="dep-task" title="${toTask?.name || '-'}">${toTask?.name || '(ไม่พบงานปลายทาง)'}</div>
+        <button class="dep-del" onclick="deleteDependency('${dep.id}')" title="ลบลิงก์">×</button>
+      </div>`
+  }).join('')
+}
+
+async function saveDependency() {
+  const from_task_id = document.getElementById('dep-from').value
+  const to_task_id = document.getElementById('dep-to').value
+  const dep_type = document.getElementById('dep-type').value
+  if (!from_task_id || !to_task_id) { toast('⚠️ กรุณาเลือก Task ต้นทางและปลายทาง'); return }
+  if (from_task_id === to_task_id) { toast('⚠️ ไม่สามารถลิงก์ Task เดียวกันได้'); return }
+  const duplicated = state.deps.some(d => d.from_task_id===from_task_id && d.to_task_id===to_task_id && d.dep_type===dep_type)
+  if (duplicated) { toast('⚠️ ลิงก์นี้มีอยู่แล้ว'); return }
+  const { error } = await db.from('dependencies').insert({
+    project_id: state.currentProjectId, from_task_id, to_task_id, dep_type
+  })
+  if (error) { toast('❌ บันทึกลิงก์ไม่สำเร็จ: '+error.message); return }
+  await loadDeps()
+  render()
+  renderDepList()
+  toast('✅ เพิ่มลิงก์สำเร็จ')
+}
+
+async function deleteDependency(id) {
+  const { error } = await db.from('dependencies').delete().eq('id', id)
+  if (error) { toast('❌ ลบลิงก์ไม่สำเร็จ: '+error.message); return }
+  await loadDeps()
+  render()
+  renderDepList()
+  toast('🗑 ลบลิงก์สำเร็จ')
 }
 
 // ── TASK MODAL ────────────────────────────────────────────
@@ -881,6 +1210,131 @@ function exportCSV() {
   a.download='ga-schedule.csv'; a.click(); toast('📊 Export CSV สำเร็จ')
 }
 
+async function exportPNG() {
+  if (!window.html2canvas) { toast('❌ ไม่พบ html2canvas'); return }
+  if (!state.currentProjectId) { openProjModal(); return }
+  const left = document.getElementById('left')
+  const right = document.getElementById('right')
+  const projectNameRaw = (state.projects.find(p => p.id === state.currentProjectId)?.name || 'project').trim()
+  const projectName = projectNameRaw.replace(/[^\wก-๙-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'project'
+  const dateStr = fmt(new Date())
+
+  showLoading()
+  setSyncStatus('⟳ กำลังสร้างไฟล์ PNG...')
+  try {
+    const stage = document.createElement('div')
+    stage.style.cssText = 'position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+    const leftClone = left.cloneNode(true)
+    const rightClone = right.cloneNode(true)
+
+    leftClone.style.width = `${left.offsetWidth}px`
+    leftClone.style.height = 'auto'
+    leftClone.style.overflow = 'visible'
+
+    rightClone.style.width = `${Math.max(right.clientWidth, right.scrollWidth)}px`
+    rightClone.style.height = 'auto'
+    rightClone.style.overflow = 'visible'
+    rightClone.scrollTop = 0
+    rightClone.scrollLeft = 0
+
+    stage.appendChild(leftClone)
+    stage.appendChild(rightClone)
+    document.body.appendChild(stage)
+
+    const canvas = await window.html2canvas(stage, {
+      backgroundColor: '#f5f7fc',
+      scale: 2,
+      useCORS: true
+    })
+    stage.remove()
+
+    const a = document.createElement('a')
+    a.href = canvas.toDataURL('image/png')
+    a.download = `ga-schedule-${projectName}-${dateStr}.png`
+    a.click()
+    toast('🖼 Export PNG สำเร็จ')
+    setSyncStatus('✓ Synced')
+  } catch (err) {
+    toast('❌ Export PNG ไม่สำเร็จ')
+    setSyncStatus('⚠️ PNG export error')
+    console.error(err)
+  } finally {
+    hideLoading()
+  }
+}
+
+async function exportPDF() {
+  if (!window.html2canvas) { toast('❌ ไม่พบ html2canvas'); return }
+  if (!window.jspdf?.jsPDF) { toast('❌ ไม่พบ jsPDF'); return }
+  if (!state.currentProjectId) { openProjModal(); return }
+  const left = document.getElementById('left')
+  const right = document.getElementById('right')
+  const projectNameRaw = (state.projects.find(p => p.id === state.currentProjectId)?.name || 'project').trim()
+  const projectName = projectNameRaw.replace(/[^\wก-๙-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'project'
+  const dateStr = fmt(new Date())
+
+  showLoading()
+  setSyncStatus('⟳ กำลังสร้างไฟล์ PDF...')
+  try {
+    const stage = document.createElement('div')
+    stage.style.cssText = 'position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+    const leftClone = left.cloneNode(true)
+    const rightClone = right.cloneNode(true)
+
+    leftClone.style.width = `${left.offsetWidth}px`
+    leftClone.style.height = 'auto'
+    leftClone.style.overflow = 'visible'
+
+    rightClone.style.width = `${Math.max(right.clientWidth, right.scrollWidth)}px`
+    rightClone.style.height = 'auto'
+    rightClone.style.overflow = 'visible'
+    rightClone.scrollTop = 0
+    rightClone.scrollLeft = 0
+
+    stage.appendChild(leftClone)
+    stage.appendChild(rightClone)
+    document.body.appendChild(stage)
+
+    const canvas = await window.html2canvas(stage, {
+      backgroundColor: '#f5f7fc',
+      scale: 2,
+      useCORS: true
+    })
+    stage.remove()
+
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const pageW = pdf.internal.pageSize.getWidth()
+    const pageH = pdf.internal.pageSize.getHeight()
+    const margin = 8
+    const headerY = 8
+    const headerH = 8
+    const imgW = pageW - margin * 2
+    const imgH = (canvas.height * imgW) / canvas.width
+    const maxImgH = pageH - margin * 2 - headerH
+    const finalImgH = Math.min(imgH, maxImgH)
+    const imgY = margin + headerH
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(12)
+    pdf.text(`GA Schedule: ${projectNameRaw || 'Project'}`, margin, headerY + 4)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(9)
+    pdf.text(`Date: ${dateStr}`, pageW - margin, headerY + 4, { align: 'right' })
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, imgY, imgW, finalImgH)
+
+    pdf.save(`ga-schedule-${projectName}-${dateStr}.pdf`)
+    toast('📄 Export PDF สำเร็จ')
+    setSyncStatus('✓ Synced')
+  } catch (err) {
+    toast('❌ Export PDF ไม่สำเร็จ')
+    setSyncStatus('⚠️ PDF export error')
+    console.error(err)
+  } finally {
+    hideLoading()
+  }
+}
+
 // ── HELPERS ───────────────────────────────────────────────
 function setSyncStatus(txt){ document.getElementById('sync-status').textContent=txt }
 
@@ -894,11 +1348,12 @@ function hideLoading(){ document.getElementById('loading').style.display='none' 
 
 // Close modals on backdrop click
 document.getElementById('task-modal-bd').onclick = e=>{ if(e.target===e.currentTarget) closeTaskModal() }
+document.getElementById('dep-modal-bd').onclick = e=>{ if(e.target===e.currentTarget) closeDepModal() }
 document.getElementById('proj-modal-bd').onclick  = e=>{ if(e.target===e.currentTarget) closeProjModal() }
 
 // Keyboard shortcuts
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ closeTaskModal(); closeProjModal() }
+  if(e.key==='Escape'){ closeTaskModal(); closeDepModal(); closeProjModal() }
   if(e.key==='n'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); openAddModal() }
 })
 
@@ -908,6 +1363,7 @@ async function init() {
   await ensureAuth()
   await Promise.all([loadProjects(), loadHolidays()])
   hideLoading()
+  initScrollSync()
   render()
   // Auto-select first project if only one
   if (state.projects.length===1) {
