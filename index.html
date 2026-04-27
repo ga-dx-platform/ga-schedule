@@ -110,7 +110,13 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   overflow:hidden;
 }
 .trow:hover{background:linear-gradient(90deg,rgba(0,245,170,.03),rgba(59,0,255,.02))}
-.trow.drag-over{outline:1px dashed rgba(59,0,255,.35);outline-offset:-2px;background:rgba(59,0,255,.06)!important}
+.trow.drag-over{background:rgba(59,0,255,.06)!important;position:relative}
+.trow.drag-over::after{
+  content:'';position:absolute;left:8px;right:8px;height:2px;border-radius:2px;
+  background:var(--nt-grad90);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 0 10px rgba(59,0,255,.25);
+}
+.trow.drag-over-before::after{top:0}
+.trow.drag-over-after::after{bottom:0}
 .trow.is-parent{background:linear-gradient(90deg,rgba(59,0,255,.05),rgba(0,245,170,.02))}
 .trow.is-selected{background:rgba(59,0,255,.07)!important}
 .trow.is-cancelled{opacity:.5}
@@ -265,6 +271,15 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 /* TOAST */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:200;background:var(--txt);color:#fff;font-size:12px;padding:8px 18px;border-radius:20px;transition:transform .3s;pointer-events:none;font-family:var(--font)}
 #toast.show{transform:translateX(-50%) translateY(0)}
+
+/* LARGE SCREEN SCALING */
+#right{background:var(--bg-page)}
+@media (min-width: 1440px){
+  #app{zoom:1.15}
+}
+@media (min-width: 1920px){
+  #app{zoom:1.35}
+}
 </style>
 </head>
 <body>
@@ -483,12 +498,26 @@ function getMinMax() {
     if(!max||e>max) max=e
   })
   if (!min) { min=new Date(); max=new Date(); max.setDate(max.getDate()+30) }
+  const spanDays = daysBetween(min, max) + 1
+  const minTimelineDays = 60
+  if (spanDays < minTimelineDays) {
+    max.setDate(max.getDate() + (minTimelineDays - spanDays))
+  }
   const a=new Date(min); a.setDate(a.getDate()-4)
   const b=new Date(max); b.setDate(b.getDate()+8)
   return { min:a, max:b }
 }
 
 function daysBetween(a,b) { return Math.round((b-a)/86400000) }
+function escapeHTML(str) {
+  if (str === null || str === undefined) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 function rollupPct(taskId) {
   const children = state.tasks.filter(t => t.parent_id === taskId)
@@ -571,6 +600,7 @@ function renderTaskList() {
   const visible = getVisible()
   const tl = document.getElementById('task-list')
   tl.innerHTML = ''
+  const fragment = document.createDocumentFragment()
 
   visible.forEach(({task:t, level}) => {
     const hasKids = state.tasks.some(c=>c.parent_id===t.id)
@@ -586,31 +616,38 @@ function renderTaskList() {
     row.dataset.parentId = t.parent_id || ''
     row.draggable = true
 
+    const taskName = t.name || ''
+    const safeName = escapeHTML(taskName)
+    const safeAssignee = escapeHTML(t.assignee || '—')
+    const safeCategory = escapeHTML(t.category)
+    const safeStatus = escapeHTML(STATUS_THAI[t.status] || t.status)
+
     row.innerHTML = `
       <span class="r-num">${ri[t.id]||''}<span class="drag-handle" title="ลากเพื่อเรียงลำดับ">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
       <span class="r-name ${hasKids?'parent':'child'}${isCancelled?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
-        <span class="lbl" title="${t.name}">${t.name}</span>
+        <span class="lbl" title="${safeName}">${safeName}</span>
         ${taskDeps.length?`<span class="dep-count">${taskDeps.length}</span>`:''}
       </span>
       <span class="r-date">${fmtShort(pd(t.start_date))}</span>
       <span class="r-date">${t.type==='milestone'?'—':fmtShort(e)}</span>
-      <span class="r-date" style="font-size:9px;overflow:hidden;text-overflow:ellipsis">${t.assignee||'—'}</span>
+      <span class="r-date" style="font-size:9px;overflow:hidden;text-overflow:ellipsis">${safeAssignee}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
       <span class="r-pct${hasKids?' parent':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
         <span>${pct}%</span>
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
-      <span><span class="sbadge ${sc}">${STATUS_THAI[t.status]||t.status}</span></span>
-      <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${t.category}</span></span>
+      <span><span class="sbadge ${sc}">${safeStatus}</span></span>
+      <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${safeCategory}</span></span>
       <span class="acts">
         <button class="act" data-edit="${t.id}" title="แก้ไข">✎</button>
         <button class="act del" data-del="${t.id}" title="ลบ">🗑</button>
       </span>`
 
-    tl.appendChild(row)
+    fragment.appendChild(row)
   })
+  tl.appendChild(fragment)
 
   // Event delegation
   tl.onclick = e => {
@@ -637,7 +674,7 @@ function renderTaskList() {
     }
     row.ondragend = () => {
       dragTaskId = null
-      tl.querySelectorAll('.trow.drag-over').forEach(el => el.classList.remove('drag-over'))
+      tl.querySelectorAll('.trow.drag-over').forEach(el => el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after'))
     }
     row.ondragover = e => {
       if (!dragTaskId || dragTaskId === row.dataset.id) return
@@ -645,12 +682,21 @@ function renderTaskList() {
       if (!dragRow) return
       if ((dragRow.dataset.parentId || '') !== (row.dataset.parentId || '')) return
       e.preventDefault()
+      const rect = row.getBoundingClientRect()
+      const placeAfter = e.clientY > rect.top + rect.height / 2
+      tl.querySelectorAll('.trow.drag-over').forEach(el => {
+        if (el !== row) el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after')
+      })
       row.classList.add('drag-over')
+      row.classList.toggle('drag-over-before', !placeAfter)
+      row.classList.toggle('drag-over-after', placeAfter)
     }
-    row.ondragleave = () => row.classList.remove('drag-over')
+    row.ondragleave = () => {
+      row.classList.remove('drag-over', 'drag-over-before', 'drag-over-after')
+    }
     row.ondrop = async e => {
       e.preventDefault()
-      row.classList.remove('drag-over')
+      row.classList.remove('drag-over', 'drag-over-before', 'drag-over-after')
       if (!dragTaskId || dragTaskId === row.dataset.id) return
       const dragRow = tl.querySelector(`.trow[data-id="${dragTaskId}"]`)
       if (!dragRow) return
@@ -721,6 +767,7 @@ function renderGantt() {
   const gh = document.getElementById('gantt-hdr')
   gh.innerHTML = ''
   gh.style.width = W + 'px'
+  const headerFrag = document.createDocumentFragment()
   const mr = document.createElement('div'); mr.className='g-month-row'
   const dr = document.createElement('div'); dr.className='g-day-row'
   let cur=new Date(min), cm='', cpx=0
@@ -743,12 +790,15 @@ function renderGantt() {
     cur.setDate(cur.getDate()+1)
   }
   const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)
-  gh.appendChild(mr); gh.appendChild(dr)
+  headerFrag.appendChild(mr)
+  headerFrag.appendChild(dr)
+  gh.appendChild(headerFrag)
 
   // Body
   const gb = document.getElementById('gantt-body')
   gb.innerHTML = ''
   gb.style.cssText = `width:${W}px;position:relative`
+  const bodyFrag = document.createDocumentFragment()
 
   // Weekend bg
   const d2=new Date(min)
@@ -756,7 +806,7 @@ function renderGantt() {
     if(d2.getDay()===0||d2.getDay()===6){
       const bg=document.createElement('div'); bg.className='g-wknd'
       bg.style.cssText=`left:${i*dayPx()}px;width:${dayPx()}px`
-      gb.appendChild(bg)
+      bodyFrag.appendChild(bg)
     }
     d2.setDate(d2.getDate()+1)
   }
@@ -764,8 +814,8 @@ function renderGantt() {
   // Today line
   const tx = daysBetween(min,today)*dayPx()
   if(tx>=0&&tx<=W){
-    const tl=document.createElement('div');tl.className='today-vline';tl.style.left=tx+'px';gb.appendChild(tl)
-    const tll=document.createElement('div');tll.className='today-vlbl';tll.style.left=tx+'px';tll.textContent='Today';gb.appendChild(tll)
+    const tl=document.createElement('div');tl.className='today-vline';tl.style.left=tx+'px';bodyFrag.appendChild(tl)
+    const tll=document.createElement('div');tll.className='today-vlbl';tll.style.left=tx+'px';tll.textContent='Today';bodyFrag.appendChild(tll)
   }
 
   // Bars
@@ -785,6 +835,7 @@ function renderGantt() {
     const catCls=isCancelled?'gb-cancel':(CAT_BAR[t.category]||'gb-general')
     const baseTask = baselineMap.get(t.id)
     const isLateVsBaseline = !!(baseTask && taskEnd(t) > taskEnd(baseTask))
+    const taskName = t.name || ''
 
     if(t.type==='milestone'){
       if (baseTask?.type === 'milestone') {
@@ -797,11 +848,11 @@ function renderGantt() {
       const ms=document.createElement('div'); ms.className='gms'
       const sz=12, bt=rowMidY-sz/2
       ms.style.cssText=`left:${x-sz/2}px;top:${bt}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`
-      ms.title=t.name
+      ms.title=taskName
       ms.onclick=()=>openEditModal(t.id)
       const lbl=document.createElement('div')
       lbl.style.cssText=`position:absolute;font-size:8px;color:var(--txt2);left:${x+sz}px;top:${bt}px;white-space:nowrap;font-family:var(--mono)`
-      lbl.textContent=t.name
+      lbl.textContent=taskName
       row.appendChild(ms); row.appendChild(lbl)
     } else {
       const bh=hasKids?8:14
@@ -821,13 +872,13 @@ function renderGantt() {
       if (isLateVsBaseline) bar.classList.add('baseline-late')
       bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bt}px`
       if(!isCancelled&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
-      if(w>40&&dayPx()>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=t.name;bar.appendChild(lbl)}
+      if(w>40&&dayPx()>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=taskName;bar.appendChild(lbl)}
       if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${bt}px`;pl.textContent=pct+'%';row.appendChild(pl)}
-      bar.title=`${t.name} | ${t.start_date}→${fmt(e)} | ${pct}% | ${STATUS_THAI[t.status]||t.status}`
+      bar.title=`${taskName} | ${t.start_date}→${fmt(e)} | ${pct}% | ${STATUS_THAI[t.status]||t.status}`
       bar.onclick=()=>openEditModal(t.id)
       row.appendChild(bar)
     }
-    gb.appendChild(row)
+    bodyFrag.appendChild(row)
   })
 
   // Dep arrows SVG
@@ -863,7 +914,8 @@ function renderGantt() {
     lbl.textContent=dep.dep_type
     svg.appendChild(path);svg.appendChild(arrow);svg.appendChild(bg);svg.appendChild(lbl)
   })
-  gb.appendChild(svg)
+  bodyFrag.appendChild(svg)
+  gb.appendChild(bodyFrag)
 
   const gw = document.getElementById('gantt-wrap')
   gw.style.width = W+'px'
@@ -913,12 +965,40 @@ function closeProjModal() { document.getElementById('proj-modal-bd').classList.r
 
 function renderProjList() {
   const pl = document.getElementById('proj-list')
-  if (!state.projects.length) { pl.innerHTML='<div style="padding:14px;font-size:12px;color:var(--txt3)">ยังไม่มีโปรเจกต์ — สร้างใหม่ด้านล่าง</div>'; return }
-  pl.innerHTML = state.projects.map(p=>`
-    <div class="proj-item${p.id===state.currentProjectId?' active':''}" onclick="selectProject('${p.id}')">
-      <div class="proj-dot" style="background:${p.color||'#3B00FF'}"></div>
-      <div><div class="proj-item-name">${p.name}</div><div class="proj-item-sub">${p.description||'ไม่มีคำอธิบาย'}</div></div>
-    </div>`).join('')
+  pl.innerHTML = ''
+  if (!state.projects.length) {
+    const empty = document.createElement('div')
+    empty.style.cssText = 'padding:14px;font-size:12px;color:var(--txt3)'
+    empty.textContent = 'ยังไม่มีโปรเจกต์ — สร้างใหม่ด้านล่าง'
+    pl.appendChild(empty)
+    return
+  }
+
+  const fragment = document.createDocumentFragment()
+  state.projects.forEach(p => {
+    const item = document.createElement('div')
+    item.className = `proj-item${p.id===state.currentProjectId?' active':''}`
+    item.onclick = () => selectProject(p.id)
+
+    const dot = document.createElement('div')
+    dot.className = 'proj-dot'
+    dot.style.background = p.color || '#3B00FF'
+
+    const textWrap = document.createElement('div')
+    const name = document.createElement('div')
+    name.className = 'proj-item-name'
+    name.textContent = p.name || ''
+    const sub = document.createElement('div')
+    sub.className = 'proj-item-sub'
+    sub.textContent = p.description || 'ไม่มีคำอธิบาย'
+
+    textWrap.appendChild(name)
+    textWrap.appendChild(sub)
+    item.appendChild(dot)
+    item.appendChild(textWrap)
+    fragment.appendChild(item)
+  })
+  pl.appendChild(fragment)
 }
 
 async function selectProject(id) {
