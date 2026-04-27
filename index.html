@@ -126,12 +126,13 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .r-name.cancelled .lbl{text-decoration:line-through;color:var(--txt3)}
 .r-date{font-size:9px;color:var(--txt2);text-align:center;font-family:var(--mono)}
 .r-dur{font-size:9px;color:var(--txt2);text-align:center}
-.r-pct{font-size:9px;text-align:center;line-height:1.3}
-.pbar{width:36px;height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin:2px auto 0}
+.r-pct{font-size:9px;text-align:center;line-height:1.1;white-space:nowrap}
+.r-pct.parent{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pbar{width:36px;height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin:0 auto}
 .pbar-fill{height:100%;border-radius:2px;background:var(--nt-grad90)}
 .ms-icon{color:var(--amber);font-size:8px;flex-shrink:0}
 .dep-count{font-size:7px;padding:0 3px;border-radius:3px;flex-shrink:0;font-family:var(--mono);font-weight:600;background:rgba(59,0,255,.1);color:#3B00FF;border:1px solid var(--bdr-mid)}
-.sbadge{font-size:8px;padding:2px 6px;border-radius:20px;font-weight:600;white-space:nowrap;text-align:center;font-family:var(--mono);letter-spacing:.02em;display:inline-block}
+.sbadge{font-size:8px;padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap;text-align:center;font-family:var(--mono);letter-spacing:.02em;display:inline-block;max-width:82px;overflow:hidden;text-overflow:ellipsis}
 .s-done{background:var(--green-s);color:var(--green);border:1px solid rgba(5,150,105,.2)}
 .s-prog{background:rgba(59,0,255,.08);color:#3B00FF;border:1px solid var(--bdr-mid)}
 .s-none{background:#f1f5f9;color:var(--txt3);border:1px solid var(--bdr)}
@@ -176,7 +177,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .gb-test{background:linear-gradient(90deg,#059669,#10b981)}
 .gb-meeting{background:linear-gradient(90deg,#c05621,#d97706)}
 .gb-nt{background:var(--nt-grad);box-shadow:var(--nt-glow)}
-.gb-parent{height:7px!important;background:linear-gradient(90deg,#0a0f1e,#2a3f6f);border-radius:2px!important}
+.gb-parent{height:8px!important;background:linear-gradient(90deg,#1a2e52,#3b6fd4);border-radius:2px!important}
 .gb-cancel{background:rgba(0,0,0,.08)!important;border:1px dashed rgba(0,0,0,.14)!important;box-shadow:none!important}
 .gb-cancel .gbar-lbl{color:var(--txt3)}
 .gms{position:absolute;border-radius:2px;transform:rotate(45deg);cursor:pointer}
@@ -450,7 +451,7 @@ let dragTaskId = null
 const CAT_COLORS = { General:'#5a20ff', Develop:'#00b87a', Test:'#10b981', Meeting:'#d97706' }
 const CAT_BAR    = { General:'gb-general', Develop:'gb-develop', Test:'gb-test', Meeting:'gb-meeting' }
 const STATUS_CLASS = { 'Not Started':'s-none', 'In Progress':'s-prog', 'Completed':'s-done', 'Cancelled':'s-cancel' }
-const STATUS_THAI  = { 'Not Started':'ยังไม่เริ่ม', 'In Progress':'กำลังดำเนินการ', 'Completed':'เสร็จแล้ว', 'Cancelled':'ยกเลิก' }
+const STATUS_THAI  = { 'Not Started':'ยังไม่เริ่ม', 'In Progress':'ดำเนินการ', 'Completed':'เสร็จแล้ว', 'Cancelled':'ยกเลิก' }
 
 // ── UTILS ─────────────────────────────────────────────────
 const pd = s => new Date(s + 'T00:00:00')
@@ -597,8 +598,9 @@ function renderTaskList() {
       <span class="r-date">${t.type==='milestone'?'—':fmtShort(e)}</span>
       <span class="r-date" style="font-size:9px;overflow:hidden;text-overflow:ellipsis">${t.assignee||'—'}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
-      <span class="r-pct" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
-        ${pct}%${hasKids?'<span style="font-size:7px;color:var(--txt3);margin-left:2px">(a)</span>':''}
+      <span class="r-pct${hasKids?' parent':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
+        <span>${pct}%</span>
+        ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
       <span><span class="sbadge ${sc}">${STATUS_THAI[t.status]||t.status}</span></span>
       <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${t.category}</span></span>
@@ -718,6 +720,7 @@ function renderGantt() {
   // Header
   const gh = document.getElementById('gantt-hdr')
   gh.innerHTML = ''
+  gh.style.width = W + 'px'
   const mr = document.createElement('div'); mr.className='g-month-row'
   const dr = document.createElement('div'); dr.className='g-day-row'
   let cur=new Date(min), cm='', cpx=0
@@ -801,7 +804,7 @@ function renderGantt() {
       lbl.textContent=t.name
       row.appendChild(ms); row.appendChild(lbl)
     } else {
-      const bh=hasKids?7:14, bt=cyLocal-bh/2
+      const bh=hasKids?8:14, bt=hasKids?13:(cyLocal-bh/2)
       if (baseTask && baseTask.type!=='milestone') {
         const bs = pd(baseTask.start_date)
         const be = taskEnd(baseTask)
@@ -860,7 +863,9 @@ function renderGantt() {
   })
   gb.appendChild(svg)
 
-  document.getElementById('gantt-wrap').style.width = W+'px'
+  const gw = document.getElementById('gantt-wrap')
+  gw.style.width = W+'px'
+  gw.style.minWidth = W+'px'
 }
 
 function renderStatusBar() {
