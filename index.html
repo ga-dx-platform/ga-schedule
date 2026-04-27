@@ -641,6 +641,8 @@ function renderTaskList() {
       <span><span class="sbadge ${sc}">${safeStatus}</span></span>
       <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${safeCategory}</span></span>
       <span class="acts">
+        <button class="act" data-outdent="${t.id}" title="ลดระดับ">&lt;</button>
+        <button class="act" data-indent="${t.id}" title="เพิ่มระดับ">&gt;</button>
         <button class="act" data-edit="${t.id}" title="แก้ไข">✎</button>
         <button class="act del" data-del="${t.id}" title="ลบ">🗑</button>
       </span>`
@@ -661,6 +663,10 @@ function renderTaskList() {
     if (editBtn) { openEditModal(editBtn.dataset.edit); return }
     const delBtn = e.target.closest('[data-del]')
     if (delBtn) { confirmDelete(delBtn.dataset.del); return }
+    const outdentBtn = e.target.closest('[data-outdent]')
+    if (outdentBtn) { outdentTask(outdentBtn.dataset.outdent); return }
+    const indentBtn = e.target.closest('[data-indent]')
+    if (indentBtn) { indentTask(indentBtn.dataset.indent); return }
     const row = e.target.closest('.trow')
     if (row) openEditModal(row.dataset.id)
   }
@@ -709,6 +715,69 @@ function renderTaskList() {
       await reorderTasks(dragTaskId, row.dataset.id, placeAfter)
     }
   })
+}
+
+async function indentTask(taskId) {
+  const target = state.tasks.find(t => t.id === taskId)
+  if (!target) return
+
+  const siblings = state.tasks
+    .filter(t => (t.parent_id || null) === (target.parent_id || null))
+    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const idx = siblings.findIndex(t => t.id === taskId)
+  if (idx <= 0) {
+    toast('⚠️ งานแรกของระดับนี้ไม่สามารถเพิ่มระดับได้')
+    return
+  }
+
+  const newParent = siblings[idx - 1]
+  const childSiblings = state.tasks
+    .filter(t => (t.parent_id || null) === newParent.id)
+    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const nextSortOrder = ((childSiblings[childSiblings.length - 1]?.sort_order ?? 0) + 10)
+
+  setSyncStatus('⟳ กำลังปรับระดับงาน...')
+  const { error } = await db.from('tasks')
+    .update({ parent_id: newParent.id, sort_order: nextSortOrder })
+    .eq('id', taskId)
+
+  if (error) {
+    toast('❌ เพิ่มระดับไม่สำเร็จ: ' + error.message)
+    setSyncStatus('⚠️ Sync error')
+    return
+  }
+  setSyncStatus('✓ Synced')
+  await loadTasks()
+  render()
+}
+
+async function outdentTask(taskId) {
+  const target = state.tasks.find(t => t.id === taskId)
+  if (!target) return
+  if (!target.parent_id) return
+
+  const parent = state.tasks.find(t => t.id === target.parent_id)
+  if (!parent) return
+
+  const nextParentId = parent.parent_id || null
+  const upperSiblings = state.tasks
+    .filter(t => (t.parent_id || null) === nextParentId)
+    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const nextSortOrder = ((upperSiblings[upperSiblings.length - 1]?.sort_order ?? 0) + 10)
+
+  setSyncStatus('⟳ กำลังปรับระดับงาน...')
+  const { error } = await db.from('tasks')
+    .update({ parent_id: nextParentId, sort_order: nextSortOrder })
+    .eq('id', taskId)
+
+  if (error) {
+    toast('❌ ลดระดับไม่สำเร็จ: ' + error.message)
+    setSyncStatus('⚠️ Sync error')
+    return
+  }
+  setSyncStatus('✓ Synced')
+  await loadTasks()
+  render()
 }
 
 async function reorderTasks(dragId, targetId, placeAfter=false) {
