@@ -166,6 +166,8 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .today-vlbl{position:absolute;top:1px;font-size:7px;color:var(--red);font-family:var(--mono);font-weight:600;transform:translateX(-50%);white-space:nowrap;z-index:5}
 .gbar{position:absolute;border-radius:3px;cursor:pointer;overflow:hidden;display:flex;align-items:center;transition:filter .12s}
 .gbar:hover{filter:brightness(.9)}
+.gbar-ghost{position:absolute;border-radius:3px;background:rgba(100,116,139,.22);border:1px dashed rgba(100,116,139,.45);pointer-events:none}
+.gbar.baseline-late{outline:1.5px solid rgba(225,29,72,.85);outline-offset:1px}
 .gbar-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.3)}
 .gbar-lbl{position:relative;font-size:8px;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;z-index:1;font-weight:500}
 .gbar-pct{position:absolute;font-size:8px;color:var(--txt3);white-space:nowrap;font-family:var(--mono)}
@@ -302,6 +304,9 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
     <button class="tb" onclick="exportPNG()">🖼 PNG</button>
     <button class="tb" onclick="exportPDF()">📄 PDF</button>
     <div class="tb-sep"></div>
+    <button class="tb" onclick="saveBaseline()">💾 Baseline</button>
+    <button class="tb" onclick="compareBaseline()">⚖️ เปรียบเทียบ Baseline</button>
+    <div class="tb-sep"></div>
     <div style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</div>
   </div>
 
@@ -435,6 +440,7 @@ async function ensureAuth() {
 let state = {
   projects: [], currentProjectId: null,
   tasks: [], deps: [],
+  baselines: [], comparedBaseline: null,
   zoom: 1, collapsed: {}, editingTaskId: null,
   holidays: []
 }
@@ -468,7 +474,9 @@ function dayPx() { return 18 * state.zoom }
 
 function getMinMax() {
   let min=null, max=null
-  state.tasks.forEach(t => {
+  const allTasks = [...state.tasks, ...((state.comparedBaseline?.tasks || []))]
+  allTasks.forEach(t => {
+    if (!t?.start_date) return
     const s=pd(t.start_date), e=taskEnd(t)
     if(!min||s<min) min=s
     if(!max||e>max) max=e
@@ -533,6 +541,13 @@ async function loadDeps() {
   const { data } = await db.from('dependencies').select('*')
     .eq('project_id', state.currentProjectId)
   state.deps = data || []
+}
+
+async function loadBaselines() {
+  if (!state.currentProjectId) return
+  const { data } = await db.from('baselines').select('*')
+    .eq('project_id', state.currentProjectId).order('created_at', { ascending: false })
+  state.baselines = data || []
 }
 
 // ── RENDER ────────────────────────────────────────────────
@@ -695,6 +710,7 @@ async function reorderTasks(dragId, targetId, placeAfter=false) {
 function renderGantt() {
   const visible = getVisible()
   const { min, max } = getMinMax()
+  const baselineMap = new Map((state.comparedBaseline?.tasks || []).map(t => [t.id, t]))
   const totalDays = daysBetween(min, max) + 1
   const W = totalDays * dayPx()
   const today = new Date()
@@ -764,8 +780,17 @@ function renderGantt() {
 
     const isCancelled=t.status==='Cancelled'
     const catCls=isCancelled?'gb-cancel':(CAT_BAR[t.category]||'gb-general')
+    const baseTask = baselineMap.get(t.id)
+    const isLateVsBaseline = !!(baseTask && taskEnd(t) > taskEnd(baseTask))
 
     if(t.type==='milestone'){
+      if (baseTask?.type === 'milestone') {
+        const bms=document.createElement('div'); bms.className='gms'
+        const bsz=10, bbt=cyLocal-bsz/2
+        const bx=daysBetween(min,pd(baseTask.start_date))*dayPx()
+        bms.style.cssText=`left:${bx-bsz/2}px;top:${bbt}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);box-shadow:none;opacity:.65;pointer-events:none`
+        row.appendChild(bms)
+      }
       const ms=document.createElement('div'); ms.className='gms'
       const sz=12, bt=cyLocal-sz/2
       ms.style.cssText=`left:${x-sz/2}px;top:${bt}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`
@@ -777,7 +802,18 @@ function renderGantt() {
       row.appendChild(ms); row.appendChild(lbl)
     } else {
       const bh=hasKids?7:14, bt=cyLocal-bh/2
+      if (baseTask && baseTask.type!=='milestone') {
+        const bs = pd(baseTask.start_date)
+        const be = taskEnd(baseTask)
+        const bx = daysBetween(min, bs) * dayPx()
+        const bw = Math.max((daysBetween(bs, be)+1)*dayPx(), dayPx())
+        const ghost=document.createElement('div')
+        ghost.className='gbar-ghost'
+        ghost.style.cssText=`left:${bx}px;width:${bw}px;height:${bh}px;top:${bt}px`
+        row.appendChild(ghost)
+      }
       const bar=document.createElement('div'); bar.className=`gbar ${catCls}${hasKids?' gb-parent':''}`
+      if (isLateVsBaseline) bar.classList.add('baseline-late')
       bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bt}px`
       if(!isCancelled&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
       if(w>40&&dayPx()>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=t.name;bar.appendChild(lbl)}
@@ -880,6 +916,7 @@ function renderProjList() {
 
 async function selectProject(id) {
   state.currentProjectId = id
+  state.comparedBaseline = null
   const p = state.projects.find(x=>x.id===id)
   document.getElementById('proj-name').textContent = p?.name || '—'
   document.getElementById('btn-link').disabled = false
@@ -888,6 +925,7 @@ async function selectProject(id) {
   showLoading()
   await loadTasks()
   await loadDeps()
+  await loadBaselines()
   hideLoading()
   render()
 }
@@ -902,6 +940,59 @@ async function createProject() {
   renderProjList()
   toast('✅ สร้างโปรเจกต์ '+name+' สำเร็จ')
   selectProject(data.id)
+}
+
+// ── BASELINE ──────────────────────────────────────────────
+async function saveBaseline() {
+  if (!state.currentProjectId) { openProjModal(); return }
+  if (!state.tasks.length) { toast('⚠️ ไม่มี Task สำหรับบันทึก Baseline'); return }
+  const defaultName = `Baseline ${fmt(new Date())}`
+  const name = prompt('ตั้งชื่อ Baseline', defaultName)
+  if (name === null) return
+  const trimmed = name.trim()
+  if (!trimmed) { toast('⚠️ กรุณาระบุชื่อ Baseline'); return }
+  const { error } = await db.from('baselines').insert({
+    project_id: state.currentProjectId,
+    name: trimmed,
+    snapshot_json: JSON.stringify(state.tasks)
+  })
+  if (error) { toast('❌ บันทึก Baseline ไม่สำเร็จ: ' + error.message); return }
+  await loadBaselines()
+  toast('✅ บันทึก Baseline สำเร็จ')
+}
+
+function compareBaseline() {
+  if (!state.currentProjectId) { openProjModal(); return }
+  if (!state.baselines.length) { toast('⚠️ ยังไม่มี Baseline ในโปรเจกต์นี้'); return }
+  const options = state.baselines
+    .map((b, i) => {
+      const d = b.created_at ? new Date(b.created_at) : new Date()
+      return `${i + 1}. ${b.name} (${fmtShort(d)})`
+    })
+    .join('\n')
+  const pick = prompt(`เลือก Baseline ที่ต้องการเปรียบเทียบ\n0. ไม่เปรียบเทียบ\n${options}`, '1')
+  if (pick === null) return
+  const idx = Number(pick)
+  if (idx === 0) {
+    state.comparedBaseline = null
+    render()
+    toast('ℹ️ ปิดการเปรียบเทียบ Baseline')
+    return
+  }
+  if (!Number.isInteger(idx) || idx < 1 || idx > state.baselines.length) {
+    toast('⚠️ เลือกหมายเลข Baseline ไม่ถูกต้อง')
+    return
+  }
+  const selected = state.baselines[idx - 1]
+  try {
+    const tasks = JSON.parse(selected.snapshot_json || '[]')
+    if (!Array.isArray(tasks)) throw new Error('invalid snapshot')
+    state.comparedBaseline = { id: selected.id, name: selected.name, tasks }
+    render()
+    toast(`✅ เปรียบเทียบกับ ${selected.name}`)
+  } catch {
+    toast('❌ อ่านข้อมูล Baseline ไม่สำเร็จ')
+  }
 }
 
 // ── DEPENDENCY MODAL ─────────────────────────────────────
