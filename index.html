@@ -10,61 +10,44 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
-  --nt-teal:   #00F5AA;
-  --nt-indigo: #3B00FF;
-  --nt-grad:   linear-gradient(135deg,#00F5AA 0%,#3B00FF 100%);
-  --nt-grad90: linear-gradient(90deg,#00F5AA 0%,#3B00FF 100%);
-  --nt-glow:   0 4px 24px rgba(59,0,255,.18),0 2px 8px rgba(0,245,170,.12);
-  --bg-page:   linear-gradient(160deg,#f5f7fc 0%,#edf0f9 45%,#e6eaf5 100%);
-  --bg-nav:    linear-gradient(110deg,#0a0f1e 0%,#0d1630 60%,#091228 100%);
-  --glass:     rgba(255,255,255,.75);
-  --glass-hi:  rgba(255,255,255,.92);
-  --gbdr:      rgba(255,255,255,.95);
-  --gshadow:   0 2px 16px rgba(59,0,255,.07),0 1px 4px rgba(0,245,170,.05);
-  --gshadow-hi:0 6px 32px rgba(59,0,255,.12),0 2px 8px rgba(0,245,170,.08);
-  --bdr:       rgba(59,0,255,.10);
-  --bdr-mid:   rgba(59,0,255,.18);
-  --bdr-teal:  rgba(0,245,170,.25);
-  --txt:       #0f172a;
-  --txt2:      #475569;
-  --txt3:      #94a3b8;
-  --green:     #059669; --green-s:#d1fae5;
-  --amber:     #d97706; --amber-s:#fef3c7;
-  --red:       #e11d48; --red-s:  #ffe4e6;
-  --font: 'Noto Sans Thai',sans-serif;
-  --mono: 'DM Mono',monospace;
+  --nt-teal:#00F5AA;--nt-ind:#3B00FF;
+  --nt-grad:linear-gradient(135deg,#00F5AA,#3B00FF);
+  --nt-grad90:linear-gradient(90deg,#00F5AA,#3B00FF);
+  --nt-glow:0 4px 24px rgba(59,0,255,.18),0 2px 8px rgba(0,245,170,.12);
+  --bg-page:linear-gradient(160deg,#f5f7fc 0%,#edf0f9 45%,#e6eaf5 100%);
+  --bg-nav:linear-gradient(110deg,#0a0f1e 0%,#0d1630 60%,#091228 100%);
+  --glass:rgba(255,255,255,.75);--glass-hi:rgba(255,255,255,.92);
+  --gbdr:rgba(255,255,255,.95);
+  --gshadow:0 2px 16px rgba(59,0,255,.07),0 1px 4px rgba(0,245,170,.05);
+  --bdr:rgba(59,0,255,.10);--bdr-mid:rgba(59,0,255,.18);--bdr-teal:rgba(0,245,170,.25);
+  --txt:#0f172a;--txt2:#475569;--txt3:#94a3b8;
+  --green:#059669;--green-s:#d1fae5;--amber:#d97706;--amber-s:#fef3c7;
+  --red:#e11d48;--red-s:#ffe4e6;
+  --font:'Noto Sans Thai',sans-serif;--mono:'DM Mono',monospace;
   --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;
-  /* Visual-only clamp vars — CSS use ONLY, never read by JS */
-  --row-h:    clamp(38px, 2.9vh,  50px);
-  --nav-h:    clamp(48px, 3.8vh,  58px);
-  --tb-h:     clamp(42px, 3.4vh,  52px);
-  --fs-name:  clamp(11px, 0.72vw, 14px);
-  --fs-meta:  clamp(9px,  0.58vw, 12px);
-  --fs-badge: clamp(8px,  0.52vw, 11px);
-  --fs-hdr:   clamp(9px,  0.56vw, 11px);
-  --fs-mono:  clamp(8px,  0.52vw, 11px);
-  /* Column grid — fixed px so no JS parseFloat issues */
-  --col-grid: 32px 22px 1fr 62px 62px 68px 40px 48px 92px 72px 62px;
+  /* Responsive — CSS visual only */
+  --row-h:clamp(40px,3.2vh,52px);
+  --nav-h:clamp(48px,3.8vh,58px);
+  --tb-h:clamp(42px,3.4vh,52px);
+  --fs-name:clamp(12px,0.75vw,14px);
+  --fs-meta:clamp(10px,0.62vw,12px);
+  --fs-badge:clamp(9px,0.55vw,11px);
+  --fs-hdr:clamp(9px,0.56vw,11px);
+  --fs-mono:clamp(9px,0.54vw,11px);
+  /* 11 columns: # ▼ name start end assign dur % status cat actions */
+  --col-grid:28px 20px 1fr 58px 58px 62px 36px 44px 86px 68px 60px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{font-family:var(--font);background:var(--bg-page);background-attachment:fixed;color:var(--txt);display:flex;flex-direction:column}
-
-/* BG ORBS */
-.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(120px);}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(120px)}
 .o1{width:500px;height:500px;background:rgba(0,245,170,.06);top:-180px;left:-120px}
 .o2{width:450px;height:450px;background:rgba(59,0,255,.07);bottom:-140px;right:-120px}
 .o3{width:320px;height:320px;background:rgba(59,0,255,.04);top:38%;left:42%}
-
-/* APP SHELL */
 #app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* NAVBAR */
-#navbar{
-  height:var(--nav-h);padding:0 18px;display:flex;align-items:center;gap:10px;
-  background:var(--bg-nav);flex-shrink:0;position:relative;overflow:hidden;
-  box-shadow:0 4px 24px rgba(0,0,0,.3),0 1px 0 rgba(255,255,255,.06) inset;
-}
+#navbar{height:var(--nav-h);padding:0 18px;display:flex;align-items:center;gap:10px;background:var(--bg-nav);flex-shrink:0;position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3),0 1px 0 rgba(255,255,255,.06) inset}
 #navbar::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,rgba(0,245,170,.5),rgba(59,0,255,.5),transparent)}
 .nav-icon{width:30px;height:30px;border-radius:7px;flex-shrink:0;background:linear-gradient(135deg,rgba(0,245,170,.2),rgba(59,0,255,.25));border:1px solid rgba(0,245,170,.25);display:flex;align-items:center;justify-content:center}
 .nav-icon svg{width:14px;height:14px;fill:none;stroke:#00F5AA;stroke-width:2.2}
@@ -79,105 +62,87 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .nav-btn{font-size:11px;padding:4px 11px;border-radius:var(--r-sm);cursor:pointer;font-family:var(--font);transition:all .15s;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.75)}
 .nav-btn:hover{background:rgba(255,255,255,.16)}
 .nav-btn.primary{background:var(--nt-grad);border:none;color:#fff;font-weight:600;box-shadow:var(--nt-glow)}
-.nav-btn.primary:hover{filter:brightness(1.08)}
 
 /* TOOLBAR */
-#toolbar{
-  height:var(--tb-h);padding:0 14px;display:flex;align-items:center;gap:5px;flex-shrink:0;overflow:hidden;
-  background:var(--glass-hi);border-bottom:1px solid var(--gbdr);
-  box-shadow:var(--gshadow);
-}
-.tb{font-size:clamp(10px,0.65vw,12px);padding:0 10px;height:calc(var(--tb-h) - 14px);border-radius:var(--r-sm);cursor:pointer;border:1px solid var(--bdr);background:transparent;color:var(--txt2);font-family:var(--font);display:flex;align-items:center;gap:3px;white-space:nowrap;transition:all .15s}
+#toolbar{height:var(--tb-h);padding:0 14px;display:flex;align-items:center;gap:4px;flex-shrink:0;overflow:hidden;background:var(--glass-hi);border-bottom:1px solid var(--gbdr);box-shadow:var(--gshadow)}
+.tb{font-size:clamp(10px,0.64vw,12px);padding:0 9px;height:calc(var(--tb-h) - 14px);border-radius:var(--r-sm);cursor:pointer;border:1px solid var(--bdr);background:transparent;color:var(--txt2);font-family:var(--font);display:flex;align-items:center;gap:3px;white-space:nowrap;transition:all .15s}
 .tb:hover{background:rgba(59,0,255,.06);color:#3B00FF;border-color:var(--bdr-mid)}
 .tb:disabled{opacity:.4;cursor:not-allowed}
 .tb.add{background:var(--nt-grad);color:#fff;border:none;font-weight:600;box-shadow:var(--nt-glow)}
-.tb.add:hover{filter:brightness(1.07)}
 .tb.link{background:#e0fdf4;color:#00a06e;border-color:var(--bdr-teal)}
 .tb.save{background:var(--green-s);color:var(--green);border-color:rgba(5,150,105,.25)}
 .tb.danger{background:var(--red-s);color:var(--red);border-color:rgba(225,29,72,.2)}
 .tb.today{background:rgba(59,0,255,.06);color:#3B00FF;border-color:var(--bdr-mid)}
 .tb-sep{width:1px;height:20px;background:var(--bdr);margin:0 2px;flex-shrink:0}
-#zoom-lbl{font-size:10px;color:var(--txt3);min-width:28px;text-align:center;font-family:var(--mono)}
+#zoom-lbl{font-size:10px;color:var(--txt3);min-width:26px;text-align:center;font-family:var(--mono)}
 
-/* MAIN AREA */
+/* MAIN */
 #main{display:flex;flex:1;overflow:hidden}
 
-/* LEFT — TASK TABLE */
-#left{width:clamp(580px,42vw,760px);min-width:480px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gbdr);overflow:hidden;background:var(--glass-hi)}
-#col-hdr{
-  display:grid;grid-template-columns: var(--col-grid);
-  gap:clamp(2px,.2vw,6px);padding:0 clamp(8px,.8vw,16px);height:28px;align-items:center;flex-shrink:0;
-  background:linear-gradient(90deg,#edf0f9,#e6eaf5);border-bottom:1px solid var(--bdr);
-  font-size:var(--fs-hdr);font-weight:600;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono);
-}
+/* LEFT */
+#left{width:clamp(580px,43vw,780px);min-width:480px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gbdr);overflow:hidden;background:var(--glass-hi)}
+#col-hdr{display:grid;grid-template-columns:var(--col-grid);gap:3px;padding:0 12px;height:30px;align-items:center;flex-shrink:0;background:linear-gradient(90deg,#edf0f9,#e6eaf5);border-bottom:1px solid var(--bdr);font-size:var(--fs-hdr);font-weight:600;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono)}
 #task-list{flex:1;overflow-y:auto}
 #task-list::-webkit-scrollbar{width:4px}
-#task-list::-webkit-scrollbar-track{background:transparent}
 #task-list::-webkit-scrollbar-thumb{background:var(--bdr-mid);border-radius:2px}
-.trow{
-  display:grid;grid-template-columns: var(--col-grid);
-  gap:clamp(2px,.2vw,6px);padding:0 clamp(8px,.8vw,16px);height:var(--row-h);align-items:center;
-  border-bottom:1px solid rgba(59,0,255,.05);transition:background .1s;cursor:pointer;
-  overflow:hidden;
-}
+
+.trow{display:grid;grid-template-columns:var(--col-grid);gap:3px;padding:0 12px;height:var(--row-h);align-items:center;border-bottom:1px solid rgba(59,0,255,.05);transition:background .1s;cursor:pointer;overflow:hidden}
 .trow:hover{background:linear-gradient(90deg,rgba(0,245,170,.03),rgba(59,0,255,.02))}
-.trow.drag-over{background:rgba(59,0,255,.06)!important;position:relative}
-.trow.drag-over::after{
-  content:'';position:absolute;left:8px;right:8px;height:2px;border-radius:2px;
-  background:var(--nt-grad90);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 0 10px rgba(59,0,255,.25);
-}
-.trow.drag-over-before::after{top:0}
-.trow.drag-over-after::after{bottom:0}
 .trow.is-parent{background:linear-gradient(90deg,rgba(59,0,255,.05),rgba(0,245,170,.02))}
 .trow.is-selected{background:rgba(59,0,255,.07)!important}
 .trow.is-cancelled{opacity:.5}
+.trow.drag-over{background:rgba(59,0,255,.06)!important;position:relative}
+.trow.drag-over::after{content:'';position:absolute;left:8px;right:8px;height:2px;border-radius:2px;background:var(--nt-grad90)}
+.trow.drag-over-before::after{top:0}.trow.drag-over-after::after{bottom:0}
+
 .r-num{font-size:var(--fs-mono);color:var(--txt3);text-align:center;font-family:var(--mono);position:relative}
 .drag-handle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;color:#3B00FF;opacity:0;transition:opacity .1s;cursor:grab;user-select:none}
-.trow:hover .drag-handle{opacity:.85}
-.trow:active .drag-handle{cursor:grabbing}
+.trow:hover .drag-handle{opacity:.8}
 .r-exp{font-size:var(--fs-mono);color:var(--txt3);text-align:center;user-select:none;cursor:pointer}
 .r-name{display:flex;align-items:center;gap:3px;overflow:hidden;min-width:0}
 .r-name .lbl{font-size:var(--fs-name);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
 .r-name.parent .lbl{font-weight:600}
 .r-name.child .lbl{color:var(--txt2)}
 .r-name.cancelled .lbl{text-decoration:line-through;color:var(--txt3)}
-.r-date{font-size:var(--fs-meta);color:var(--txt2);text-align:center;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-date{font-size:var(--fs-meta);color:var(--txt2);text-align:center;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .r-dur{font-size:var(--fs-meta);color:var(--txt2);text-align:center}
-.r-pct{font-size:var(--fs-meta);text-align:center;line-height:1.1;white-space:nowrap}
-.r-pct.parent{display:flex;flex-direction:column;align-items:center;gap:2px}
-.pbar{width:36px;height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin:0 auto}
+.r-pct{font-size:var(--fs-meta);text-align:center;line-height:1.1}
+.r-pct.par{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pbar{width:34px;height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin:0 auto}
 .pbar-fill{height:100%;border-radius:2px;background:var(--nt-grad90)}
 .ms-icon{color:var(--amber);font-size:8px;flex-shrink:0}
 .dep-count{font-size:var(--fs-mono);padding:0 3px;border-radius:3px;flex-shrink:0;font-family:var(--mono);font-weight:600;background:rgba(59,0,255,.1);color:#3B00FF;border:1px solid var(--bdr-mid)}
-.sbadge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap;text-align:center;font-family:var(--mono);letter-spacing:.02em;display:inline-block;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+/* STATUS BADGES */
+.sbadge{font-size:var(--fs-badge);padding:2px 5px;border-radius:4px;font-weight:600;white-space:nowrap;text-align:center;font-family:var(--mono);display:inline-block;max-width:84px;overflow:hidden;text-overflow:ellipsis}
 .s-done{background:var(--green-s);color:var(--green);border:1px solid rgba(5,150,105,.2)}
 .s-prog{background:rgba(59,0,255,.08);color:#3B00FF;border:1px solid var(--bdr-mid)}
 .s-none{background:#f1f5f9;color:var(--txt3);border:1px solid var(--bdr)}
 .s-cancel{background:var(--red-s);color:var(--red);border:1px solid rgba(225,29,72,.18)}
-.cat-cell{display:flex;align-items:center;gap:3px;justify-content:center}
+/* CATEGORY */
+.cat-cell{display:flex;align-items:center;gap:3px;justify-content:center;overflow:hidden}
 .cat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.cat-lbl{font-size:10px;color:#475569}
-.acts{display:flex;gap:1px}
-.act{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bdr);background:transparent;cursor:pointer;font-size:9px;color:var(--txt3);transition:all .1s}
+.cat-lbl{font-size:var(--fs-meta);color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ACTIONS — correct size */
+.acts{display:flex;gap:3px;justify-content:center;align-items:center}
+.act{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bdr);background:transparent;cursor:pointer;font-size:12px;color:var(--txt3);transition:all .1s;flex-shrink:0}
 .act:hover{background:rgba(59,0,255,.08);color:#3B00FF;border-color:var(--bdr-mid)}
 .act.del:hover{background:var(--red-s);color:var(--red);border-color:rgba(225,29,72,.2)}
-.add-row{padding:5px 10px;font-size:11px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:4px;border-top:1px solid var(--bdr)}
+.add-row{padding:6px 12px;font-size:11px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:4px;border-top:1px solid var(--bdr)}
 .add-row:hover{color:#3B00FF}
 
 /* RIGHT — GANTT */
-#right{flex:1;overflow:auto;background:var(--glass)}
+#right{flex:1;overflow:auto;background:var(--bg-page)}
 #right::-webkit-scrollbar{width:4px;height:4px}
 #right::-webkit-scrollbar-thumb{background:var(--bdr-mid);border-radius:2px}
 #gantt-wrap{position:relative;min-width:100%}
-#gantt-hdr{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#edf0f9,#e6eaf5);border-bottom:1px solid var(--bdr);height:28px;overflow:hidden;display:flex;flex-direction:column}
+#gantt-hdr{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#edf0f9,#e6eaf5);border-bottom:1px solid var(--bdr);height:28px;display:flex;flex-direction:column;overflow:hidden}
 .g-month-row{display:flex;height:13px;flex-shrink:0}
-.g-month{font-size:var(--fs-hdr);color:var(--txt2);padding:0 6px;border-right:1px solid var(--bdr);text-align:center;font-weight:600;font-family:var(--mono);line-height:13px}
+.g-month{font-size:var(--fs-hdr);color:var(--txt2);padding:0 5px;border-right:1px solid var(--bdr);text-align:center;font-weight:600;font-family:var(--mono);line-height:13px}
 .g-day-row{display:flex;height:15px;flex-shrink:0}
 .g-day{font-size:var(--fs-mono);color:var(--txt3);text-align:center;flex-shrink:0;border-right:1px solid rgba(0,0,0,.04);padding:1px 0;font-family:var(--mono)}
-.g-day.weekend{background:rgba(0,0,0,.025)}
-.g-day.today-d{background:rgba(225,29,72,.08);color:var(--red);font-weight:600}
+.g-day.weekend{background:rgba(0,0,0,.025)}.g-day.today-d{background:rgba(225,29,72,.08);color:var(--red);font-weight:600}
 #gantt-body{position:relative}
-.g-row{display:flex;align-items:center;height:var(--row-h);border-bottom:1px solid rgba(59,0,255,.04);position:relative;overflow:visible}
+.g-row{height:var(--row-h);position:relative;border-bottom:1px solid rgba(59,0,255,.04);overflow:visible}
 .g-row:hover{background:rgba(0,245,170,.015)}
 .g-wknd{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.02);pointer-events:none}
 .today-vline{position:absolute;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,transparent,var(--red),transparent);opacity:.65;z-index:4;pointer-events:none}
@@ -193,7 +158,6 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .gb-develop{background:linear-gradient(90deg,#00b87a,#00F5AA);box-shadow:0 1px 6px rgba(0,245,170,.25)}
 .gb-test{background:linear-gradient(90deg,#059669,#10b981)}
 .gb-meeting{background:linear-gradient(90deg,#c05621,#d97706)}
-.gb-nt{background:var(--nt-grad);box-shadow:var(--nt-glow)}
 .gb-parent{background:#1e3a5f!important;border-radius:2px!important;box-shadow:0 1px 4px rgba(30,58,95,.4)!important}
 .gb-cancel{background:rgba(0,0,0,.08)!important;border:1px dashed rgba(0,0,0,.14)!important;box-shadow:none!important}
 .gb-cancel .gbar-lbl{color:var(--txt3)}
@@ -208,17 +172,10 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .sb-ok{background:var(--green-s);color:var(--green)}
 .sb-warn{background:var(--red-s);color:var(--red)}
 
-/* MODAL BACKDROP */
+/* MODALS */
 .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .modal-bd.show{display:flex}
-
-/* TASK MODAL */
-#task-modal{
-  width:420px;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);
-  background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);
-  border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;
-  box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08);
-}
+#task-modal{width:420px;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
 #task-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90);z-index:1}
 .m-hdr{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bdr);background:linear-gradient(90deg,rgba(59,0,255,.05),rgba(0,245,170,.03))}
 .m-title{font-size:14px;font-weight:600;color:var(--txt)}
@@ -237,16 +194,13 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .mbtn.cancel{background:transparent;border:1px solid var(--bdr-mid);color:var(--txt2)}
 .mbtn.cancel:hover{background:rgba(59,0,255,.06)}
 .mbtn.save{background:var(--nt-grad);color:#fff;border:none;font-weight:600;box-shadow:var(--nt-glow)}
-.mbtn.save:hover{filter:brightness(1.07)}
 .mbtn.del-m{background:var(--red-s);color:var(--red);border:1px solid rgba(225,29,72,.2);margin-right:auto}
-
-/* DEPENDENCY MODAL */
-#dep-modal{width:560px;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);background:rgba(255,255,255,.92);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
+#dep-modal{width:560px;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);background:rgba(255,255,255,.92);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15)}
 #dep-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90);z-index:1}
 .dep-grid{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dep-grid .full{grid-column:1/-1}
 .dep-hint{font-size:10px;color:var(--txt3);margin-top:3px;line-height:1.45}
-.dep-list-wrap{border-top:1px solid var(--bdr);background:linear-gradient(180deg,rgba(59,0,255,.02),transparent)}
+.dep-list-wrap{border-top:1px solid var(--bdr)}
 .dep-list{max-height:220px;overflow:auto;padding:10px 18px 14px}
 .dep-item{display:grid;grid-template-columns:1fr auto 1fr auto;align-items:center;gap:6px;background:rgba(255,255,255,.86);border:1px solid var(--bdr);border-radius:var(--r-sm);padding:7px 9px;margin-bottom:7px}
 .dep-task{font-size:11px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -257,58 +211,33 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .dep-type.sf{background:rgba(225,29,72,.12);color:#be123c}
 .dep-del{width:24px;height:24px;border:1px solid rgba(225,29,72,.2);border-radius:6px;background:var(--red-s);color:var(--red);font-size:12px;cursor:pointer}
 .dep-empty{font-size:11px;color:var(--txt3);padding:14px 0;text-align:center}
-
-/* PROJECT MODAL */
 #proj-modal{width:380px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15)}
 #proj-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90)}
 .proj-item{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--bdr);transition:background .1s}
-.proj-item:hover{background:rgba(59,0,255,.05)}
-.proj-item.active{background:rgba(59,0,255,.08)}
+.proj-item:hover{background:rgba(59,0,255,.05)}.proj-item.active{background:rgba(59,0,255,.08)}
 .proj-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .proj-item-name{font-size:13px;font-weight:500;color:var(--txt)}
 .proj-item-sub{font-size:10px;color:var(--txt3)}
-
-/* LOADING */
 #loading{position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
 .loader{width:36px;height:36px;border-radius:50%;border:3px solid rgba(59,0,255,.15);border-top-color:#3B00FF;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loading p{font-size:12px;color:var(--txt3)}
-
-/* EMPTY STATE */
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--txt3)}
-.empty-state svg{width:48px;height:48px;opacity:.3}
-.empty-state p{font-size:13px}
-
-/* TOAST */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:200;background:var(--txt);color:#fff;font-size:12px;padding:8px 18px;border-radius:20px;transition:transform .3s;pointer-events:none;font-family:var(--font)}
 #toast.show{transform:translateX(-50%) translateY(0)}
-
-/* Gantt uses page background */
-#right{background:var(--bg-page)}
 </style>
 </head>
 <body>
 <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
-
 <div id="loading"><div class="loader"></div><p>กำลังโหลด GA Schedule...</p></div>
 <div id="toast"></div>
-
 <div id="app">
-  <!-- NAVBAR -->
   <div id="navbar">
     <div class="nav-icon"><svg viewBox="0 0 14 12"><rect x="0" y="0" width="14" height="2.2" rx="1"/><rect x="0" y="5" width="10" height="2.2" rx="1"/><rect x="0" y="10" width="12" height="2.2" rx="1"/></svg></div>
-    <div>
-      <div id="proj-name" onclick="openProjModal()">— เลือกโปรเจกต์ —</div>
-      <div class="nav-sub">GA Schedule · Ajinomoto Thailand</div>
-    </div>
-    <div class="nav-sep"></div>
-    <div id="nav-legend"></div>
-    <div class="nav-spacer"></div>
+    <div><div id="proj-name" onclick="openProjModal()">— เลือกโปรเจกต์ —</div><div class="nav-sub">GA Schedule · Ajinomoto Thailand</div></div>
+    <div class="nav-sep"></div><div id="nav-legend"></div><div class="nav-spacer"></div>
     <button class="nav-btn" onclick="openProjModal()">📁 โปรเจกต์</button>
     <button class="nav-btn primary" onclick="openAddModal()">+ เพิ่ม Task</button>
   </div>
-
-  <!-- TOOLBAR -->
   <div id="toolbar">
     <button class="tb add" onclick="openAddModal()">+ เพิ่ม Task</button>
     <button class="tb link" id="btn-link" onclick="openDepModal()" disabled>→ เพิ่มลิงก์งาน</button>
@@ -328,12 +257,9 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
     <button class="tb" onclick="saveBaseline()">💾 Baseline</button>
     <button class="tb" onclick="compareBaseline()">⚖️ เปรียบเทียบ Baseline</button>
     <div class="tb-sep"></div>
-    <div style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</div>
+    <span style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</span>
   </div>
-
-  <!-- MAIN -->
   <div id="main">
-    <!-- LEFT: task table -->
     <div id="left">
       <div id="col-hdr">
         <span style="text-align:center">#</span><span></span>
@@ -346,17 +272,8 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
       <div id="task-list"></div>
       <div class="add-row" onclick="openAddModal()">+ เพิ่ม Task...</div>
     </div>
-
-    <!-- RIGHT: gantt -->
-    <div id="right">
-      <div id="gantt-wrap">
-        <div id="gantt-hdr"></div>
-        <div id="gantt-body"></div>
-      </div>
-    </div>
+    <div id="right"><div id="gantt-wrap"><div id="gantt-hdr"></div><div id="gantt-body"></div></div></div>
   </div>
-
-  <!-- STATUS BAR -->
   <div id="status-bar">
     <span class="sb-txt" id="sb-tasks">0 tasks</span>
     <span class="sb-txt" id="sb-prog">0% overall</span>
@@ -390,22 +307,13 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   </div>
 </div>
 
-<!-- DEPENDENCY MODAL -->
+<!-- DEP MODAL -->
 <div class="modal-bd" id="dep-modal-bd">
   <div id="dep-modal">
-    <div class="m-hdr">
-      <span class="m-title">🔗 จัดการ Dependency</span>
-      <button class="m-close" onclick="closeDepModal()">×</button>
-    </div>
+    <div class="m-hdr"><span class="m-title">🔗 จัดการ Dependency</span><button class="m-close" onclick="closeDepModal()">×</button></div>
     <div class="dep-grid">
-      <div class="full">
-        <label class="flbl">งานต้นทาง (From Task)</label>
-        <select class="finput" id="dep-from"></select>
-      </div>
-      <div class="full">
-        <label class="flbl">งานปลายทาง (To Task)</label>
-        <select class="finput" id="dep-to"></select>
-      </div>
+      <div class="full"><label class="flbl">งานต้นทาง (From Task)</label><select class="finput" id="dep-from"></select></div>
+      <div class="full"><label class="flbl">งานปลายทาง (To Task)</label><select class="finput" id="dep-to"></select></div>
       <div class="full">
         <label class="flbl">ประเภทลิงก์</label>
         <select class="finput" id="dep-type">
@@ -414,7 +322,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
           <option value="FF">FF — B เสร็จหลัง A เสร็จ</option>
           <option value="SF">SF — B เสร็จหลัง A เริ่ม</option>
         </select>
-        <div class="dep-hint">เลือกงานต้นทางและปลายทาง จากนั้นกด “เพิ่มลิงก์” เพื่อบันทึกลงฐานข้อมูล</div>
+        <div class="dep-hint">เลือกงานต้นทางและปลายทาง จากนั้นกด "เพิ่มลิงก์"</div>
       </div>
       <div class="full" style="display:flex;justify-content:flex-end;gap:8px">
         <button class="mbtn cancel" onclick="closeDepModal()">ปิด</button>
@@ -428,7 +336,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
   </div>
 </div>
 
-<!-- PROJECT MODAL -->
+<!-- PROJ MODAL -->
 <div class="modal-bd" id="proj-modal-bd">
   <div id="proj-modal">
     <div class="m-hdr"><span class="m-title">📁 โปรเจกต์</span><button class="m-close" onclick="closeProjModal()">×</button></div>
@@ -443,533 +351,256 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 </div>
 
 <script>
-// ── SUPABASE ──────────────────────────────────────────────
-const SUPABASE_URL  = 'https://ucentmuxtabrgqgpywts.supabase.co'
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZW50bXV4dGFicmdxZ3B5d3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM4NjQsImV4cCI6MjA5Mjg3OTg2NH0.BGTAPlKksj2ackf6QPHyfQkDuN35S1qoa0zr91kInRQ'
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+const SUPABASE_URL='https://ucentmuxtabrgqgpywts.supabase.co'
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZW50bXV4dGFicmdxZ3B5d3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM4NjQsImV4cCI6MjA5Mjg3OTg2NH0.BGTAPlKksj2ackf6QPHyfQkDuN35S1qoa0zr91kInRQ'
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 
-// ── SIGN IN ANONYMOUSLY (no login required for GA internal tool) ──
-async function ensureAuth() {
-  const { data: { session } } = await db.auth.getSession()
-  if (!session) {
-    const { error } = await db.auth.signInAnonymously()
-    if (error) console.warn('Auth error:', error.message)
-  }
-}
+async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
-// ── STATE ─────────────────────────────────────────────────
-let state = {
-  projects: [], currentProjectId: null,
-  tasks: [], deps: [],
-  baselines: [], comparedBaseline: null,
-  zoom: 1, collapsed: {}, editingTaskId: null,
-  holidays: []
-}
-let isSyncingScroll = false
-let dragTaskId = null
+let state={projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[]}
+let isSS=false,dragTaskId=null
 
-const CAT_COLORS = { General:'#5a20ff', Develop:'#00b87a', Test:'#10b981', Meeting:'#d97706' }
-const CAT_BAR    = { General:'gb-general', Develop:'gb-develop', Test:'gb-test', Meeting:'gb-meeting' }
-const STATUS_CLASS = { 'Not Started':'s-none', 'In Progress':'s-prog', 'Completed':'s-done', 'Cancelled':'s-cancel' }
-const STATUS_THAI  = { 'Not Started':'ยังไม่เริ่ม', 'In Progress':'ดำเนินการ', 'Completed':'เสร็จแล้ว', 'Cancelled':'ยกเลิก' }
+const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
+const CAT_BAR={General:'gb-general',Develop:'gb-develop',Test:'gb-test',Meeting:'gb-meeting'}
+const STATUS_CLASS={'Not Started':'s-none','In Progress':'s-prog',Completed:'s-done',Cancelled:'s-cancel'}
+const STATUS_THAI={'Not Started':'ยังไม่เริ่ม','In Progress':'ดำเนินการ',Completed:'เสร็จแล้ว',Cancelled:'ยกเลิก'}
 
-// ── UTILS ─────────────────────────────────────────────────
-const pd = s => new Date(s + 'T00:00:00')
-const fmt = d => d.toISOString().slice(0,10)
-const fmtShort = d => `${d.getMonth()+1}/${d.getDate()}`
+const pd=s=>new Date(s+'T00:00:00')
+const fmt=d=>d.toISOString().slice(0,10)
+const fmtS=d=>`${d.getMonth()+1}/${d.getDate()}`
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
-function addWorkDays(date, n) {
-  if (n <= 1) return new Date(date)
-  let d = new Date(date), c = 0
-  const hols = new Set(state.holidays.map(h => h.date))
-  while (c < n-1) {
-    d.setDate(d.getDate()+1)
-    const ds = fmt(d)
-    if (d.getDay()!==0 && d.getDay()!==6 && !hols.has(ds)) c++
-  }
+function addWD(date,n){
+  if(n<=1)return new Date(date)
+  let d=new Date(date),c=0
+  const hols=new Set(state.holidays.map(h=>h.date))
+  while(c<n-1){d.setDate(d.getDate()+1);const ds=fmt(d);if(d.getDay()!==0&&d.getDay()!==6&&!hols.has(ds))c++}
   return d
 }
+function taskEnd(t){return addWD(pd(t.start_date),t.duration_days)}
+function dayPx(){return Math.max(18,Math.round(window.innerWidth*0.013))*state.zoom}
+function getROW_H(){return Math.max(40,Math.round(window.innerHeight*0.048))}
 
-function taskEnd(t) { return addWorkDays(pd(t.start_date), t.duration_days) }
-function dayPx() {
-  return Math.max(18, Math.round(window.innerWidth * 0.013)) * state.zoom
+function getMinMax(){
+  let min=null,max=null
+  const all=[...state.tasks,...(state.comparedBaseline?.tasks||[])]
+  all.forEach(t=>{if(!t?.start_date)return;const s=pd(t.start_date),e=taskEnd(t);if(!min||s<min)min=s;if(!max||e>max)max=e})
+  if(!min){min=new Date();max=new Date();max.setDate(max.getDate()+30)}
+  const a=new Date(min);a.setDate(a.getDate()-3)
+  const b=new Date(max);b.setDate(b.getDate()+7)
+  return{min:a,max:b}
 }
+function dBetween(a,b){return Math.round((b-a)/86400000)}
 
-function getMinMax() {
-  let min=null, max=null
-  const allTasks = [...state.tasks, ...((state.comparedBaseline?.tasks || []))]
-  allTasks.forEach(t => {
-    if (!t?.start_date) return
-    const s=pd(t.start_date), e=taskEnd(t)
-    if(!min||s<min) min=s
-    if(!max||e>max) max=e
-  })
-  if (!min) { min=new Date(); max=new Date(); max.setDate(max.getDate()+30) }
-  const a=new Date(min); a.setDate(a.getDate()-3)
-  const b=new Date(max); b.setDate(b.getDate()+7)
-  return { min:a, max:b }
+function rollupPct(id){
+  const ch=state.tasks.filter(t=>t.parent_id===id)
+  if(!ch.length)return state.tasks.find(t=>t.id===id)?.progress_pct||0
+  return Math.round(ch.reduce((s,c)=>s+rollupPct(c.id),0)/ch.length)
 }
-
-function daysBetween(a,b) { return Math.round((b-a)/86400000) }
-function escapeHTML(str) {
-  if (str === null || str === undefined) return ''
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+function getWBS(){
+  const wbs={},ri={};let cnt=0
+  function walk(pid,pre){state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order).forEach((t,i)=>{const w=pre+(i+1);wbs[t.id]=w;ri[t.id]=++cnt;walk(t.id,w+'.')})}
+  walk(null,'');return{wbs,ri}
 }
-
-function rollupPct(taskId) {
-  const children = state.tasks.filter(t => t.parent_id === taskId)
-  if (!children.length) return state.tasks.find(t => t.id === taskId)?.progress_pct || 0
-  return Math.round(children.reduce((s,c) => s + rollupPct(c.id), 0) / children.length)
-}
-
-function getWBS() {
-  const wbs={}, ri={}; let cnt=0
-  function walk(pid,pre) {
-    state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order)
-      .forEach((t,i) => { const w=pre+(i+1); wbs[t.id]=w; ri[t.id]=++cnt; walk(t.id,w+'.') })
-  }
-  walk(null,''); return { wbs, ri }
-}
-
-function getVisible() {
+function getVisible(){
   const vis=[]
-  function walk(pid,level) {
-    state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order)
-      .forEach(t => { vis.push({task:t,level}); if(!state.collapsed[t.id]) walk(t.id,level+1) })
-  }
-  walk(null,0); return vis
+  function walk(pid,lv){state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order).forEach(t=>{vis.push({task:t,level:lv});if(!state.collapsed[t.id])walk(t.id,lv+1)})}
+  walk(null,0);return vis
 }
 
-// ── DATA LOADING ──────────────────────────────────────────
-async function loadProjects() {
-  const { data, error } = await db.from('projects').select('*').order('created_at')
-  if (error) { toast('❌ โหลดโปรเจกต์ไม่สำเร็จ'); return }
-  state.projects = data || []
+async function loadProjects(){const{data,error}=await db.from('projects').select('*').order('created_at');if(error){toast('❌ โหลดโปรเจกต์ไม่สำเร็จ');return}state.projects=data||[]}
+async function loadTasks(){if(!state.currentProjectId)return;setSS('⟳ กำลังโหลด...');const{data,error}=await db.from('tasks').select('*').eq('project_id',state.currentProjectId).order('sort_order');if(error){toast('❌ โหลด Tasks ไม่สำเร็จ');return}state.tasks=data||[];setSS('✓ Synced')}
+async function loadHolidays(){const{data}=await db.from('thai_holidays').select('date').eq('year',new Date().getFullYear());state.holidays=data||[]}
+async function loadDeps(){if(!state.currentProjectId)return;const{data}=await db.from('dependencies').select('*').eq('project_id',state.currentProjectId);state.deps=data||[]}
+async function loadBaselines(){if(!state.currentProjectId)return;const{data}=await db.from('baselines').select('*').eq('project_id',state.currentProjectId).order('created_at',{ascending:false});state.baselines=data||[]}
+
+function render(){
+  const RH=getROW_H()
+  document.documentElement.style.setProperty('--row-h',RH+'px')
+  renderLegend();renderTaskList();renderGantt(RH);renderSB()
 }
 
-async function loadTasks() {
-  if (!state.currentProjectId) return
-  setSyncStatus('⟳ กำลังโหลด...')
-  const { data, error } = await db.from('tasks').select('*')
-    .eq('project_id', state.currentProjectId).order('sort_order')
-  if (error) { toast('❌ โหลด Tasks ไม่สำเร็จ'); return }
-  state.tasks = data || []
-  setSyncStatus('✓ Synced')
+function renderLegend(){
+  const cats=[...new Set(state.tasks.map(t=>t.category))]
+  document.getElementById('nav-legend').innerHTML=cats.map(c=>`<div class="nleg"><div class="nleg-dot" style="background:${CAT_COLORS[c]||'#888'}"></div>${c}</div>`).join('')
 }
 
-async function loadHolidays() {
-  const year = new Date().getFullYear()
-  const { data } = await db.from('thai_holidays').select('date').eq('year', year)
-  state.holidays = data || []
-}
-
-async function loadDeps() {
-  if (!state.currentProjectId) return
-  const { data } = await db.from('dependencies').select('*')
-    .eq('project_id', state.currentProjectId)
-  state.deps = data || []
-}
-
-async function loadBaselines() {
-  if (!state.currentProjectId) return
-  const { data } = await db.from('baselines').select('*')
-    .eq('project_id', state.currentProjectId).order('created_at', { ascending: false })
-  state.baselines = data || []
-}
-
-// ── RENDER ────────────────────────────────────────────────
-function render() {
-  renderLegend()
-  renderTaskList()
-  renderGantt()
-  renderStatusBar()
-}
-
-function renderLegend() {
-  const cats = [...new Set(state.tasks.map(t=>t.category))]
-  document.getElementById('nav-legend').innerHTML = cats.map(c =>
-    `<div class="nleg"><div class="nleg-dot" style="background:${CAT_COLORS[c]||'#888'}"></div>${c}</div>`
-  ).join('')
-}
-
-function renderTaskList() {
-  const { wbs, ri } = getWBS()
-  const visible = getVisible()
-  const tl = document.getElementById('task-list')
-  tl.innerHTML = ''
-  const fragment = document.createDocumentFragment()
-
-  visible.forEach(({task:t, level}) => {
-    const hasKids = state.tasks.some(c=>c.parent_id===t.id)
-    const e = taskEnd(t)
-    const pct = hasKids ? rollupPct(t.id) : t.progress_pct
-    const sc = STATUS_CLASS[t.status]||'s-none'
-    const taskDeps = state.deps.filter(d=>d.from_task_id===t.id||d.to_task_id===t.id)
-    const isCancelled = t.status==='Cancelled'
-
-    const row = document.createElement('div')
-    row.className = `trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCancelled?' is-cancelled':''}`
-    row.dataset.id = t.id
-    row.dataset.parentId = t.parent_id || ''
-    row.draggable = true
-
-    const taskName = t.name || ''
-    const safeName = escapeHTML(taskName)
-    const safeAssignee = escapeHTML(t.assignee || '—')
-    const safeCategory = escapeHTML(t.category)
-    const safeStatus = escapeHTML(STATUS_THAI[t.status] || t.status)
-
-    row.innerHTML = `
-      <span class="r-num">${ri[t.id]||''}<span class="drag-handle" title="ลากเพื่อเรียงลำดับ">⠿</span></span>
+function renderTaskList(){
+  const{wbs,ri}=getWBS(),visible=getVisible()
+  const tl=document.getElementById('task-list');tl.innerHTML=''
+  const frag=document.createDocumentFragment()
+  visible.forEach(({task:t,level})=>{
+    const hasKids=state.tasks.some(c=>c.parent_id===t.id)
+    const e=taskEnd(t),pct=hasKids?rollupPct(t.id):t.progress_pct
+    const sc=STATUS_CLASS[t.status]||'s-none'
+    const tdeps=state.deps.filter(d=>d.from_task_id===t.id||d.to_task_id===t.id)
+    const isCan=t.status==='Cancelled'
+    const row=document.createElement('div')
+    row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}`
+    row.dataset.id=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true
+    row.innerHTML=`
+      <span class="r-num">${ri[t.id]||''}<span class="drag-handle">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
-      <span class="r-name ${hasKids?'parent':'child'}${isCancelled?' cancelled':''}" style="padding-left:${level*12+2}px">
+      <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
-        <span class="lbl" title="${safeName}">${safeName}</span>
-        ${taskDeps.length?`<span class="dep-count">${taskDeps.length}</span>`:''}
+        <span class="lbl" title="${esc(t.name)}">${esc(t.name)}</span>
+        ${tdeps.length?`<span class="dep-count">${tdeps.length}</span>`:''}
       </span>
-      <span class="r-date">${fmtShort(pd(t.start_date))}</span>
-      <span class="r-date">${t.type==='milestone'?'—':fmtShort(e)}</span>
-      <span class="r-date">${safeAssignee}</span>
+      <span class="r-date">${fmtS(pd(t.start_date))}</span>
+      <span class="r-date">${t.type==='milestone'?'—':fmtS(e)}</span>
+      <span class="r-date">${esc(t.assignee||'—')}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
-      <span class="r-pct${hasKids?' parent':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
+      <span class="r-pct${hasKids?' par':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
         <span>${pct}%</span>
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
-      <span><span class="sbadge ${sc}">${safeStatus}</span></span>
-      <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${t.category||'General'}</span></span>
+      <span><span class="sbadge ${sc}">${esc(STATUS_THAI[t.status]||t.status)}</span></span>
+      <span class="cat-cell">
+        <div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div>
+        <span class="cat-lbl">${esc(t.category||'General')}</span>
+      </span>
       <span class="acts">
         <button class="act" data-edit="${t.id}" title="แก้ไข">✎</button>
         <button class="act del" data-del="${t.id}" title="ลบ">🗑</button>
       </span>`
-
-    fragment.appendChild(row)
+    frag.appendChild(row)
   })
-  tl.appendChild(fragment)
-
-  // Event delegation
-  tl.onclick = e => {
-    const exp = e.target.closest('[data-id]')
-    if (exp && exp.classList.contains('r-exp')) {
-      const id = exp.dataset.id
-      state.collapsed[id] = !state.collapsed[id]
-      render(); return
-    }
-    const editBtn = e.target.closest('[data-edit]')
-    if (editBtn) { openEditModal(editBtn.dataset.edit); return }
-    const delBtn = e.target.closest('[data-del]')
-    if (delBtn) { confirmDelete(delBtn.dataset.del); return }
-    const row = e.target.closest('.trow')
-    if (row) openEditModal(row.dataset.id)
+  tl.appendChild(frag)
+  tl.onclick=e=>{
+    const exp=e.target.closest('[data-id]');if(exp&&exp.classList.contains('r-exp')){state.collapsed[exp.dataset.id]=!state.collapsed[exp.dataset.id];render();return}
+    const eb=e.target.closest('[data-edit]');if(eb){openEditModal(eb.dataset.edit);return}
+    const db2=e.target.closest('[data-del]');if(db2){confirmDelete(db2.dataset.del);return}
+    const rw=e.target.closest('.trow');if(rw)openEditModal(rw.dataset.id)
   }
-
-  // Drag & Drop reorder (same parent only)
-  tl.querySelectorAll('.trow').forEach(row => {
-    row.ondragstart = e => {
-      dragTaskId = row.dataset.id
-      e.dataTransfer.effectAllowed = 'move'
-      e.dataTransfer.setData('text/plain', dragTaskId)
-    }
-    row.ondragend = () => {
-      dragTaskId = null
-      tl.querySelectorAll('.trow.drag-over').forEach(el => el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after'))
-    }
-    row.ondragover = e => {
-      if (!dragTaskId || dragTaskId === row.dataset.id) return
-      const dragRow = tl.querySelector(`.trow[data-id="${dragTaskId}"]`)
-      if (!dragRow) return
-      if ((dragRow.dataset.parentId || '') !== (row.dataset.parentId || '')) return
+  tl.querySelectorAll('.trow').forEach(row=>{
+    row.ondragstart=e=>{dragTaskId=row.dataset.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragTaskId)}
+    row.ondragend=()=>{dragTaskId=null;tl.querySelectorAll('.trow.drag-over').forEach(el=>el.classList.remove('drag-over','drag-over-before','drag-over-after'))}
+    row.ondragover=e=>{
+      if(!dragTaskId||dragTaskId===row.dataset.id)return
+      const dr=tl.querySelector(`.trow[data-id="${dragTaskId}"]`);if(!dr)return
+      if((dr.dataset.parentId||'')!==(row.dataset.parentId||''))return
       e.preventDefault()
-      const rect = row.getBoundingClientRect()
-      const placeAfter = e.clientY > rect.top + rect.height / 2
-      tl.querySelectorAll('.trow.drag-over').forEach(el => {
-        if (el !== row) el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after')
-      })
-      row.classList.add('drag-over')
-      row.classList.toggle('drag-over-before', !placeAfter)
-      row.classList.toggle('drag-over-after', placeAfter)
+      const rect=row.getBoundingClientRect(),pa=e.clientY>rect.top+rect.height/2
+      tl.querySelectorAll('.trow.drag-over').forEach(el=>{if(el!==row)el.classList.remove('drag-over','drag-over-before','drag-over-after')})
+      row.classList.add('drag-over');row.classList.toggle('drag-over-before',!pa);row.classList.toggle('drag-over-after',pa)
     }
-    row.ondragleave = () => {
-      row.classList.remove('drag-over', 'drag-over-before', 'drag-over-after')
-    }
-    row.ondrop = async e => {
-      e.preventDefault()
-      row.classList.remove('drag-over', 'drag-over-before', 'drag-over-after')
-      if (!dragTaskId || dragTaskId === row.dataset.id) return
-      const dragRow = tl.querySelector(`.trow[data-id="${dragTaskId}"]`)
-      if (!dragRow) return
-      if ((dragRow.dataset.parentId || '') !== (row.dataset.parentId || '')) {
-        toast('⚠️ ลากได้เฉพาะงานระดับเดียวกันเท่านั้น')
-        return
-      }
-      const rect = row.getBoundingClientRect()
-      const placeAfter = e.clientY > rect.top + rect.height / 2
-      await reorderTasks(dragTaskId, row.dataset.id, placeAfter)
+    row.ondragleave=()=>row.classList.remove('drag-over','drag-over-before','drag-over-after')
+    row.ondrop=async e=>{
+      e.preventDefault();row.classList.remove('drag-over','drag-over-before','drag-over-after')
+      if(!dragTaskId||dragTaskId===row.dataset.id)return
+      const dr=tl.querySelector(`.trow[data-id="${dragTaskId}"]`);if(!dr)return
+      if((dr.dataset.parentId||'')!==(row.dataset.parentId||'')){toast('⚠️ ลากได้เฉพาะงานระดับเดียวกัน');return}
+      await reorderTasks(dragTaskId,row.dataset.id,e.clientY>row.getBoundingClientRect().top+row.getBoundingClientRect().height/2)
     }
   })
 }
 
-async function indentTask(taskId) {
-  const target = state.tasks.find(t => t.id === taskId)
-  if (!target) return
-
-  const siblings = state.tasks
-    .filter(t => (t.parent_id || null) === (target.parent_id || null))
-    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-  const idx = siblings.findIndex(t => t.id === taskId)
-  if (idx <= 0) {
-    toast('⚠️ งานแรกของระดับนี้ไม่สามารถเพิ่มระดับได้')
-    return
-  }
-
-  const newParent = siblings[idx - 1]
-  const childSiblings = state.tasks
-    .filter(t => (t.parent_id || null) === newParent.id)
-    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-  const nextSortOrder = ((childSiblings[childSiblings.length - 1]?.sort_order ?? 0) + 10)
-
-  setSyncStatus('⟳ กำลังปรับระดับงาน...')
-  const { error } = await db.from('tasks')
-    .update({ parent_id: newParent.id, sort_order: nextSortOrder })
-    .eq('id', taskId)
-
-  if (error) {
-    toast('❌ เพิ่มระดับไม่สำเร็จ: ' + error.message)
-    setSyncStatus('⚠️ Sync error')
-    return
-  }
-  setSyncStatus('✓ Synced')
-  await loadTasks()
-  render()
+async function reorderTasks(dragId,targetId,placeAfter){
+  const dt=state.tasks.find(t=>t.id===dragId),tt=state.tasks.find(t=>t.id===targetId)
+  if(!dt||!tt||(dt.parent_id||null)!==(tt.parent_id||null))return
+  const pid=tt.parent_id||null
+  const sibs=state.tasks.filter(t=>(t.parent_id||null)===pid).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0))
+  const fi=sibs.findIndex(t=>t.id===dragId),ti=sibs.findIndex(t=>t.id===targetId)
+  if(fi<0||ti<0||fi===ti)return
+  const[mv]=sibs.splice(fi,1);let ii=ti;if(fi<ti)ii--;if(placeAfter)ii++;sibs.splice(ii,0,mv)
+  sibs.forEach((t,i)=>{const r=state.tasks.find(x=>x.id===t.id);if(r)r.sort_order=(i+1)*10})
+  setSS('⟳ กำลังอัปเดตลำดับ...')
+  const res=await Promise.all(sibs.map((t,i)=>db.from('tasks').update({sort_order:(i+1)*10}).eq('id',t.id)))
+  if(res.find(r=>r.error)){toast('❌ อัปเดตลำดับไม่สำเร็จ');await loadTasks()}else toast('✅ จัดลำดับงานสำเร็จ')
+  setSS('✓ Synced');render()
 }
 
-async function outdentTask(taskId) {
-  const target = state.tasks.find(t => t.id === taskId)
-  if (!target) return
-  if (!target.parent_id) return
-
-  const parent = state.tasks.find(t => t.id === target.parent_id)
-  if (!parent) return
-
-  const nextParentId = parent.parent_id || null
-  const upperSiblings = state.tasks
-    .filter(t => (t.parent_id || null) === nextParentId)
-    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-  const nextSortOrder = ((upperSiblings[upperSiblings.length - 1]?.sort_order ?? 0) + 10)
-
-  setSyncStatus('⟳ กำลังปรับระดับงาน...')
-  const { error } = await db.from('tasks')
-    .update({ parent_id: nextParentId, sort_order: nextSortOrder })
-    .eq('id', taskId)
-
-  if (error) {
-    toast('❌ ลดระดับไม่สำเร็จ: ' + error.message)
-    setSyncStatus('⚠️ Sync error')
-    return
-  }
-  setSyncStatus('✓ Synced')
-  await loadTasks()
-  render()
-}
-
-async function reorderTasks(dragId, targetId, placeAfter=false) {
-  const dragTask = state.tasks.find(t => t.id === dragId)
-  const targetTask = state.tasks.find(t => t.id === targetId)
-  if (!dragTask || !targetTask) return
-  if ((dragTask.parent_id || null) !== (targetTask.parent_id || null)) return
-
-  const parentId = targetTask.parent_id || null
-  const siblings = state.tasks
-    .filter(t => (t.parent_id || null) === parentId)
-    .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-
-  const fromIdx = siblings.findIndex(t => t.id === dragId)
-  const targetIdx = siblings.findIndex(t => t.id === targetId)
-  if (fromIdx < 0 || targetIdx < 0 || fromIdx === targetIdx) return
-
-  const [moved] = siblings.splice(fromIdx, 1)
-  let insertIdx = targetIdx
-  if (fromIdx < targetIdx) insertIdx -= 1
-  if (placeAfter) insertIdx += 1
-  siblings.splice(insertIdx, 0, moved)
-
-  siblings.forEach((t, idx) => {
-    const nextOrder = (idx + 1) * 10
-    const ref = state.tasks.find(x => x.id === t.id)
-    if (ref) ref.sort_order = nextOrder
-  })
-
-  setSyncStatus('⟳ กำลังอัปเดตลำดับ...')
-  const updates = siblings.map((t, idx) =>
-    db.from('tasks').update({ sort_order: (idx + 1) * 10 }).eq('id', t.id)
-  )
-  const results = await Promise.all(updates)
-  const failed = results.find(r => r.error)
-  if (failed?.error) {
-    toast('❌ อัปเดตลำดับไม่สำเร็จ: ' + failed.error.message)
-    setSyncStatus('⚠️ Sync error')
-    await loadTasks()
-  } else {
-    setSyncStatus('✓ Synced')
-    toast('✅ จัดลำดับงานสำเร็จ')
-  }
-  render()
-}
-
-function renderGantt() {
-  // JS constants — computed from window dimensions, NEVER from CSS vars
-  const DAY_PX       = Math.max(18, Math.round(window.innerWidth  * 0.013))
-  const ROW_H        = Math.max(38, Math.round(window.innerHeight * 0.048))
-  const BAR_CHILD_H  = Math.max(12, Math.round(ROW_H * 0.40))
-  const BAR_PARENT_H = Math.max(5,  Math.round(ROW_H * 0.22))
-  const BAR_MS_SZ    = Math.max(10, Math.round(ROW_H * 0.35))
-  const DEP_FS       = 8
-
-  // Sync CSS var so .trow / .g-row heights match bar geometry
-  document.documentElement.style.setProperty('--row-h', ROW_H + 'px')
-
-  const visible = getVisible()
-  console.log('DAY_PX:', DAY_PX, 'ROW_H:', ROW_H, 'visible:', visible.length)
-  const { min, max } = getMinMax()
-  const baselineMap = new Map((state.comparedBaseline?.tasks || []).map(t => [t.id, t]))
-  const totalDays = daysBetween(min, max) + 1
-  const W = totalDays * dayPx()
-  const today = new Date()
+function renderGantt(RH){
+  RH=RH||getROW_H()
+  const DP=Math.max(18,Math.round(window.innerWidth*0.013))*state.zoom
+  const BCH=Math.max(14,Math.round(RH*0.42))
+  const BPH=Math.max(6,Math.round(RH*0.20))
+  const BMS=Math.max(12,Math.round(RH*0.36))
+  const visible=getVisible()
+  const{min,max}=getMinMax()
+  const bMap=new Map((state.comparedBaseline?.tasks||[]).map(t=>[t.id,t]))
+  const totalDays=dBetween(min,max)+1
+  const W=totalDays*DP,today=new Date()
 
   // Header
-  const gh = document.getElementById('gantt-hdr')
-  gh.innerHTML = ''
-  gh.style.width = W + 'px'
-  const headerFrag = document.createDocumentFragment()
-  const mr = document.createElement('div'); mr.className='g-month-row'
-  const dr = document.createElement('div'); dr.className='g-day-row'
-  let cur=new Date(min), cm='', cpx=0
-
-  for (let i=0; i<totalDays; i++) {
-    const m = cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
-    if (m!==cm) {
-      if (cm) { const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc) }
-      cm=m; cpx=0
-    }
-    cpx += dayPx()
-    const dc=document.createElement('div'); dc.className='g-day'
-    const isWE=cur.getDay()===0||cur.getDay()===6
-    const isTdy=cur.toDateString()===today.toDateString()
-    if(isWE) dc.classList.add('weekend')
-    if(isTdy) dc.classList.add('today-d')
-    dc.style.width=dayPx()+'px'
-    if(dayPx()>=14) dc.textContent=cur.getDate()
-    dr.appendChild(dc)
-    cur.setDate(cur.getDate()+1)
+  const gh=document.getElementById('gantt-hdr');gh.innerHTML='';gh.style.width=W+'px'
+  const mr=document.createElement('div');mr.className='g-month-row'
+  const dr=document.createElement('div');dr.className='g-day-row'
+  let cur=new Date(min),cm='',cpx=0
+  for(let i=0;i<totalDays;i++){
+    const m=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
+    if(m!==cm){if(cm){const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)}cm=m;cpx=0}
+    cpx+=DP
+    const dc=document.createElement('div');dc.className='g-day'
+    const isWE=cur.getDay()===0||cur.getDay()===6,isTd=cur.toDateString()===today.toDateString()
+    if(isWE)dc.classList.add('weekend');if(isTd)dc.classList.add('today-d')
+    dc.style.width=DP+'px';if(DP>=14)dc.textContent=cur.getDate()
+    dr.appendChild(dc);cur.setDate(cur.getDate()+1)
   }
   const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)
-  headerFrag.appendChild(mr)
-  headerFrag.appendChild(dr)
-  gh.appendChild(headerFrag)
+  gh.appendChild(mr);gh.appendChild(dr)
 
   // Body
-  const gb = document.getElementById('gantt-body')
-  gb.innerHTML = ''
-  gb.style.cssText = `width:${W}px;position:relative`
-  const rowContainer = document.createElement('div')
-  rowContainer.style.position = 'relative'
-  const bodyFrag = document.createDocumentFragment()
+  const gb=document.getElementById('gantt-body');gb.innerHTML='';gb.style.cssText=`width:${W}px;position:relative`
+  const rowCont=document.createElement('div');rowCont.style.position='relative'
+  const bfrag=document.createDocumentFragment()
 
-  // Weekend bg
+  // Weekend bg + today
   const d2=new Date(min)
   for(let i=0;i<totalDays;i++){
-    if(d2.getDay()===0||d2.getDay()===6){
-      const bg=document.createElement('div'); bg.className='g-wknd'
-      bg.style.cssText=`left:${i*dayPx()}px;width:${dayPx()}px`
-      bodyFrag.appendChild(bg)
-    }
+    if(d2.getDay()===0||d2.getDay()===6){const bg=document.createElement('div');bg.className='g-wknd';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
     d2.setDate(d2.getDate()+1)
   }
-
-  // Today line
-  const tx = daysBetween(min,today)*dayPx()
+  const tx=dBetween(min,today)*DP
   if(tx>=0&&tx<=W){
-    const tl=document.createElement('div');tl.className='today-vline';tl.style.left=tx+'px';bodyFrag.appendChild(tl)
-    const tll=document.createElement('div');tll.className='today-vlbl';tll.style.left=tx+'px';tll.textContent='Today';bodyFrag.appendChild(tll)
+    const tv=document.createElement('div');tv.className='today-vline';tv.style.left=tx+'px';bfrag.appendChild(tv)
+    const tl=document.createElement('div');tl.className='today-vlbl';tl.style.left=tx+'px';tl.textContent='Today';bfrag.appendChild(tl)
   }
 
   // Bars
   const barPos={}
-  visible.forEach(({task:t},rowIdx) => {
-    const row=document.createElement('div'); row.className='g-row'; row.style.width=W+'px'
-    const s=pd(t.start_date), e=taskEnd(t)
-    const x=daysBetween(min,s)*dayPx()
-    const w=Math.max((daysBetween(s,e)+1)*dayPx(),dayPx())
+  visible.forEach(({task:t},rowIdx)=>{
+    const row=document.createElement('div');row.className='g-row';row.style.width=W+'px'
+    const s=pd(t.start_date),e=taskEnd(t)
+    const x=dBetween(min,s)*DP,w=Math.max((dBetween(s,e)+1)*DP,DP)
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
     const pct=hasKids?rollupPct(t.id):t.progress_pct
-    const rowMidY = ROW_H / 2
-    barPos[t.id]={x1:x,x2:x+w,y:rowIdx*ROW_H+rowMidY}
-
-    const isCancelled=t.status==='Cancelled'
-    const catCls=isCancelled?'gb-cancel':(CAT_BAR[t.category]||'gb-general')
-    const baseTask = baselineMap.get(t.id)
-    const isLateVsBaseline = !!(baseTask && taskEnd(t) > taskEnd(baseTask))
-    const taskName = t.name || ''
+    const absCy=rowIdx*RH+RH/2
+    barPos[t.id]={x1:x,x2:x+w,y:absCy}
+    const isCan=t.status==='Cancelled',bt=bMap.get(t.id)
+    const isLate=!!(bt&&taskEnd(t)>taskEnd(bt))
+    const tn=t.name||'',mid=RH/2
 
     if(t.type==='milestone'){
-      if (baseTask?.type === 'milestone') {
-        const bms=document.createElement('div'); bms.className='gms'
-        const bsz=BAR_MS_SZ, bbt=rowMidY-bsz/2
-        const bx=daysBetween(min,pd(baseTask.start_date))*dayPx()
-        bms.style.cssText=`left:${bx-bsz/2}px;top:${bbt}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);box-shadow:none;opacity:.65;pointer-events:none`
-        row.appendChild(bms)
-      }
-      const ms=document.createElement('div'); ms.className='gms'
-      const sz=BAR_MS_SZ, bt=rowMidY-sz/2
-      ms.style.cssText=`left:${x-sz/2}px;top:${bt}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`
-      ms.title=taskName
-      ms.onclick=()=>openEditModal(t.id)
-      const lbl=document.createElement('div')
-      lbl.style.cssText=`position:absolute;font-size:var(--fs-mono);color:var(--txt2);left:${x+sz}px;top:${bt}px;white-space:nowrap;font-family:var(--mono)`
-      lbl.textContent=taskName
-      row.appendChild(ms); row.appendChild(lbl)
+      if(bt?.type==='milestone'){const bms=document.createElement('div');bms.className='gms';const bsz=BMS,bbt2=mid-bsz/2,bx=dBetween(min,pd(bt.start_date))*DP;bms.style.cssText=`left:${bx-bsz/2}px;top:${bbt2}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);opacity:.65;pointer-events:none`;row.appendChild(bms)}
+      const ms=document.createElement('div');ms.className='gms';const sz=BMS,bbt2=mid-sz/2;ms.style.cssText=`left:${x-sz/2}px;top:${bbt2}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`;ms.title=tn;ms.onclick=()=>openEditModal(t.id)
+      const lbl=document.createElement('div');lbl.style.cssText=`position:absolute;font-size:9px;color:var(--txt2);left:${x+sz+3}px;top:${bbt2}px;white-space:nowrap;font-family:var(--mono)`;lbl.textContent=tn
+      row.appendChild(ms);row.appendChild(lbl)
     } else {
-      const bh=hasKids?BAR_PARENT_H:BAR_CHILD_H
-      const bt=(ROW_H-bh)/2
-      if (baseTask && baseTask.type!=='milestone') {
-        const bs = pd(baseTask.start_date)
-        const be = taskEnd(baseTask)
-        const bx = daysBetween(min, bs) * dayPx()
-        const bw = Math.max((daysBetween(bs, be)+1)*dayPx(), dayPx())
-        const ghost=document.createElement('div')
-        ghost.className='gbar-ghost'
-        ghost.style.cssText=`left:${bx}px;width:${bw}px;height:${bh}px;top:${bt}px`
-        row.appendChild(ghost)
-      }
+      const bh=hasKids?BPH:BCH,bbt2=(RH-bh)/2
+      if(bt&&bt.type!=='milestone'){const bs=pd(bt.start_date),be=taskEnd(bt);const bx=dBetween(min,bs)*DP,bw=Math.max((dBetween(bs,be)+1)*DP,DP);const ghost=document.createElement('div');ghost.className='gbar-ghost';ghost.style.cssText=`left:${bx}px;width:${bw}px;height:${bh}px;top:${bbt2}px`;row.appendChild(ghost)}
       const bar=document.createElement('div')
-      bar.className = hasKids ? 'gbar gb-parent' : `gbar ${catCls}`
-      if (isLateVsBaseline) bar.classList.add('baseline-late')
-      bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bt}px`
-      if(!isCancelled&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
-      if(w>40&&dayPx()>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=taskName;bar.appendChild(lbl)}
-      if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${bt}px`;pl.textContent=pct+'%';row.appendChild(pl)}
-      bar.title=`${taskName} | ${t.start_date}→${fmt(e)} | ${pct}% | ${STATUS_THAI[t.status]||t.status}`
+      if(hasKids){bar.className='gbar gb-parent';bar.style.cssText=`position:absolute;left:${x}px;width:${w}px;height:${bh}px;top:${bbt2}px`}
+      else{bar.className=`gbar ${isCan?'gb-cancel':(CAT_BAR[t.category]||'gb-general')}`;bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bbt2}px`}
+      if(isLate)bar.classList.add('baseline-late')
+      if(!isCan&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
+      if(w>40&&DP>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=tn;bar.appendChild(lbl)}
+      if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${bbt2}px`;pl.textContent=pct+'%';row.appendChild(pl)}
+      bar.title=`${tn} | ${t.start_date}→${fmt(e)} | ${pct}%`
       bar.onclick=()=>openEditModal(t.id)
       row.appendChild(bar)
     }
-    rowContainer.appendChild(row)
+    rowCont.appendChild(row)
   })
 
-  // Dep arrows SVG
-  const svgH=visible.length*ROW_H+10
+  // Dep SVG
+  const svgH=visible.length*RH+10
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg')
-  svg.className='dep-svg'; svg.style.cssText=`width:${W}px;height:${svgH}px`
-  svg.setAttribute('viewBox',`0 0 ${W} ${svgH}`)
-  const DEP_COL={FS:'#3B00FF',SS:'#00b87a',FF:'#d97706',SF:'#e11d48'}
+  svg.className='dep-svg';svg.style.cssText=`width:${W}px;height:${svgH}px`;svg.setAttribute('viewBox',`0 0 ${W} ${svgH}`)
+  const DC={FS:'#3B00FF',SS:'#00b87a',FF:'#d97706',SF:'#e11d48'}
   state.deps.forEach(dep=>{
-    const f=barPos[dep.from_task_id], t2=barPos[dep.to_task_id]
-    if(!f||!t2) return
-    const color=DEP_COL[dep.dep_type]||'#3B00FF'
-    let x1,y1,x2,y2
+    const f=barPos[dep.from_task_id],t2=barPos[dep.to_task_id];if(!f||!t2)return
+    const color=DC[dep.dep_type]||'#3B00FF';let x1,y1,x2,y2
     if(dep.dep_type==='FS'){x1=f.x2;y1=f.y;x2=t2.x1;y2=t2.y}
     else if(dep.dep_type==='SS'){x1=f.x1;y1=f.y;x2=t2.x1;y2=t2.y}
     else if(dep.dep_type==='FF'){x1=f.x2;y1=f.y;x2=t2.x2;y2=t2.y}
@@ -977,566 +608,220 @@ function renderGantt() {
     const cx=(x1+x2)/2
     const path=document.createElementNS('http://www.w3.org/2000/svg','path')
     path.setAttribute('d',`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`)
-    path.setAttribute('fill','none');path.setAttribute('stroke',color)
-    path.setAttribute('stroke-width','1.5');path.setAttribute('stroke-dasharray','4,3');path.setAttribute('opacity','.6')
+    path.setAttribute('fill','none');path.setAttribute('stroke',color);path.setAttribute('stroke-width','1.5');path.setAttribute('stroke-dasharray','4,3');path.setAttribute('opacity','.6')
     const arrow=document.createElementNS('http://www.w3.org/2000/svg','polygon')
-    if(dep.dep_type==='FS'||dep.dep_type==='SS'){arrow.setAttribute('points',`${x2},${y2} ${x2-6},${y2-3} ${x2-6},${y2+3}`)}
-    else{arrow.setAttribute('points',`${x2},${y2} ${x2+6},${y2-3} ${x2+6},${y2+3}`)}
+    if(dep.dep_type==='FS'||dep.dep_type==='SS')arrow.setAttribute('points',`${x2},${y2} ${x2-6},${y2-3} ${x2-6},${y2+3}`)
+    else arrow.setAttribute('points',`${x2},${y2} ${x2+6},${y2-3} ${x2+6},${y2+3}`)
     arrow.setAttribute('fill',color);arrow.setAttribute('opacity','.6')
-    const lx=(x1+x2)/2, ly=(y1+y2)/2-5
-    const bg=document.createElementNS('http://www.w3.org/2000/svg','rect')
-    bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill','white');bg.setAttribute('opacity','.9')
-    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text')
-    lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle')
-    lbl.setAttribute('font-size',DEP_FS);lbl.setAttribute('fill',color);lbl.setAttribute('font-family','DM Mono');lbl.setAttribute('font-weight','600')
-    lbl.textContent=dep.dep_type
+    const lx=(x1+x2)/2,ly=(y1+y2)/2-5
+    const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill','white');bg.setAttribute('opacity','.9')
+    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','8');lbl.setAttribute('fill',color);lbl.setAttribute('font-family','DM Mono');lbl.setAttribute('font-weight','600');lbl.textContent=dep.dep_type
     svg.appendChild(path);svg.appendChild(arrow);svg.appendChild(bg);svg.appendChild(lbl)
   })
-  rowContainer.appendChild(svg)
-  gb.appendChild(bodyFrag)
-  gb.appendChild(rowContainer)
-
-  const gw = document.getElementById('gantt-wrap')
-  gw.style.width = W+'px'
-  gw.style.minWidth = W+'px'
+  rowCont.appendChild(svg)
+  gb.appendChild(bfrag);gb.appendChild(rowCont)
+  document.getElementById('gantt-wrap').style.cssText=`width:${W}px;min-width:${W}px`
 }
 
-function renderStatusBar() {
-  const total=state.tasks.length
-  const done=state.tasks.filter(t=>t.status==='Completed').length
+function renderSB(){
+  const total=state.tasks.length,done=state.tasks.filter(t=>t.status==='Completed').length
   const today=new Date()
   const delayed=state.tasks.filter(t=>{const e=taskEnd(t);return e<today&&t.status!=='Completed'&&t.status!=='Cancelled'})
   const avgPct=total?Math.round(state.tasks.filter(t=>t.status!=='Cancelled').reduce((s,t)=>s+t.progress_pct,0)/Math.max(1,state.tasks.filter(t=>t.status!=='Cancelled').length)):0
   document.getElementById('sb-tasks').textContent=`${total} tasks · ${done} เสร็จ`
   document.getElementById('sb-prog').textContent=`${avgPct}% overall`
   document.getElementById('sb-badge').innerHTML=delayed.length?`<span class="sb-badge sb-warn">${delayed.length} เลยกำหนด</span>`:(total?`<span class="sb-badge sb-ok">On Track</span>`:'')
-  if(state.tasks.length){
-    const dates=state.tasks.map(t=>pd(t.start_date))
-    const minD=new Date(Math.min(...dates))
-    document.getElementById('sb-range').textContent=`${fmtShort(minD)} – ${fmtShort(taskEnd(state.tasks.reduce((a,b)=>taskEnd(b)>taskEnd(a)?b:a,state.tasks[0])))}`
-  }
+  if(state.tasks.length){const dates=state.tasks.map(t=>pd(t.start_date));const minD=new Date(Math.min(...dates));document.getElementById('sb-range').textContent=`${fmtS(minD)} – ${fmtS(taskEnd(state.tasks.reduce((a,b)=>taskEnd(b)>taskEnd(a)?b:a,state.tasks[0])))}`}
 }
 
-// ── SCROLL SYNC (TASK LIST ↔ GANTT) ──────────────────────
-function initScrollSync() {
-  const taskList = document.getElementById('task-list')
-  const right = document.getElementById('right')
-  taskList.addEventListener('scroll', () => {
-    if (isSyncingScroll) return
-    isSyncingScroll = true
-    right.scrollTop = taskList.scrollTop
-    isSyncingScroll = false
+function initSS(){
+  const tl=document.getElementById('task-list'),r=document.getElementById('right')
+  tl.addEventListener('scroll',()=>{if(isSS)return;isSS=true;r.scrollTop=tl.scrollTop;isSS=false})
+  r.addEventListener('scroll',()=>{if(isSS)return;isSS=true;tl.scrollTop=r.scrollTop;isSS=false})
+}
+
+function openProjModal(){renderProjList();document.getElementById('proj-modal-bd').classList.add('show')}
+function closeProjModal(){document.getElementById('proj-modal-bd').classList.remove('show')}
+function renderProjList(){
+  const pl=document.getElementById('proj-list');pl.innerHTML=''
+  if(!state.projects.length){const e=document.createElement('div');e.style.cssText='padding:14px;font-size:12px;color:var(--txt3)';e.textContent='ยังไม่มีโปรเจกต์ — สร้างใหม่ด้านล่าง';pl.appendChild(e);return}
+  const frag=document.createDocumentFragment()
+  state.projects.forEach(p=>{
+    const item=document.createElement('div');item.className=`proj-item${p.id===state.currentProjectId?' active':''}`;item.onclick=()=>selectProject(p.id)
+    const dot=document.createElement('div');dot.className='proj-dot';dot.style.background=p.color||'#3B00FF'
+    const tw=document.createElement('div');const nm=document.createElement('div');nm.className='proj-item-name';nm.textContent=p.name||'';const sb=document.createElement('div');sb.className='proj-item-sub';sb.textContent=p.description||'ไม่มีคำอธิบาย'
+    tw.appendChild(nm);tw.appendChild(sb);item.appendChild(dot);item.appendChild(tw);frag.appendChild(item)
   })
-  right.addEventListener('scroll', () => {
-    if (isSyncingScroll) return
-    isSyncingScroll = true
-    taskList.scrollTop = right.scrollTop
-    isSyncingScroll = false
-  })
+  pl.appendChild(frag)
+}
+async function selectProject(id){
+  state.currentProjectId=id;state.comparedBaseline=null
+  const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
+  document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
+  closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render()
+}
+async function createProject(){
+  const name=document.getElementById('new-proj-name').value.trim();if(!name){toast('⚠️ กรุณากรอกชื่อโปรเจกต์');return}
+  const{data,error}=await db.from('projects').insert({name}).select().single();if(error){toast('❌ สร้างโปรเจกต์ไม่สำเร็จ: '+error.message);return}
+  document.getElementById('new-proj-name').value='';await loadProjects();renderProjList();toast('✅ สร้างโปรเจกต์ '+name+' สำเร็จ');selectProject(data.id)
 }
 
-// ── PROJECT MODAL ─────────────────────────────────────────
-function openProjModal() {
-  renderProjList()
-  document.getElementById('proj-modal-bd').classList.add('show')
+async function saveBaseline(){
+  if(!state.currentProjectId){openProjModal();return}if(!state.tasks.length){toast('⚠️ ไม่มี Task สำหรับบันทึก Baseline');return}
+  const name=prompt('ตั้งชื่อ Baseline',`Baseline ${fmt(new Date())}`);if(name===null)return;const tr=name.trim();if(!tr){toast('⚠️ กรุณาระบุชื่อ Baseline');return}
+  const{error}=await db.from('baselines').insert({project_id:state.currentProjectId,name:tr,snapshot_json:JSON.stringify(state.tasks)})
+  if(error){toast('❌ บันทึก Baseline ไม่สำเร็จ: '+error.message);return}await loadBaselines();toast('✅ บันทึก Baseline สำเร็จ')
 }
-function closeProjModal() { document.getElementById('proj-modal-bd').classList.remove('show') }
-
-function renderProjList() {
-  const pl = document.getElementById('proj-list')
-  pl.innerHTML = ''
-  if (!state.projects.length) {
-    const empty = document.createElement('div')
-    empty.style.cssText = 'padding:14px;font-size:12px;color:var(--txt3)'
-    empty.textContent = 'ยังไม่มีโปรเจกต์ — สร้างใหม่ด้านล่าง'
-    pl.appendChild(empty)
-    return
-  }
-
-  const fragment = document.createDocumentFragment()
-  state.projects.forEach(p => {
-    const item = document.createElement('div')
-    item.className = `proj-item${p.id===state.currentProjectId?' active':''}`
-    item.onclick = () => selectProject(p.id)
-
-    const dot = document.createElement('div')
-    dot.className = 'proj-dot'
-    dot.style.background = p.color || '#3B00FF'
-
-    const textWrap = document.createElement('div')
-    const name = document.createElement('div')
-    name.className = 'proj-item-name'
-    name.textContent = p.name || ''
-    const sub = document.createElement('div')
-    sub.className = 'proj-item-sub'
-    sub.textContent = p.description || 'ไม่มีคำอธิบาย'
-
-    textWrap.appendChild(name)
-    textWrap.appendChild(sub)
-    item.appendChild(dot)
-    item.appendChild(textWrap)
-    fragment.appendChild(item)
-  })
-  pl.appendChild(fragment)
+function compareBaseline(){
+  if(!state.currentProjectId){openProjModal();return}if(!state.baselines.length){toast('⚠️ ยังไม่มี Baseline');return}
+  const opts=state.baselines.map((b,i)=>`${i+1}. ${b.name}`).join('\n')
+  const pick=prompt(`เลือก Baseline\n0. ไม่เปรียบเทียบ\n${opts}`,'1');if(pick===null)return
+  const idx=Number(pick);if(idx===0){state.comparedBaseline=null;render();toast('ℹ️ ปิดการเปรียบเทียบ');return}
+  if(!Number.isInteger(idx)||idx<1||idx>state.baselines.length){toast('⚠️ เลือกหมายเลขไม่ถูกต้อง');return}
+  const sel=state.baselines[idx-1]
+  try{const tasks=JSON.parse(sel.snapshot_json||'[]');if(!Array.isArray(tasks))throw new Error();state.comparedBaseline={id:sel.id,name:sel.name,tasks};render();toast(`✅ เปรียบเทียบกับ ${sel.name}`)}
+  catch{toast('❌ อ่านข้อมูล Baseline ไม่สำเร็จ')}
 }
 
-async function selectProject(id) {
-  state.currentProjectId = id
-  state.comparedBaseline = null
-  const p = state.projects.find(x=>x.id===id)
-  document.getElementById('proj-name').textContent = p?.name || '—'
-  document.getElementById('btn-link').disabled = false
-  document.getElementById('btn-clear').disabled = false
-  closeProjModal()
-  showLoading()
-  await loadTasks()
-  await loadDeps()
-  await loadBaselines()
-  hideLoading()
-  render()
+function openDepModal(){if(!state.currentProjectId){openProjModal();return}if(!state.tasks.length){toast('⚠️ กรุณาเพิ่ม Task ก่อน');return}populateDepOpts();renderDepList();document.getElementById('dep-modal-bd').classList.add('show')}
+function closeDepModal(){document.getElementById('dep-modal-bd').classList.remove('show')}
+function populateDepOpts(){const opts=state.tasks.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');document.getElementById('dep-from').innerHTML=opts;document.getElementById('dep-to').innerHTML=opts;if(state.tasks.length>1)document.getElementById('dep-to').selectedIndex=1}
+function renderDepList(){
+  const list=document.getElementById('dep-list')
+  if(!state.deps.length){list.innerHTML='<div class="dep-empty">ยังไม่มีลิงก์ในโปรเจกต์นี้</div>';return}
+  list.innerHTML=state.deps.map(dep=>{const ft=state.tasks.find(t=>t.id===dep.from_task_id),tt=state.tasks.find(t=>t.id===dep.to_task_id);return`<div class="dep-item"><div class="dep-task">${esc(ft?.name||'(ไม่พบ)')}</div><div class="dep-type ${(dep.dep_type||'').toLowerCase()}">${dep.dep_type||'FS'}</div><div class="dep-task">${esc(tt?.name||'(ไม่พบ)')}</div><button class="dep-del" onclick="deleteDep('${dep.id}')">×</button></div>`}).join('')
 }
-
-async function createProject() {
-  const name = document.getElementById('new-proj-name').value.trim()
-  if (!name) { toast('⚠️ กรุณากรอกชื่อโปรเจกต์'); return }
-  const { data, error } = await db.from('projects').insert({ name }).select().single()
-  if (error) { toast('❌ สร้างโปรเจกต์ไม่สำเร็จ: '+error.message); return }
-  document.getElementById('new-proj-name').value = ''
-  await loadProjects()
-  renderProjList()
-  toast('✅ สร้างโปรเจกต์ '+name+' สำเร็จ')
-  selectProject(data.id)
+async function saveDependency(){
+  const fid=document.getElementById('dep-from').value,tid=document.getElementById('dep-to').value,dtype=document.getElementById('dep-type').value
+  if(!fid||!tid){toast('⚠️ กรุณาเลือก Task');return}if(fid===tid){toast('⚠️ ไม่สามารถลิงก์ Task เดียวกัน');return}
+  if(state.deps.some(d=>d.from_task_id===fid&&d.to_task_id===tid&&d.dep_type===dtype)){toast('⚠️ ลิงก์นี้มีอยู่แล้ว');return}
+  const{error}=await db.from('dependencies').insert({project_id:state.currentProjectId,from_task_id:fid,to_task_id:tid,dep_type:dtype})
+  if(error){toast('❌ บันทึกลิงก์ไม่สำเร็จ: '+error.message);return}await loadDeps();render();renderDepList();toast('✅ เพิ่มลิงก์สำเร็จ')
 }
+async function deleteDep(id){const{error}=await db.from('dependencies').delete().eq('id',id);if(error){toast('❌ ลบลิงก์ไม่สำเร็จ');return}await loadDeps();render();renderDepList();toast('🗑 ลบลิงก์สำเร็จ')}
 
-// ── BASELINE ──────────────────────────────────────────────
-async function saveBaseline() {
-  if (!state.currentProjectId) { openProjModal(); return }
-  if (!state.tasks.length) { toast('⚠️ ไม่มี Task สำหรับบันทึก Baseline'); return }
-  const defaultName = `Baseline ${fmt(new Date())}`
-  const name = prompt('ตั้งชื่อ Baseline', defaultName)
-  if (name === null) return
-  const trimmed = name.trim()
-  if (!trimmed) { toast('⚠️ กรุณาระบุชื่อ Baseline'); return }
-  const { error } = await db.from('baselines').insert({
-    project_id: state.currentProjectId,
-    name: trimmed,
-    snapshot_json: JSON.stringify(state.tasks)
-  })
-  if (error) { toast('❌ บันทึก Baseline ไม่สำเร็จ: ' + error.message); return }
-  await loadBaselines()
-  toast('✅ บันทึก Baseline สำเร็จ')
-}
-
-function compareBaseline() {
-  if (!state.currentProjectId) { openProjModal(); return }
-  if (!state.baselines.length) { toast('⚠️ ยังไม่มี Baseline ในโปรเจกต์นี้'); return }
-  const options = state.baselines
-    .map((b, i) => {
-      const d = b.created_at ? new Date(b.created_at) : new Date()
-      return `${i + 1}. ${b.name} (${fmtShort(d)})`
-    })
-    .join('\n')
-  const pick = prompt(`เลือก Baseline ที่ต้องการเปรียบเทียบ\n0. ไม่เปรียบเทียบ\n${options}`, '1')
-  if (pick === null) return
-  const idx = Number(pick)
-  if (idx === 0) {
-    state.comparedBaseline = null
-    render()
-    toast('ℹ️ ปิดการเปรียบเทียบ Baseline')
-    return
-  }
-  if (!Number.isInteger(idx) || idx < 1 || idx > state.baselines.length) {
-    toast('⚠️ เลือกหมายเลข Baseline ไม่ถูกต้อง')
-    return
-  }
-  const selected = state.baselines[idx - 1]
-  try {
-    const tasks = JSON.parse(selected.snapshot_json || '[]')
-    if (!Array.isArray(tasks)) throw new Error('invalid snapshot')
-    state.comparedBaseline = { id: selected.id, name: selected.name, tasks }
-    render()
-    toast(`✅ เปรียบเทียบกับ ${selected.name}`)
-  } catch {
-    toast('❌ อ่านข้อมูล Baseline ไม่สำเร็จ')
-  }
-}
-
-// ── DEPENDENCY MODAL ─────────────────────────────────────
-function openDepModal() {
-  if (!state.currentProjectId) { openProjModal(); return }
-  if (!state.tasks.length) { toast('⚠️ กรุณาเพิ่ม Task ก่อนสร้างลิงก์'); return }
-  populateDepTaskOptions()
-  renderDepList()
-  document.getElementById('dep-modal-bd').classList.add('show')
-}
-
-function closeDepModal() { document.getElementById('dep-modal-bd').classList.remove('show') }
-
-function populateDepTaskOptions() {
-  const from = document.getElementById('dep-from')
-  const to = document.getElementById('dep-to')
-  const opts = state.tasks.map(t => `<option value="${t.id}">${t.name}</option>`).join('')
-  from.innerHTML = opts
-  to.innerHTML = opts
-  if (state.tasks.length > 1) to.selectedIndex = 1
-}
-
-function renderDepList() {
-  const list = document.getElementById('dep-list')
-  if (!state.deps.length) {
-    list.innerHTML = '<div class="dep-empty">ยังไม่มีลิงก์ในโปรเจกต์นี้</div>'
-    return
-  }
-  list.innerHTML = state.deps.map(dep => {
-    const fromTask = state.tasks.find(t => t.id === dep.from_task_id)
-    const toTask = state.tasks.find(t => t.id === dep.to_task_id)
-    return `
-      <div class="dep-item">
-        <div class="dep-task" title="${fromTask?.name || '-'}">${fromTask?.name || '(ไม่พบงานต้นทาง)'}</div>
-        <div class="dep-type ${(dep.dep_type || '').toLowerCase()}">${dep.dep_type || 'FS'}</div>
-        <div class="dep-task" title="${toTask?.name || '-'}">${toTask?.name || '(ไม่พบงานปลายทาง)'}</div>
-        <button class="dep-del" onclick="deleteDependency('${dep.id}')" title="ลบลิงก์">×</button>
-      </div>`
-  }).join('')
-}
-
-async function saveDependency() {
-  const from_task_id = document.getElementById('dep-from').value
-  const to_task_id = document.getElementById('dep-to').value
-  const dep_type = document.getElementById('dep-type').value
-  if (!from_task_id || !to_task_id) { toast('⚠️ กรุณาเลือก Task ต้นทางและปลายทาง'); return }
-  if (from_task_id === to_task_id) { toast('⚠️ ไม่สามารถลิงก์ Task เดียวกันได้'); return }
-  const duplicated = state.deps.some(d => d.from_task_id===from_task_id && d.to_task_id===to_task_id && d.dep_type===dep_type)
-  if (duplicated) { toast('⚠️ ลิงก์นี้มีอยู่แล้ว'); return }
-  const { error } = await db.from('dependencies').insert({
-    project_id: state.currentProjectId, from_task_id, to_task_id, dep_type
-  })
-  if (error) { toast('❌ บันทึกลิงก์ไม่สำเร็จ: '+error.message); return }
-  await loadDeps()
-  render()
-  renderDepList()
-  toast('✅ เพิ่มลิงก์สำเร็จ')
-}
-
-async function deleteDependency(id) {
-  const { error } = await db.from('dependencies').delete().eq('id', id)
-  if (error) { toast('❌ ลบลิงก์ไม่สำเร็จ: '+error.message); return }
-  await loadDeps()
-  render()
-  renderDepList()
-  toast('🗑 ลบลิงก์สำเร็จ')
-}
-
-// ── TASK MODAL ────────────────────────────────────────────
-function openAddModal() {
-  if (!state.currentProjectId) { openProjModal(); return }
-  state.editingTaskId = null
-  document.getElementById('modal-title').textContent = 'เพิ่ม Task'
-  document.getElementById('f-name').value = ''
-  document.getElementById('f-start').value = fmt(new Date())
-  document.getElementById('f-dur').value = 5
-  document.getElementById('f-pct').value = 0; document.getElementById('f-pct-lbl').textContent='0%'
-  document.getElementById('f-assign').value = ''
-  document.getElementById('f-notes').value = ''
-  document.getElementById('f-type').value = 'task'
-  document.getElementById('f-cat').value = 'General'
-  document.getElementById('f-status').value = 'Not Started'
-  document.getElementById('btn-del-task').style.display = 'none'
-  populateParentSelect(null)
-  document.getElementById('task-modal-bd').classList.add('show')
+function openAddModal(){
+  if(!state.currentProjectId){openProjModal();return}state.editingTaskId=null
+  document.getElementById('modal-title').textContent='เพิ่ม Task'
+  document.getElementById('f-name').value='';document.getElementById('f-start').value=fmt(new Date())
+  document.getElementById('f-dur').value=5;document.getElementById('f-pct').value=0;document.getElementById('f-pct-lbl').textContent='0%'
+  document.getElementById('f-assign').value='';document.getElementById('f-notes').value=''
+  document.getElementById('f-type').value='task';document.getElementById('f-cat').value='General';document.getElementById('f-status').value='Not Started'
+  document.getElementById('btn-del-task').style.display='none'
+  populateParentSel(null);document.getElementById('task-modal-bd').classList.add('show')
   setTimeout(()=>document.getElementById('f-name').focus(),100)
 }
-
-function openEditModal(id) {
-  const t = state.tasks.find(x=>x.id===id); if(!t) return
-  state.editingTaskId = id
-  document.getElementById('modal-title').textContent = 'แก้ไข Task'
-  document.getElementById('f-name').value = t.name
-  document.getElementById('f-start').value = t.start_date
-  document.getElementById('f-dur').value = t.duration_days
-  document.getElementById('f-pct').value = t.progress_pct; document.getElementById('f-pct-lbl').textContent=t.progress_pct+'%'
-  document.getElementById('f-assign').value = t.assignee||''
-  document.getElementById('f-notes').value = t.notes||''
-  document.getElementById('f-type').value = t.type||'task'
-  document.getElementById('f-cat').value = t.category||'General'
-  document.getElementById('f-status').value = t.status||'Not Started'
-  document.getElementById('btn-del-task').style.display = 'block'
-  populateParentSelect(t.parent_id)
-  document.getElementById('task-modal-bd').classList.add('show')
+function openEditModal(id){
+  const t=state.tasks.find(x=>x.id===id);if(!t)return;state.editingTaskId=id
+  document.getElementById('modal-title').textContent='แก้ไข Task'
+  document.getElementById('f-name').value=t.name;document.getElementById('f-start').value=t.start_date
+  document.getElementById('f-dur').value=t.duration_days;document.getElementById('f-pct').value=t.progress_pct;document.getElementById('f-pct-lbl').textContent=t.progress_pct+'%'
+  document.getElementById('f-assign').value=t.assignee||'';document.getElementById('f-notes').value=t.notes||''
+  document.getElementById('f-type').value=t.type||'task';document.getElementById('f-cat').value=t.category||'General';document.getElementById('f-status').value=t.status||'Not Started'
+  document.getElementById('btn-del-task').style.display='block'
+  populateParentSel(t.parent_id);document.getElementById('task-modal-bd').classList.add('show')
 }
-
-function closeTaskModal() {
-  document.getElementById('task-modal-bd').classList.remove('show')
-  state.editingTaskId = null; render()
+function closeTaskModal(){document.getElementById('task-modal-bd').classList.remove('show');state.editingTaskId=null;render()}
+function populateParentSel(sel){
+  const s=document.getElementById('f-parent');s.innerHTML='<option value="">— Root level —</option>'
+  state.tasks.filter(t=>t.id!==state.editingTaskId).forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name;if(t.id===sel)o.selected=true;s.appendChild(o)})
 }
+document.getElementById('f-pct').oninput=function(){document.getElementById('f-pct-lbl').textContent=this.value+'%'}
 
-function populateParentSelect(sel) {
-  const s = document.getElementById('f-parent')
-  s.innerHTML = '<option value="">— Root level —</option>'
-  state.tasks.filter(t=>t.id!==state.editingTaskId).forEach(t=>{
-    const o=document.createElement('option'); o.value=t.id; o.textContent=t.name
-    if(t.id===sel) o.selected=true; s.appendChild(o)
-  })
+async function saveTask(){
+  const name=document.getElementById('f-name').value.trim();if(!name){toast('⚠️ กรุณากรอกชื่อ Task');return}
+  let pct=parseInt(document.getElementById('f-pct').value)||0,status=document.getElementById('f-status').value
+  if(pct===100)status='Completed'
+  const payload={project_id:state.currentProjectId,parent_id:document.getElementById('f-parent').value||null,name,type:document.getElementById('f-type').value,category:document.getElementById('f-cat').value,start_date:document.getElementById('f-start').value,duration_days:parseInt(document.getElementById('f-dur').value)||1,progress_pct:pct,status,assignee:document.getElementById('f-assign').value||null,notes:document.getElementById('f-notes').value||null,sort_order:state.editingTaskId?undefined:state.tasks.length}
+  setSS('⟳ กำลังบันทึก...')
+  if(state.editingTaskId){const{error}=await db.from('tasks').update(payload).eq('id',state.editingTaskId);if(error){toast('❌ บันทึกไม่สำเร็จ: '+error.message);setSS('✗ Error');return}}
+  else{const{error}=await db.from('tasks').insert(payload);if(error){toast('❌ บันทึกไม่สำเร็จ: '+error.message);setSS('✗ Error');return}}
+  await loadTasks();setSS('✓ Synced');toast('✅ บันทึก Task สำเร็จ');closeTaskModal()
 }
-
-document.getElementById('f-pct').oninput = function(){ document.getElementById('f-pct-lbl').textContent=this.value+'%' }
-
-async function saveTask() {
-  const name = document.getElementById('f-name').value.trim()
-  if (!name) { toast('⚠️ กรุณากรอกชื่อ Task'); return }
-  let pct = parseInt(document.getElementById('f-pct').value)||0
-  let status = document.getElementById('f-status').value
-  if (pct===100) status='Completed'
-
-  const payload = {
-    project_id: state.currentProjectId,
-    parent_id: document.getElementById('f-parent').value || null,
-    name, type: document.getElementById('f-type').value,
-    category: document.getElementById('f-cat').value,
-    start_date: document.getElementById('f-start').value,
-    duration_days: parseInt(document.getElementById('f-dur').value)||1,
-    progress_pct: pct, status,
-    assignee: document.getElementById('f-assign').value||null,
-    notes: document.getElementById('f-notes').value||null,
-    sort_order: state.editingTaskId ? undefined : state.tasks.length
-  }
-
-  setSyncStatus('⟳ กำลังบันทึก...')
-  if (state.editingTaskId) {
-    const { error } = await db.from('tasks').update(payload).eq('id', state.editingTaskId)
-    if (error) { toast('❌ บันทึกไม่สำเร็จ: '+error.message); setSyncStatus('✗ Error'); return }
-  } else {
-    const { error } = await db.from('tasks').insert(payload)
-    if (error) { toast('❌ บันทึกไม่สำเร็จ: '+error.message); setSyncStatus('✗ Error'); return }
-  }
-  await loadTasks(); setSyncStatus('✓ Synced'); toast('✅ บันทึก Task สำเร็จ'); closeTaskModal()
+async function deleteTask(){
+  if(!state.editingTaskId)return;const t=state.tasks.find(x=>x.id===state.editingTaskId);if(!confirm(`ลบ "${t?.name}" ?`))return
+  const ids=getDesc(state.editingTaskId);ids.push(state.editingTaskId);setSS('⟳ กำลังลบ...')
+  const{error}=await db.from('tasks').delete().in('id',ids);if(error){toast('❌ ลบไม่สำเร็จ');return}
+  await loadTasks();await loadDeps();setSS('✓ Synced');toast('🗑 ลบ Task สำเร็จ');closeTaskModal()
 }
+function confirmDelete(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;state.editingTaskId=id;deleteTask()}
+function getDesc(id){const kids=state.tasks.filter(t=>t.parent_id===id).map(t=>t.id);return[...kids,...kids.flatMap(k=>getDesc(k))]}
 
-async function deleteTask() {
-  if (!state.editingTaskId) return
-  const t = state.tasks.find(x=>x.id===state.editingTaskId)
-  if (!confirm(`ลบ "${t?.name}" ?`)) return
-  const ids = getAllDescendants(state.editingTaskId)
-  ids.push(state.editingTaskId)
-  setSyncStatus('⟳ กำลังลบ...')
-  const { error } = await db.from('tasks').delete().in('id', ids)
-  if (error) { toast('❌ ลบไม่สำเร็จ'); return }
-  await loadTasks(); await loadDeps(); setSyncStatus('✓ Synced'); toast('🗑 ลบ Task สำเร็จ'); closeTaskModal()
+function zoomIn(){state.zoom=Math.min(state.zoom*1.4,3);updateZL();render()}
+function zoomOut(){state.zoom=Math.max(state.zoom/1.4,.25);updateZL();render()}
+function updateZL(){document.getElementById('zoom-lbl').textContent=state.zoom>=2?'Week':state.zoom>=.8?'Day':'Month'}
+function scrollToday(){const{min}=getMinMax();document.getElementById('right').scrollLeft=Math.max(0,dBetween(min,new Date())*dayPx()-120)}
+
+async function saveAll(){if(!state.currentProjectId)return;showL();await loadTasks();await loadDeps();hideL();render();toast('✅ Synced กับ Supabase แล้ว')}
+async function clearProject(){
+  if(!state.currentProjectId)return;if(!confirm('ล้าง Tasks ทั้งหมดในโปรเจกต์นี้?'))return;setSS('⟳ กำลังล้าง...')
+  await db.from('tasks').delete().eq('project_id',state.currentProjectId);await loadTasks();await loadDeps();setSS('✓ Synced');render();toast('🗑 ล้างข้อมูลสำเร็จ')
 }
-
-function confirmDelete(id) {
-  const t = state.tasks.find(x=>x.id===id); if(!t) return
-  state.editingTaskId = id; deleteTask()
-}
-
-function getAllDescendants(id) {
-  const kids = state.tasks.filter(t=>t.parent_id===id).map(t=>t.id)
-  return [...kids, ...kids.flatMap(k=>getAllDescendants(k))]
-}
-
-// ── ZOOM ──────────────────────────────────────────────────
-function zoomIn(){ state.zoom=Math.min(state.zoom*1.4,3); updateZoomLbl(); render() }
-function zoomOut(){ state.zoom=Math.max(state.zoom/1.4,.25); updateZoomLbl(); render() }
-function updateZoomLbl(){ document.getElementById('zoom-lbl').textContent=state.zoom>=2?'Week':state.zoom>=.8?'Day':'Month' }
-function scrollToday(){
-  const {min}=getMinMax(); const x=daysBetween(min,new Date())*dayPx()
-  document.getElementById('right').scrollLeft=Math.max(0,x-120)
-}
-
-// ── SAVE ALL (re-sync) ────────────────────────────────────
-async function saveAll() {
-  if (!state.currentProjectId) return
-  showLoading(); await loadTasks(); await loadDeps(); hideLoading(); render()
-  toast('✅ Synced กับ Supabase แล้ว')
-}
-
-// ── CLEAR PROJECT ─────────────────────────────────────────
-async function clearProject() {
-  if (!state.currentProjectId) return
-  if (!confirm('ล้าง Tasks ทั้งหมดในโปรเจกต์นี้?')) return
-  setSyncStatus('⟳ กำลังล้าง...')
-  await db.from('tasks').delete().eq('project_id', state.currentProjectId)
-  await loadTasks(); await loadDeps(); setSyncStatus('✓ Synced'); render(); toast('🗑 ล้างข้อมูลสำเร็จ')
-}
-
-// ── EXPORT CSV ────────────────────────────────────────────
-function exportCSV() {
-  const { wbs } = getWBS()
-  const rows = [['WBS','ชื่อ Task','ประเภท','หมวด','วันเริ่ม','วันสิ้นสุด','ระยะเวลา','%','สถานะ','ผู้รับผิดชอบ']]
-  getVisible().forEach(({task:t})=>{
-    rows.push([wbs[t.id]||'',t.name,t.type,t.category,t.start_date,fmt(taskEnd(t)),t.duration_days+'d',t.progress_pct+'%',STATUS_THAI[t.status]||t.status,t.assignee||''])
-  })
+function exportCSV(){
+  const{wbs}=getWBS(),rows=[['WBS','ชื่อ Task','ประเภท','หมวด','วันเริ่ม','วันสิ้นสุด','ระยะเวลา','%','สถานะ','ผู้รับผิดชอบ']]
+  getVisible().forEach(({task:t})=>{rows.push([wbs[t.id]||'',t.name,t.type,t.category,t.start_date,fmt(taskEnd(t)),t.duration_days+'d',t.progress_pct+'%',STATUS_THAI[t.status]||t.status,t.assignee||''])})
   const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n')
-  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv)
-  a.download='ga-schedule.csv'; a.click(); toast('📊 Export CSV สำเร็จ')
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ga-schedule.csv';a.click();toast('📊 Export CSV สำเร็จ')
+}
+async function exportPNG(){
+  if(!window.html2canvas){toast('❌ ไม่พบ html2canvas');return}if(!state.currentProjectId){openProjModal();return}
+  const left=document.getElementById('left'),right=document.getElementById('right')
+  const pn=(state.projects.find(p=>p.id===state.currentProjectId)?.name||'project').replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
+  showL();setSS('⟳ กำลังสร้าง PNG...')
+  try{
+    const stage=document.createElement('div');stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+    const lc=left.cloneNode(true),rc=right.cloneNode(true)
+    lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
+    rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
+    stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
+    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true});stage.remove()
+    const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=`ga-schedule-${pn}-${fmt(new Date())}.png`;a.click()
+    toast('🖼 Export PNG สำเร็จ');setSS('✓ Synced')
+  }catch(err){toast('❌ Export PNG ไม่สำเร็จ');setSS('⚠️ PNG error');console.error(err)}
+  finally{hideL()}
+}
+async function exportPDF(){
+  if(!window.html2canvas||!window.jspdf?.jsPDF){toast('❌ ไม่พบ library');return}if(!state.currentProjectId){openProjModal();return}
+  const left=document.getElementById('left'),right=document.getElementById('right')
+  const pnr=state.projects.find(p=>p.id===state.currentProjectId)?.name||'project'
+  const pn=pnr.replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
+  showL();setSS('⟳ กำลังสร้าง PDF...')
+  try{
+    const stage=document.createElement('div');stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+    const lc=left.cloneNode(true),rc=right.cloneNode(true)
+    lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
+    rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
+    stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
+    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true});stage.remove()
+    const{jsPDF}=window.jspdf,pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'})
+    const pw=pdf.internal.pageSize.getWidth(),m=8,imgW=pw-m*2
+    const imgH=Math.min((canvas.height*imgW)/canvas.width,pdf.internal.pageSize.getHeight()-m*2-8)
+    pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text(`GA Schedule: ${pnr}`,m,m+4)
+    pdf.setFont('helvetica','normal');pdf.setFontSize(9);pdf.text(`Date: ${fmt(new Date())}`,pw-m,m+4,{align:'right'})
+    pdf.addImage(canvas.toDataURL('image/png'),'PNG',m,m+8,imgW,imgH)
+    pdf.save(`ga-schedule-${pn}-${fmt(new Date())}.pdf`)
+    toast('📄 Export PDF สำเร็จ');setSS('✓ Synced')
+  }catch(err){toast('❌ Export PDF ไม่สำเร็จ');setSS('⚠️ PDF error');console.error(err)}
+  finally{hideL()}
 }
 
-async function exportPNG() {
-  if (!window.html2canvas) { toast('❌ ไม่พบ html2canvas'); return }
-  if (!state.currentProjectId) { openProjModal(); return }
-  const left = document.getElementById('left')
-  const right = document.getElementById('right')
-  const projectNameRaw = (state.projects.find(p => p.id === state.currentProjectId)?.name || 'project').trim()
-  const projectName = projectNameRaw.replace(/[^\wก-๙-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'project'
-  const dateStr = fmt(new Date())
+function setSS(t){document.getElementById('sync-status').textContent=t}
+function toast(msg,dur=2500){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),dur)}
+function showL(){document.getElementById('loading').style.display='flex'}
+function hideL(){document.getElementById('loading').style.display='none'}
 
-  showLoading()
-  setSyncStatus('⟳ กำลังสร้างไฟล์ PNG...')
-  try {
-    const stage = document.createElement('div')
-    stage.style.cssText = 'position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
-    const leftClone = left.cloneNode(true)
-    const rightClone = right.cloneNode(true)
+document.getElementById('task-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeTaskModal()}
+document.getElementById('dep-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeDepModal()}
+document.getElementById('proj-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeProjModal()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeDepModal();closeProjModal()}if(e.key==='n'&&(e.metaKey||e.ctrlKey)){e.preventDefault();openAddModal()}})
 
-    leftClone.style.width = `${left.offsetWidth}px`
-    leftClone.style.height = 'auto'
-    leftClone.style.overflow = 'visible'
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>render(),200)})
 
-    rightClone.style.width = `${Math.max(right.clientWidth, right.scrollWidth)}px`
-    rightClone.style.height = 'auto'
-    rightClone.style.overflow = 'visible'
-    rightClone.scrollTop = 0
-    rightClone.scrollLeft = 0
-
-    stage.appendChild(leftClone)
-    stage.appendChild(rightClone)
-    document.body.appendChild(stage)
-
-    const canvas = await window.html2canvas(stage, {
-      backgroundColor: '#f5f7fc',
-      scale: 2,
-      useCORS: true
-    })
-    stage.remove()
-
-    const a = document.createElement('a')
-    a.href = canvas.toDataURL('image/png')
-    a.download = `ga-schedule-${projectName}-${dateStr}.png`
-    a.click()
-    toast('🖼 Export PNG สำเร็จ')
-    setSyncStatus('✓ Synced')
-  } catch (err) {
-    toast('❌ Export PNG ไม่สำเร็จ')
-    setSyncStatus('⚠️ PNG export error')
-    console.error(err)
-  } finally {
-    hideLoading()
-  }
+async function init(){
+  showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();render()
+  if(state.projects.length===1)selectProject(state.projects[0].id)
+  else if(state.projects.length>1)openProjModal()
 }
-
-async function exportPDF() {
-  if (!window.html2canvas) { toast('❌ ไม่พบ html2canvas'); return }
-  if (!window.jspdf?.jsPDF) { toast('❌ ไม่พบ jsPDF'); return }
-  if (!state.currentProjectId) { openProjModal(); return }
-  const left = document.getElementById('left')
-  const right = document.getElementById('right')
-  const projectNameRaw = (state.projects.find(p => p.id === state.currentProjectId)?.name || 'project').trim()
-  const projectName = projectNameRaw.replace(/[^\wก-๙-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'project'
-  const dateStr = fmt(new Date())
-
-  showLoading()
-  setSyncStatus('⟳ กำลังสร้างไฟล์ PDF...')
-  try {
-    const stage = document.createElement('div')
-    stage.style.cssText = 'position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
-    const leftClone = left.cloneNode(true)
-    const rightClone = right.cloneNode(true)
-
-    leftClone.style.width = `${left.offsetWidth}px`
-    leftClone.style.height = 'auto'
-    leftClone.style.overflow = 'visible'
-
-    rightClone.style.width = `${Math.max(right.clientWidth, right.scrollWidth)}px`
-    rightClone.style.height = 'auto'
-    rightClone.style.overflow = 'visible'
-    rightClone.scrollTop = 0
-    rightClone.scrollLeft = 0
-
-    stage.appendChild(leftClone)
-    stage.appendChild(rightClone)
-    document.body.appendChild(stage)
-
-    const canvas = await window.html2canvas(stage, {
-      backgroundColor: '#f5f7fc',
-      scale: 2,
-      useCORS: true
-    })
-    stage.remove()
-
-    const { jsPDF } = window.jspdf
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-    const pageW = pdf.internal.pageSize.getWidth()
-    const pageH = pdf.internal.pageSize.getHeight()
-    const margin = 8
-    const headerY = 8
-    const headerH = 8
-    const imgW = pageW - margin * 2
-    const imgH = (canvas.height * imgW) / canvas.width
-    const maxImgH = pageH - margin * 2 - headerH
-    const finalImgH = Math.min(imgH, maxImgH)
-    const imgY = margin + headerH
-
-    pdf.setFont('helvetica', 'bold')
-    pdf.setFontSize(12)
-    pdf.text(`GA Schedule: ${projectNameRaw || 'Project'}`, margin, headerY + 4)
-    pdf.setFont('helvetica', 'normal')
-    pdf.setFontSize(9)
-    pdf.text(`Date: ${dateStr}`, pageW - margin, headerY + 4, { align: 'right' })
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, imgY, imgW, finalImgH)
-
-    pdf.save(`ga-schedule-${projectName}-${dateStr}.pdf`)
-    toast('📄 Export PDF สำเร็จ')
-    setSyncStatus('✓ Synced')
-  } catch (err) {
-    toast('❌ Export PDF ไม่สำเร็จ')
-    setSyncStatus('⚠️ PDF export error')
-    console.error(err)
-  } finally {
-    hideLoading()
-  }
-}
-
-// ── HELPERS ───────────────────────────────────────────────
-function setSyncStatus(txt){ document.getElementById('sync-status').textContent=txt }
-
-function toast(msg, dur=2500){
-  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show')
-  setTimeout(()=>el.classList.remove('show'), dur)
-}
-
-function showLoading(){ document.getElementById('loading').style.display='flex' }
-function hideLoading(){ document.getElementById('loading').style.display='none' }
-
-// Close modals on backdrop click
-document.getElementById('task-modal-bd').onclick = e=>{ if(e.target===e.currentTarget) closeTaskModal() }
-document.getElementById('dep-modal-bd').onclick = e=>{ if(e.target===e.currentTarget) closeDepModal() }
-document.getElementById('proj-modal-bd').onclick  = e=>{ if(e.target===e.currentTarget) closeProjModal() }
-
-// Keyboard shortcuts
-document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ closeTaskModal(); closeDepModal(); closeProjModal() }
-  if(e.key==='n'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); openAddModal() }
-})
-
-// ── RESIZE → RE-RENDER ────────────────────────────────────
-window.addEventListener('resize', () => { render() })
-
-// ── INIT ──────────────────────────────────────────────────
-async function init() {
-  showLoading()
-  await ensureAuth()
-  await Promise.all([loadProjects(), loadHolidays()])
-  hideLoading()
-  initScrollSync()
-  render()
-  // Auto-select first project if only one
-  if (state.projects.length===1) {
-    selectProject(state.projects[0].id)
-  } else if (state.projects.length>1) {
-    openProjModal()
-  }
-}
-
 init()
 </script>
 </body>
