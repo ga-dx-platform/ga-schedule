@@ -396,7 +396,7 @@ function addWD(date,n){
   while(c<n-1){d.setDate(d.getDate()+1);const ds=fmtISO(d);if(d.getDay()!==0&&d.getDay()!==6&&!hols.has(ds))c++}
   return d
 }
-function taskEnd(t){return addWD(pd(t.start_date),t.duration_days)}
+function taskEnd(t){const d=pd(t.start_date);d.setDate(d.getDate()+(t.duration_days||1)-1);return d}
 function dayPx(){return Math.max(18,Math.round(window.innerWidth*0.013))*state.zoom}
 function getROW_H(){return Math.max(40,Math.round(window.innerHeight*0.048))}
 
