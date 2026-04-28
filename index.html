@@ -384,7 +384,7 @@ const STATUS_CLASS={'Not Started':'s-none','In Progress':'s-prog',Completed:'s-d
 const STATUS_LABELS={'Not Started':'Not Started','In Progress':'In Progress',Completed:'Completed',Cancelled:'Cancelled'}
 
 const pd=s=>new Date(s+'T00:00:00')
-const fmtISO=d=>d.toISOString().slice(0,10)
+const fmtISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const fmt=d=>{const s=fmtISO(d);return`${s.slice(8,10)}-${s.slice(5,7)}-${s.slice(0,4)}`}
 const fmtS=d=>{const s=fmtISO(d);return`${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}`}
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
