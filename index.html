@@ -129,6 +129,9 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .act.del:hover{background:var(--red-s);color:var(--red);border-color:rgba(225,29,72,.2)}
 .add-row{padding:6px 12px;font-size:11px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:4px;border-top:1px solid var(--bdr)}
 .add-row:hover{color:#3B00FF}
+/* COLUMN RESIZER */
+.resizer{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:2;border-radius:0 2px 2px 0}
+.resizer:hover,.resizer.is-resizing{background:rgba(59,0,255,.28)}
 
 /* RIGHT — GANTT */
 #right{flex:1;overflow:auto;background:var(--bg-page)}
@@ -359,8 +362,9 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 
 async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
-let state={projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[]}
+let state={projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60]}
 let isSS=false,dragTaskId=null
+let colResize={active:false,colIdx:-1,startX:0,startW:0}
 let lastFocusEl=null,lastSavedAt=null
 
 const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
@@ -429,6 +433,7 @@ function renderLegend(){
 }
 
 function renderTaskList(){
+  renderColHdr()
   const{wbs,ri}=getWBS(),visible=getVisible()
   const tl=document.getElementById('task-list');tl.innerHTML=''
   const frag=document.createDocumentFragment()
@@ -497,6 +502,7 @@ function renderTaskList(){
       await reorderTasks(dragTaskId,row.dataset.id,e.clientY>row.getBoundingClientRect().top+row.getBoundingClientRect().height/2)
     }
   })
+  applyColumnWidths()
 }
 
 async function reorderTasks(dragId,targetId,placeAfter){
@@ -820,6 +826,52 @@ function markDirty(){setSS('● Unsaved changes')}
 function fmtTime(d){return d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 function rememberFocus(){lastFocusEl=document.activeElement}
 function restoreFocus(){if(lastFocusEl&&typeof lastFocusEl.focus==='function')lastFocusEl.focus();lastFocusEl=null}
+
+function applyColumnWidths(){
+  const tpl=state.colWidths.map(w=>w+'px').join(' ')
+  const hdr=document.getElementById('col-hdr')
+  if(hdr)hdr.style.gridTemplateColumns=tpl
+  document.querySelectorAll('.trow').forEach(r=>r.style.gridTemplateColumns=tpl)
+}
+
+function renderColHdr(){
+  const hdr=document.getElementById('col-hdr')
+  if(!hdr)return
+  const cols=[
+    {lbl:'#',align:'center'},{lbl:'',align:'center'},{lbl:'ชื่อ Task',align:'left'},
+    {lbl:'เริ่ม',align:'center'},{lbl:'สิ้นสุด',align:'center'},{lbl:'ผู้รับผิดชอบ',align:'center'},
+    {lbl:'วัน',align:'center'},{lbl:'%',align:'center'},{lbl:'สถานะ',align:'center'},
+    {lbl:'หมวด',align:'center'},{lbl:'Actions',align:'center'}
+  ]
+  hdr.innerHTML=cols.map((c,i)=>`<div style="position:relative;text-align:${c.align};${c.align==='left'?'padding-left:4px':''}">${c.lbl}<div class="resizer" data-col="${i}"></div></div>`).join('')
+  hdr.querySelectorAll('.resizer').forEach(el=>el.addEventListener('mousedown',onColResizerDown))
+}
+
+function onColResizerDown(e){
+  e.preventDefault()
+  colResize.active=true
+  colResize.colIdx=parseInt(e.currentTarget.dataset.col)
+  colResize.startX=e.clientX
+  colResize.startW=state.colWidths[colResize.colIdx]
+  e.currentTarget.classList.add('is-resizing')
+  document.body.style.cursor='col-resize'
+  document.body.style.userSelect='none'
+}
+
+document.addEventListener('mousemove',e=>{
+  if(!colResize.active)return
+  const delta=e.clientX-colResize.startX
+  state.colWidths[colResize.colIdx]=Math.max(20,colResize.startW+delta)
+  applyColumnWidths()
+})
+
+document.addEventListener('mouseup',()=>{
+  if(!colResize.active)return
+  colResize.active=false
+  document.body.style.cursor=''
+  document.body.style.userSelect=''
+  document.querySelectorAll('.resizer.is-resizing').forEach(el=>el.classList.remove('is-resizing'))
+})
 
 document.getElementById('task-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeTaskModal()}
 document.getElementById('dep-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeDepModal()}
