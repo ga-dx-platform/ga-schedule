@@ -80,7 +80,10 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #main{display:flex;flex:1;overflow:hidden}
 
 /* LEFT */
-#left{width:clamp(580px,43vw,780px);min-width:480px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gbdr);overflow:hidden;background:var(--glass-hi)}
+#left{width:clamp(580px,43vw,780px);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:var(--glass-hi)}
+#panel-resizer{flex-shrink:0;width:5px;cursor:col-resize;background:var(--gbdr);position:relative;z-index:10;transition:background .12s}
+#panel-resizer::after{content:'';position:absolute;top:0;bottom:0;left:-5px;right:-5px}
+#panel-resizer:hover,#panel-resizer.is-dragging{background:var(--bdr-mid)}
 #col-hdr{display:grid;grid-template-columns:var(--col-grid);gap:3px;padding:0 12px;height:30px;align-items:center;flex-shrink:0;background:linear-gradient(90deg,#edf0f9,#e6eaf5);border-bottom:1px solid var(--bdr);font-size:var(--fs-hdr);font-weight:600;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono)}
 #task-list{flex:1;overflow-y:auto}
 #task-list::-webkit-scrollbar{width:4px}
@@ -284,6 +287,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
       <div id="task-list"></div>
       <div class="add-row" onclick="openAddModal()">+ Add Task...</div>
     </div>
+    <div id="panel-resizer"></div>
     <div id="right"><div id="gantt-wrap"><div id="gantt-hdr"></div><div id="gantt-body"></div></div></div>
   </div>
   <div id="status-bar">
@@ -888,6 +892,32 @@ document.addEventListener('mouseup',()=>{
   document.body.style.cursor=''
   document.body.style.userSelect=''
   document.querySelectorAll('.resizer.is-resizing').forEach(el=>el.classList.remove('is-resizing'))
+})
+
+// Panel splitter
+let isResizingPanel=false,startPanelX=0,startLeftWidth=0
+const panelResizer=document.getElementById('panel-resizer')
+const leftPanel=document.getElementById('left')
+panelResizer.addEventListener('mousedown',e=>{
+  e.preventDefault()
+  isResizingPanel=true
+  startPanelX=e.clientX
+  startLeftWidth=leftPanel.getBoundingClientRect().width
+  panelResizer.classList.add('is-dragging')
+  document.body.style.cursor='col-resize'
+  document.body.style.userSelect='none'
+})
+document.addEventListener('mousemove',e=>{
+  if(!isResizingPanel)return
+  const newW=Math.min(Math.max(startLeftWidth+(e.clientX-startPanelX),320),window.innerWidth*0.8)
+  leftPanel.style.width=newW+'px'
+})
+document.addEventListener('mouseup',()=>{
+  if(!isResizingPanel)return
+  isResizingPanel=false
+  panelResizer.classList.remove('is-dragging')
+  document.body.style.cursor=''
+  document.body.style.userSelect=''
 })
 
 document.getElementById('task-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeTaskModal()}
