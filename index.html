@@ -239,21 +239,21 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 </head>
 <body>
 <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
-<div id="loading"><div class="loader"></div><p>กำลังโหลด GA Schedule...</p></div>
+<div id="loading"><div class="loader"></div><p>Loading GA Schedule...</p></div>
 <div id="toast"></div>
 <div id="app">
   <div id="navbar">
     <div class="nav-icon"><svg viewBox="0 0 14 12"><rect x="0" y="0" width="14" height="2.2" rx="1"/><rect x="0" y="5" width="10" height="2.2" rx="1"/><rect x="0" y="10" width="12" height="2.2" rx="1"/></svg></div>
-    <div><div id="proj-name" onclick="openProjModal()">— เลือกโปรเจกต์ —</div><div class="nav-sub">GA Schedule · Ajinomoto Thailand</div></div>
+    <div><div id="proj-name" onclick="openProjModal()">— Select Project —</div><div class="nav-sub">GA Schedule · Ajinomoto Thailand</div></div>
     <div class="nav-sep"></div><div id="nav-legend"></div><div class="nav-spacer"></div>
-    <button class="nav-btn" onclick="openProjModal()">📁 โปรเจกต์</button>
-    <button class="nav-btn primary" onclick="openAddModal()">+ เพิ่ม Task</button>
+    <button class="nav-btn" onclick="openProjModal()">📁 Projects</button>
+    <button class="nav-btn primary" onclick="openAddModal()">+ Add Task</button>
   </div>
   <div id="toolbar">
-        <button class="tb link" id="btn-link" onclick="openDepModal()" disabled>→ เพิ่มลิงก์งาน</button>
+        <button class="tb link" id="btn-link" onclick="openDepModal()" disabled>→ Add Link</button>
     <div class="tb-sep"></div>
-    <button class="tb save" onclick="saveAll()">💾 บันทึก</button>
-    <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>🗑 ล้าง</button>
+    <button class="tb save" onclick="saveAll()">💾 Save</button>
+    <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>🗑 Clear</button>
     <div class="tb-sep"></div>
     <button class="tb" onclick="zoomOut()">−</button>
     <span id="zoom-lbl">Day</span>
@@ -267,7 +267,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <label class="sw-opt"><input type="checkbox" id="sw-gtxt" checked> Task Labels</label>
     <div class="tb-sep"></div>
     <button class="tb" onclick="saveBaseline()">💾 Baseline</button>
-    <button class="tb" onclick="compareBaseline()">⚖️ เปรียบเทียบ Baseline</button>
+    <button class="tb" onclick="compareBaseline()">⚖️ Compare Baseline</button>
     <div class="tb-sep"></div>
     <span style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</span>
   </div>
@@ -275,14 +275,14 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <div id="left">
       <div id="col-hdr">
         <span style="text-align:center">#</span><span></span>
-        <span style="padding-left:4px">ชื่อ Task</span>
-        <span style="text-align:center">เริ่ม</span><span style="text-align:center">สิ้นสุด</span>
-        <span style="text-align:center">ผู้รับผิดชอบ</span><span style="text-align:center">วัน</span>
-        <span style="text-align:center">%</span><span style="text-align:center">สถานะ</span>
-        <span style="text-align:center">หมวด</span><span style="text-align:center">Actions</span>
+        <span style="padding-left:4px">Task Name</span>
+        <span style="text-align:center">Start</span><span style="text-align:center">End</span>
+        <span style="text-align:center">Assignee</span><span style="text-align:center">Days</span>
+        <span style="text-align:center">%</span><span style="text-align:center">Status</span>
+        <span style="text-align:center">Category</span><span style="text-align:center">Actions</span>
       </div>
       <div id="task-list"></div>
-      <div class="add-row" onclick="openAddModal()">+ เพิ่ม Task...</div>
+      <div class="add-row" onclick="openAddModal()">+ Add Task...</div>
     </div>
     <div id="right"><div id="gantt-wrap"><div id="gantt-hdr"></div><div id="gantt-body"></div></div></div>
   </div>
@@ -298,51 +298,51 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 <!-- TASK MODAL -->
 <div class="modal-bd" id="task-modal-bd">
   <div id="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="m-hdr"><span class="m-title" id="modal-title">เพิ่ม Task</span><button class="m-close" onclick="closeTaskModal()" aria-label="ปิดหน้าต่าง Task">×</button></div>
+    <div class="m-hdr"><span class="m-title" id="modal-title">Add Task</span><button class="m-close" onclick="closeTaskModal()" aria-label="Close">×</button></div>
     <div class="m-body">
-      <div class="full"><label class="flbl">ชื่อ Task *</label><input class="finput" id="f-name" placeholder="เช่น Survey 15F layout"/></div>
+      <div class="full"><label class="flbl">Task Name *</label><input class="finput" id="f-name" placeholder="e.g. Survey 15F layout"/></div>
       <div class="full"><label class="flbl">Phase / Parent Task</label><select class="finput" id="f-parent"><option value="">— Root level —</option></select></div>
-      <div><label class="flbl">ประเภท</label><select class="finput" id="f-type"><option value="task">Task</option><option value="milestone">Milestone</option><option value="parent">Phase/Group</option></select></div>
-      <div><label class="flbl">หมวดหมู่</label><select class="finput" id="f-cat"><option value="General">General</option><option value="Develop">Develop</option><option value="Test">Test</option><option value="Meeting">Meeting</option></select></div>
-      <div><label class="flbl">วันเริ่มต้น</label><input type="date" class="finput" id="f-start"/></div>
-      <div><label class="flbl">ระยะเวลา (วันทำงาน)</label><input type="number" class="finput" id="f-dur" value="5" min="1"/></div>
-      <div class="full"><label class="flbl">สถานะ</label><select class="finput" id="f-status"><option value="Not Started">ยังไม่เริ่ม</option><option value="In Progress">กำลังดำเนินการ</option><option value="Completed">เสร็จแล้ว</option><option value="Cancelled">ยกเลิก</option></select></div>
-      <div class="full"><label class="flbl">ผู้รับผิดชอบ</label><input class="finput" id="f-assign" placeholder="เช่น Micky, Sunthorn"/></div>
-      <div class="full"><label class="flbl">ความคืบหน้า %</label><div class="pct-row"><input type="range" id="f-pct" min="0" max="100" step="5" value="0"/><span id="f-pct-lbl">0%</span></div></div>
-      <div class="full"><label class="flbl">หมายเหตุ</label><input class="finput" id="f-notes" placeholder="(ไม่บังคับ)"/></div>
+      <div><label class="flbl">Type</label><select class="finput" id="f-type"><option value="task">Task</option><option value="milestone">Milestone</option><option value="parent">Phase/Group</option></select></div>
+      <div><label class="flbl">Category</label><select class="finput" id="f-cat"><option value="General">General</option><option value="Develop">Develop</option><option value="Test">Test</option><option value="Meeting">Meeting</option></select></div>
+      <div><label class="flbl">Start Date</label><input type="date" class="finput" id="f-start"/></div>
+      <div><label class="flbl">Duration (working days)</label><input type="number" class="finput" id="f-dur" value="5" min="1"/></div>
+      <div class="full"><label class="flbl">Status</label><select class="finput" id="f-status"><option value="Not Started">Not Started</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>
+      <div class="full"><label class="flbl">Assignee</label><input class="finput" id="f-assign" placeholder="e.g. Micky, Sunthorn"/></div>
+      <div class="full"><label class="flbl">Progress %</label><div class="pct-row"><input type="range" id="f-pct" min="0" max="100" step="5" value="0"/><span id="f-pct-lbl">0%</span></div></div>
+      <div class="full"><label class="flbl">Notes</label><input class="finput" id="f-notes" placeholder="(optional)"/></div>
     </div>
     <div class="m-footer">
-      <button class="mbtn del-m" id="btn-del-task" style="display:none" onclick="deleteTask()">ลบ Task</button>
-      <button class="mbtn cancel" onclick="closeTaskModal()">ยกเลิก</button>
-      <button class="mbtn save" onclick="saveTask()">บันทึก</button>
+      <button class="mbtn del-m" id="btn-del-task" style="display:none" onclick="deleteTask()">Delete</button>
+      <button class="mbtn cancel" onclick="closeTaskModal()">Cancel</button>
+      <button class="mbtn save" onclick="saveTask()">Save</button>
     </div>
   </div>
 </div>
 
 <!-- DEP MODAL -->
 <div class="modal-bd" id="dep-modal-bd">
-  <div id="dep-modal" role="dialog" aria-modal="true" aria-label="จัดการ Dependency">
-    <div class="m-hdr"><span class="m-title">🔗 จัดการ Dependency</span><button class="m-close" onclick="closeDepModal()" aria-label="ปิดหน้าต่าง Dependency">×</button></div>
+  <div id="dep-modal" role="dialog" aria-modal="true" aria-label="Manage Dependencies">
+    <div class="m-hdr"><span class="m-title">🔗 Manage Dependencies</span><button class="m-close" onclick="closeDepModal()" aria-label="Close">×</button></div>
     <div class="dep-grid">
-      <div class="full"><label class="flbl">งานต้นทาง (From Task)</label><select class="finput" id="dep-from"></select></div>
-      <div class="full"><label class="flbl">งานปลายทาง (To Task)</label><select class="finput" id="dep-to"></select></div>
+      <div class="full"><label class="flbl">From Task</label><select class="finput" id="dep-from"></select></div>
+      <div class="full"><label class="flbl">To Task</label><select class="finput" id="dep-to"></select></div>
       <div class="full">
-        <label class="flbl">ประเภทลิงก์</label>
+        <label class="flbl">Link Type</label>
         <select class="finput" id="dep-type">
-          <option value="FS">FS — B เริ่มได้หลัง A เสร็จ</option>
-          <option value="SS">SS — B เริ่มพร้อม A</option>
-          <option value="FF">FF — B เสร็จหลัง A เสร็จ</option>
-          <option value="SF">SF — B เสร็จหลัง A เริ่ม</option>
+          <option value="FS">FS — B starts after A finishes</option>
+          <option value="SS">SS — B starts with A</option>
+          <option value="FF">FF — B finishes after A finishes</option>
+          <option value="SF">SF — B finishes after A starts</option>
         </select>
-        <div class="dep-hint">เลือกงานต้นทางและปลายทาง จากนั้นกด "เพิ่มลิงก์"</div>
+        <div class="dep-hint">Select From and To tasks, then click "Add Link"</div>
       </div>
       <div class="full" style="display:flex;justify-content:flex-end;gap:8px">
-        <button class="mbtn cancel" onclick="closeDepModal()">ปิด</button>
-        <button class="mbtn save" onclick="saveDependency()">+ เพิ่มลิงก์</button>
+        <button class="mbtn cancel" onclick="closeDepModal()">Close</button>
+        <button class="mbtn save" onclick="saveDependency()">+ Add Link</button>
       </div>
     </div>
     <div class="dep-list-wrap">
-      <div class="m-hdr" style="padding:10px 18px"><span class="m-title" style="font-size:12px">ลิงก์ที่มีอยู่</span></div>
+      <div class="m-hdr" style="padding:10px 18px"><span class="m-title" style="font-size:12px">Existing Links</span></div>
       <div class="dep-list" id="dep-list"></div>
     </div>
   </div>
@@ -350,13 +350,13 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 
 <!-- PROJ MODAL -->
 <div class="modal-bd" id="proj-modal-bd">
-  <div id="proj-modal" role="dialog" aria-modal="true" aria-label="โปรเจกต์">
-    <div class="m-hdr"><span class="m-title">📁 โปรเจกต์</span><button class="m-close" onclick="closeProjModal()" aria-label="ปิดหน้าต่างโปรเจกต์">×</button></div>
+  <div id="proj-modal" role="dialog" aria-modal="true" aria-label="Projects">
+    <div class="m-hdr"><span class="m-title">📁 Projects</span><button class="m-close" onclick="closeProjModal()" aria-label="Close">×</button></div>
     <div id="proj-list" style="max-height:280px;overflow-y:auto"></div>
     <div style="padding:12px 14px;border-top:1px solid var(--bdr)">
       <div style="display:flex;gap:8px">
-        <input class="finput" id="new-proj-name" placeholder="ชื่อโปรเจกต์ใหม่" style="flex:1"/>
-        <button class="mbtn save" onclick="createProject()" style="padding:6px 14px">สร้าง</button>
+        <input class="finput" id="new-proj-name" placeholder="New project name" style="flex:1"/>
+        <button class="mbtn save" onclick="createProject()" style="padding:6px 14px">Create</button>
       </div>
     </div>
   </div>
@@ -377,18 +377,19 @@ let lastFocusEl=null,lastSavedAt=null
 const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
 const CAT_BAR={General:'gb-general',Develop:'gb-develop',Test:'gb-test',Meeting:'gb-meeting'}
 const STATUS_CLASS={'Not Started':'s-none','In Progress':'s-prog',Completed:'s-done',Cancelled:'s-cancel'}
-const STATUS_THAI={'Not Started':'ยังไม่เริ่ม','In Progress':'ดำเนินการ',Completed:'เสร็จแล้ว',Cancelled:'ยกเลิก'}
+const STATUS_LABELS={'Not Started':'Not Started','In Progress':'In Progress',Completed:'Completed',Cancelled:'Cancelled'}
 
 const pd=s=>new Date(s+'T00:00:00')
-const fmt=d=>d.toISOString().slice(0,10)
-const fmtS=d=>`${d.getMonth()+1}/${d.getDate()}`
+const fmtISO=d=>d.toISOString().slice(0,10)
+const fmt=d=>{const s=fmtISO(d);return`${s.slice(8,10)}-${s.slice(5,7)}-${s.slice(0,4)}`}
+const fmtS=d=>{const s=fmtISO(d);return`${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}`}
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
 function addWD(date,n){
   if(n<=1)return new Date(date)
   let d=new Date(date),c=0
   const hols=new Set(state.holidays.map(h=>h.date))
-  while(c<n-1){d.setDate(d.getDate()+1);const ds=fmt(d);if(d.getDay()!==0&&d.getDay()!==6&&!hols.has(ds))c++}
+  while(c<n-1){d.setDate(d.getDate()+1);const ds=fmtISO(d);if(d.getDay()!==0&&d.getDay()!==6&&!hols.has(ds))c++}
   return d
 }
 function taskEnd(t){return addWD(pd(t.start_date),t.duration_days)}
@@ -422,8 +423,8 @@ function getVisible(){
   walk(null,0);return vis
 }
 
-async function loadProjects(){const{data,error}=await db.from('projects').select('*').order('created_at');if(error){toast('❌ โหลดโปรเจกต์ไม่สำเร็จ');return}state.projects=data||[]}
-async function loadTasks(){if(!state.currentProjectId)return;setSS('⟳ กำลังโหลด...');const{data,error}=await db.from('tasks').select('*').eq('project_id',state.currentProjectId).order('sort_order');if(error){toast('❌ โหลด Tasks ไม่สำเร็จ');return}state.tasks=data||[];setSS('✓ Synced')}
+async function loadProjects(){const{data,error}=await db.from('projects').select('*').order('created_at');if(error){toast('❌ Failed to load projects');return}state.projects=data||[]}
+async function loadTasks(){if(!state.currentProjectId)return;setSS('⟳ Loading...');const{data,error}=await db.from('tasks').select('*').eq('project_id',state.currentProjectId).order('sort_order');if(error){toast('❌ Failed to load tasks');return}state.tasks=data||[];setSS('✓ Synced')}
 async function loadHolidays(){const{data}=await db.from('thai_holidays').select('date').eq('year',new Date().getFullYear());state.holidays=data||[]}
 async function loadDeps(){if(!state.currentProjectId)return;const{data}=await db.from('dependencies').select('*').eq('project_id',state.currentProjectId);state.deps=data||[]}
 async function loadBaselines(){if(!state.currentProjectId)return;const{data}=await db.from('baselines').select('*').eq('project_id',state.currentProjectId).order('created_at',{ascending:false});state.baselines=data||[]}
@@ -452,7 +453,7 @@ function renderTaskList(){
     const isCan=t.status==='Cancelled'
     const row=document.createElement('div')
     row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}`
-    row.dataset.id=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`แก้ไข Task ${esc(t.name)}`)
+    row.dataset.id=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Edit task ${esc(t.name)}`)
     row.innerHTML=`
       <span class="r-num">${ri[t.id]||''}<span class="drag-handle">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
@@ -469,14 +470,14 @@ function renderTaskList(){
         <span>${pct}%</span>
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
-      <span><span class="sbadge ${sc}">${esc(STATUS_THAI[t.status]||t.status)}</span></span>
+      <span><span class="sbadge ${sc}">${esc(STATUS_LABELS[t.status]||t.status)}</span></span>
       <span class="cat-cell">
         <div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div>
         <span class="cat-lbl">${esc(t.category||'General')}</span>
       </span>
       <span class="acts">
-        <button class="act" data-edit="${t.id}" title="แก้ไข" aria-label="แก้ไข ${esc(t.name)}">✎</button>
-        <button class="act del" data-del="${t.id}" title="ลบ" aria-label="ลบ ${esc(t.name)}">🗑</button>
+        <button class="act" data-edit="${t.id}" title="Edit" aria-label="Edit ${esc(t.name)}">✎</button>
+        <button class="act del" data-del="${t.id}" title="Delete" aria-label="Delete ${esc(t.name)}">🗑</button>
       </span>`
     frag.appendChild(row)
   })
@@ -505,7 +506,7 @@ function renderTaskList(){
       e.preventDefault();row.classList.remove('drag-over','drag-over-before','drag-over-after')
       if(!dragTaskId||dragTaskId===row.dataset.id)return
       const dr=tl.querySelector(`.trow[data-id="${dragTaskId}"]`);if(!dr)return
-      if((dr.dataset.parentId||'')!==(row.dataset.parentId||'')){toast('⚠️ ลากได้เฉพาะงานระดับเดียวกัน');return}
+      if((dr.dataset.parentId||'')!==(row.dataset.parentId||'')){toast('⚠️ Can only reorder tasks at the same level');return}
       await reorderTasks(dragTaskId,row.dataset.id,e.clientY>row.getBoundingClientRect().top+row.getBoundingClientRect().height/2)
     }
   })
@@ -521,9 +522,9 @@ async function reorderTasks(dragId,targetId,placeAfter){
   if(fi<0||ti<0||fi===ti)return
   const[mv]=sibs.splice(fi,1);let ii=ti;if(fi<ti)ii--;if(placeAfter)ii++;sibs.splice(ii,0,mv)
   sibs.forEach((t,i)=>{const r=state.tasks.find(x=>x.id===t.id);if(r)r.sort_order=(i+1)*10})
-  setSS('⟳ กำลังอัปเดตลำดับ...')
+  setSS('⟳ Updating order...')
   const res=await Promise.all(sibs.map((t,i)=>db.from('tasks').update({sort_order:(i+1)*10}).eq('id',t.id)))
-  if(res.find(r=>r.error)){toast('❌ อัปเดตลำดับไม่สำเร็จ');await loadTasks()}else toast('✅ จัดลำดับงานสำเร็จ')
+  if(res.find(r=>r.error)){toast('❌ Failed to update order');await loadTasks()}else toast('✅ Order updated')
   setSS('✓ Synced');render()
 }
 
@@ -645,9 +646,9 @@ function renderSB(){
   const today=new Date()
   const delayed=state.tasks.filter(t=>{const e=taskEnd(t);return e<today&&t.status!=='Completed'&&t.status!=='Cancelled'})
   const avgPct=total?Math.round(state.tasks.filter(t=>t.status!=='Cancelled').reduce((s,t)=>s+t.progress_pct,0)/Math.max(1,state.tasks.filter(t=>t.status!=='Cancelled').length)):0
-  document.getElementById('sb-tasks').textContent=`${total} tasks · ${done} เสร็จ`
+  document.getElementById('sb-tasks').textContent=`${total} tasks · ${done} done`
   document.getElementById('sb-prog').textContent=`${avgPct}% overall`
-  document.getElementById('sb-badge').innerHTML=delayed.length?`<span class="sb-badge sb-warn">${delayed.length} เลยกำหนด</span>`:(total?`<span class="sb-badge sb-ok">On Track</span>`:'')
+  document.getElementById('sb-badge').innerHTML=delayed.length?`<span class="sb-badge sb-warn">${delayed.length} overdue</span>`:(total?`<span class="sb-badge sb-ok">On Track</span>`:'')
   if(state.tasks.length){const dates=state.tasks.map(t=>pd(t.start_date));const minD=new Date(Math.min(...dates));document.getElementById('sb-range').textContent=`${fmtS(minD)} – ${fmtS(taskEnd(state.tasks.reduce((a,b)=>taskEnd(b)>taskEnd(a)?b:a,state.tasks[0])))}`}
 }
 
@@ -661,12 +662,12 @@ function openProjModal(){rememberFocus();renderProjList();document.getElementByI
 function closeProjModal(){document.getElementById('proj-modal-bd').classList.remove('show');restoreFocus()}
 function renderProjList(){
   const pl=document.getElementById('proj-list');pl.innerHTML=''
-  if(!state.projects.length){const e=document.createElement('div');e.style.cssText='padding:14px;font-size:12px;color:var(--txt3)';e.textContent='ยังไม่มีโปรเจกต์ — สร้างใหม่ด้านล่าง';pl.appendChild(e);return}
+  if(!state.projects.length){const e=document.createElement('div');e.style.cssText='padding:14px;font-size:12px;color:var(--txt3)';e.textContent='No projects yet — create one below';pl.appendChild(e);return}
   const frag=document.createDocumentFragment()
   state.projects.forEach(p=>{
     const item=document.createElement('div');item.className=`proj-item${p.id===state.currentProjectId?' active':''}`;item.onclick=()=>selectProject(p.id)
     const dot=document.createElement('div');dot.className='proj-dot';dot.style.background=p.color||'#3B00FF'
-    const tw=document.createElement('div');const nm=document.createElement('div');nm.className='proj-item-name';nm.textContent=p.name||'';const sb=document.createElement('div');sb.className='proj-item-sub';sb.textContent=p.description||'ไม่มีคำอธิบาย'
+    const tw=document.createElement('div');const nm=document.createElement('div');nm.className='proj-item-name';nm.textContent=p.name||'';const sb=document.createElement('div');sb.className='proj-item-sub';sb.textContent=p.description||'No description'
     tw.appendChild(nm);tw.appendChild(sb);item.appendChild(dot);item.appendChild(tw);frag.appendChild(item)
   })
   pl.appendChild(frag)
@@ -678,50 +679,50 @@ async function selectProject(id){
   closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render()
 }
 async function createProject(){
-  const name=document.getElementById('new-proj-name').value.trim();if(!name){toast('⚠️ กรุณากรอกชื่อโปรเจกต์');return}
-  const{data,error}=await db.from('projects').insert({name}).select().single();if(error){toast('❌ สร้างโปรเจกต์ไม่สำเร็จ: '+error.message);return}
-  document.getElementById('new-proj-name').value='';await loadProjects();renderProjList();toast('✅ สร้างโปรเจกต์ '+name+' สำเร็จ');selectProject(data.id)
+  const name=document.getElementById('new-proj-name').value.trim();if(!name){toast('⚠️ Please enter a project name');return}
+  const{data,error}=await db.from('projects').insert({name}).select().single();if(error){toast('❌ Failed to create project: '+error.message);return}
+  document.getElementById('new-proj-name').value='';await loadProjects();renderProjList();toast('✅ Project '+name+' created');selectProject(data.id)
 }
 
 async function saveBaseline(){
-  if(!state.currentProjectId){openProjModal();return}if(!state.tasks.length){toast('⚠️ ไม่มี Task สำหรับบันทึก Baseline');return}
-  const name=prompt('ตั้งชื่อ Baseline',`Baseline ${fmt(new Date())}`);if(name===null)return;const tr=name.trim();if(!tr){toast('⚠️ กรุณาระบุชื่อ Baseline');return}
+  if(!state.currentProjectId){openProjModal();return}if(!state.tasks.length){toast('⚠️ No tasks to save as Baseline');return}
+  const name=prompt('Baseline name',`Baseline ${fmt(new Date())}`);if(name===null)return;const tr=name.trim();if(!tr){toast('⚠️ Please enter a Baseline name');return}
   const{error}=await db.from('baselines').insert({project_id:state.currentProjectId,name:tr,snapshot_json:JSON.stringify(state.tasks)})
-  if(error){toast('❌ บันทึก Baseline ไม่สำเร็จ: '+error.message);return}await loadBaselines();toast('✅ บันทึก Baseline สำเร็จ')
+  if(error){toast('❌ Failed to save Baseline: '+error.message);return}await loadBaselines();toast('✅ Baseline saved')
 }
 function compareBaseline(){
-  if(!state.currentProjectId){openProjModal();return}if(!state.baselines.length){toast('⚠️ ยังไม่มี Baseline');return}
+  if(!state.currentProjectId){openProjModal();return}if(!state.baselines.length){toast('⚠️ No Baselines saved yet');return}
   const opts=state.baselines.map((b,i)=>`${i+1}. ${b.name}`).join('\n')
-  const pick=prompt(`เลือก Baseline\n0. ไม่เปรียบเทียบ\n${opts}`,'1');if(pick===null)return
-  const idx=Number(pick);if(idx===0){state.comparedBaseline=null;render();toast('ℹ️ ปิดการเปรียบเทียบ');return}
-  if(!Number.isInteger(idx)||idx<1||idx>state.baselines.length){toast('⚠️ เลือกหมายเลขไม่ถูกต้อง');return}
+  const pick=prompt(`Select Baseline\n0. None\n${opts}`,'1');if(pick===null)return
+  const idx=Number(pick);if(idx===0){state.comparedBaseline=null;render();toast('ℹ️ Comparison off');return}
+  if(!Number.isInteger(idx)||idx<1||idx>state.baselines.length){toast('⚠️ Invalid selection');return}
   const sel=state.baselines[idx-1]
-  try{const tasks=JSON.parse(sel.snapshot_json||'[]');if(!Array.isArray(tasks))throw new Error();state.comparedBaseline={id:sel.id,name:sel.name,tasks};render();toast(`✅ เปรียบเทียบกับ ${sel.name}`)}
-  catch{toast('❌ อ่านข้อมูล Baseline ไม่สำเร็จ')}
+  try{const tasks=JSON.parse(sel.snapshot_json||'[]');if(!Array.isArray(tasks))throw new Error();state.comparedBaseline={id:sel.id,name:sel.name,tasks};render();toast(`✅ Comparing with ${sel.name}`)}
+  catch{toast('❌ Failed to read Baseline data')}
 }
 
-function openDepModal(){if(!state.currentProjectId){openProjModal();return}if(!state.tasks.length){toast('⚠️ กรุณาเพิ่ม Task ก่อน');return}rememberFocus();populateDepOpts();renderDepList();document.getElementById('dep-modal-bd').classList.add('show');setTimeout(()=>document.getElementById('dep-from').focus(),100)}
+function openDepModal(){if(!state.currentProjectId){openProjModal();return}if(!state.tasks.length){toast('⚠️ Add a task first');return}rememberFocus();populateDepOpts();renderDepList();document.getElementById('dep-modal-bd').classList.add('show');setTimeout(()=>document.getElementById('dep-from').focus(),100)}
 function closeDepModal(){document.getElementById('dep-modal-bd').classList.remove('show');restoreFocus()}
 function populateDepOpts(){const opts=state.tasks.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');document.getElementById('dep-from').innerHTML=opts;document.getElementById('dep-to').innerHTML=opts;if(state.tasks.length>1)document.getElementById('dep-to').selectedIndex=1}
 function renderDepList(){
   const list=document.getElementById('dep-list')
-  if(!state.deps.length){list.innerHTML='<div class="dep-empty">ยังไม่มีลิงก์ในโปรเจกต์นี้</div>';return}
-  list.innerHTML=state.deps.map(dep=>{const ft=state.tasks.find(t=>t.id===dep.from_task_id),tt=state.tasks.find(t=>t.id===dep.to_task_id);return`<div class="dep-item"><div class="dep-task">${esc(ft?.name||'(ไม่พบ)')}</div><div class="dep-type ${(dep.dep_type||'').toLowerCase()}">${dep.dep_type||'FS'}</div><div class="dep-task">${esc(tt?.name||'(ไม่พบ)')}</div><button class="dep-del" onclick="deleteDep('${dep.id}')" aria-label="ลบ dependency ${esc(ft?.name||'')}-${esc(tt?.name||'')}">×</button></div>`}).join('')
+  if(!state.deps.length){list.innerHTML='<div class="dep-empty">No links in this project</div>';return}
+  list.innerHTML=state.deps.map(dep=>{const ft=state.tasks.find(t=>t.id===dep.from_task_id),tt=state.tasks.find(t=>t.id===dep.to_task_id);return`<div class="dep-item"><div class="dep-task">${esc(ft?.name||'(not found)')}</div><div class="dep-type ${(dep.dep_type||'').toLowerCase()}">${dep.dep_type||'FS'}</div><div class="dep-task">${esc(tt?.name||'(not found)')}</div><button class="dep-del" onclick="deleteDep('${dep.id}')" aria-label="Remove dependency ${esc(ft?.name||'')}-${esc(tt?.name||'')}">×</button></div>`}).join('')
 }
 async function saveDependency(){
   const fid=document.getElementById('dep-from').value,tid=document.getElementById('dep-to').value,dtype=document.getElementById('dep-type').value
-  if(!fid||!tid){toast('⚠️ กรุณาเลือก Task');return}if(fid===tid){toast('⚠️ ไม่สามารถลิงก์ Task เดียวกัน');return}
-  if(state.deps.some(d=>d.from_task_id===fid&&d.to_task_id===tid&&d.dep_type===dtype)){toast('⚠️ ลิงก์นี้มีอยู่แล้ว');return}
+  if(!fid||!tid){toast('⚠️ Please select tasks');return}if(fid===tid){toast('⚠️ Cannot link a task to itself');return}
+  if(state.deps.some(d=>d.from_task_id===fid&&d.to_task_id===tid&&d.dep_type===dtype)){toast('⚠️ This link already exists');return}
   const{error}=await db.from('dependencies').insert({project_id:state.currentProjectId,from_task_id:fid,to_task_id:tid,dep_type:dtype})
-  if(error){toast('❌ บันทึกลิงก์ไม่สำเร็จ: '+error.message);return}await loadDeps();render();renderDepList();toast('✅ เพิ่มลิงก์สำเร็จ')
+  if(error){toast('❌ Failed to save link: '+error.message);return}await loadDeps();render();renderDepList();toast('✅ Link added')
 }
-async function deleteDep(id){const{error}=await db.from('dependencies').delete().eq('id',id);if(error){toast('❌ ลบลิงก์ไม่สำเร็จ');return}await loadDeps();render();renderDepList();toast('🗑 ลบลิงก์สำเร็จ')}
+async function deleteDep(id){const{error}=await db.from('dependencies').delete().eq('id',id);if(error){toast('❌ Failed to delete link');return}await loadDeps();render();renderDepList();toast('🗑 Link removed')}
 
 function openAddModal(){
   if(!state.currentProjectId){openProjModal();return}state.editingTaskId=null
   rememberFocus()
-  document.getElementById('modal-title').textContent='เพิ่ม Task'
-  document.getElementById('f-name').value='';document.getElementById('f-start').value=fmt(new Date())
+  document.getElementById('modal-title').textContent='Add Task'
+  document.getElementById('f-name').value='';document.getElementById('f-start').value=fmtISO(new Date())
   document.getElementById('f-dur').value=5;document.getElementById('f-pct').value=0;document.getElementById('f-pct-lbl').textContent='0%'
   document.getElementById('f-assign').value='';document.getElementById('f-notes').value=''
   document.getElementById('f-type').value='task';document.getElementById('f-cat').value='General';document.getElementById('f-status').value='Not Started'
@@ -732,7 +733,7 @@ function openAddModal(){
 function openEditModal(id){
   const t=state.tasks.find(x=>x.id===id);if(!t)return;state.editingTaskId=id
   rememberFocus()
-  document.getElementById('modal-title').textContent='แก้ไข Task'
+  document.getElementById('modal-title').textContent='Edit Task'
   document.getElementById('f-name').value=t.name;document.getElementById('f-start').value=t.start_date
   document.getElementById('f-dur').value=t.duration_days;document.getElementById('f-pct').value=t.progress_pct;document.getElementById('f-pct-lbl').textContent=t.progress_pct+'%'
   document.getElementById('f-assign').value=t.assignee||'';document.getElementById('f-notes').value=t.notes||''
@@ -749,20 +750,20 @@ function populateParentSel(sel){
 document.getElementById('f-pct').oninput=function(){document.getElementById('f-pct-lbl').textContent=this.value+'%'}
 
 async function saveTask(){
-  const name=document.getElementById('f-name').value.trim();if(!name){toast('⚠️ กรุณากรอกชื่อ Task');return}
+  const name=document.getElementById('f-name').value.trim();if(!name){toast('⚠️ Please enter a task name');return}
   let pct=parseInt(document.getElementById('f-pct').value)||0,status=document.getElementById('f-status').value
   if(pct===100)status='Completed'
   const payload={project_id:state.currentProjectId,parent_id:document.getElementById('f-parent').value||null,name,type:document.getElementById('f-type').value,category:document.getElementById('f-cat').value,start_date:document.getElementById('f-start').value,duration_days:parseInt(document.getElementById('f-dur').value)||1,progress_pct:pct,status,assignee:document.getElementById('f-assign').value||null,notes:document.getElementById('f-notes').value||null,sort_order:state.editingTaskId?undefined:state.tasks.length}
-  setSS('⟳ กำลังบันทึก...')
-  if(state.editingTaskId){const{error}=await db.from('tasks').update(payload).eq('id',state.editingTaskId);if(error){toast('❌ บันทึกไม่สำเร็จ: '+error.message);setSS('✗ Error');return}}
-  else{const{error}=await db.from('tasks').insert(payload);if(error){toast('❌ บันทึกไม่สำเร็จ: '+error.message);setSS('✗ Error');return}}
-  await loadTasks();setSS('✓ Synced');toast('✅ บันทึก Task สำเร็จ');closeTaskModal()
+  setSS('⟳ Saving...')
+  if(state.editingTaskId){const{error}=await db.from('tasks').update(payload).eq('id',state.editingTaskId);if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}}
+  else{const{error}=await db.from('tasks').insert(payload);if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}}
+  await loadTasks();setSS('✓ Synced');toast('✅ Task saved');closeTaskModal()
 }
 async function deleteTask(){
-  if(!state.editingTaskId)return;const t=state.tasks.find(x=>x.id===state.editingTaskId);if(!confirm(`ลบ "${t?.name}" ?`))return
-  const ids=getDesc(state.editingTaskId);ids.push(state.editingTaskId);setSS('⟳ กำลังลบ...')
-  const{error}=await db.from('tasks').delete().in('id',ids);if(error){toast('❌ ลบไม่สำเร็จ');return}
-  await loadTasks();await loadDeps();setSS('✓ Synced');toast('🗑 ลบ Task สำเร็จ');closeTaskModal()
+  if(!state.editingTaskId)return;const t=state.tasks.find(x=>x.id===state.editingTaskId);if(!confirm(`Delete "${t?.name}"?`))return
+  const ids=getDesc(state.editingTaskId);ids.push(state.editingTaskId);setSS('⟳ Deleting...')
+  const{error}=await db.from('tasks').delete().in('id',ids);if(error){toast('❌ Delete failed');return}
+  await loadTasks();await loadDeps();setSS('✓ Synced');toast('🗑 Task deleted');closeTaskModal()
 }
 function confirmDelete(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;state.editingTaskId=id;deleteTask()}
 function getDesc(id){const kids=state.tasks.filter(t=>t.parent_id===id).map(t=>t.id);return[...kids,...kids.flatMap(k=>getDesc(k))]}
@@ -772,22 +773,22 @@ function zoomOut(){state.zoom=Math.max(state.zoom/1.4,.25);updateZL();render()}
 function updateZL(){document.getElementById('zoom-lbl').textContent=state.zoom>=2?'Week':state.zoom>=.8?'Day':'Month'}
 function scrollToday(){const{min}=getMinMax();document.getElementById('right').scrollLeft=Math.max(0,dBetween(min,new Date())*dayPx()-120)}
 
-async function saveAll(){if(!state.currentProjectId)return;setSS('⟳ Saving...');showL();await loadTasks();await loadDeps();hideL();render();lastSavedAt=new Date();setSS(`✓ Saved ${fmtTime(lastSavedAt)}`);toast('✅ Synced กับ Supabase แล้ว')}
+async function saveAll(){if(!state.currentProjectId)return;setSS('⟳ Saving...');showL();await loadTasks();await loadDeps();hideL();render();lastSavedAt=new Date();setSS(`✓ Saved ${fmtTime(lastSavedAt)}`);toast('✅ Synced with Supabase')}
 async function clearProject(){
-  if(!state.currentProjectId)return;if(!confirm('ล้าง Tasks ทั้งหมดในโปรเจกต์นี้?'))return;setSS('⟳ กำลังล้าง...')
-  await db.from('tasks').delete().eq('project_id',state.currentProjectId);await loadTasks();await loadDeps();setSS('✓ Synced');render();toast('🗑 ล้างข้อมูลสำเร็จ')
+  if(!state.currentProjectId)return;if(!confirm('Clear all tasks in this project?'))return;setSS('⟳ Clearing...')
+  await db.from('tasks').delete().eq('project_id',state.currentProjectId);await loadTasks();await loadDeps();setSS('✓ Synced');render();toast('🗑 Project cleared')
 }
 function exportCSV(){
-  const{wbs}=getWBS(),rows=[['WBS','ชื่อ Task','ประเภท','หมวด','วันเริ่ม','วันสิ้นสุด','ระยะเวลา','%','สถานะ','ผู้รับผิดชอบ']]
-  getVisible().forEach(({task:t})=>{rows.push([wbs[t.id]||'',t.name,t.type,t.category,t.start_date,fmt(taskEnd(t)),t.duration_days+'d',t.progress_pct+'%',STATUS_THAI[t.status]||t.status,t.assignee||''])})
+  const{wbs}=getWBS(),rows=[['WBS','Task Name','Type','Category','Start','End','Duration','%','Status','Assignee']]
+  getVisible().forEach(({task:t})=>{rows.push([wbs[t.id]||'',t.name,t.type,t.category,fmt(pd(t.start_date)),fmt(taskEnd(t)),t.duration_days+'d',t.progress_pct+'%',STATUS_LABELS[t.status]||t.status,t.assignee||''])})
   const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n')
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ga-schedule.csv';a.click();toast('📊 Export CSV สำเร็จ')
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ga-schedule.csv';a.click();toast('📊 CSV exported')
 }
 async function exportPNG(){
-  if(!window.html2canvas){toast('❌ ไม่พบ html2canvas');return}if(!state.currentProjectId){openProjModal();return}
+  if(!window.html2canvas){toast('❌ html2canvas not found');return}if(!state.currentProjectId){openProjModal();return}
   const left=document.getElementById('left'),right=document.getElementById('right')
   const pn=(state.projects.find(p=>p.id===state.currentProjectId)?.name||'project').replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
-  showL();setSS('⟳ กำลังสร้าง PNG...')
+  showL();setSS('⟳ Generating PNG...')
   try{
     const stage=document.createElement('div');stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
     const lc=left.cloneNode(true),rc=right.cloneNode(true)
@@ -796,16 +797,16 @@ async function exportPNG(){
     stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
     const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true});stage.remove()
     const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=`ga-schedule-${pn}-${fmt(new Date())}.png`;a.click()
-    toast('🖼 Export PNG สำเร็จ');setSS('✓ Synced')
-  }catch(err){toast('❌ Export PNG ไม่สำเร็จ');setSS('⚠️ PNG error');console.error(err)}
+    toast('🖼 PNG exported');setSS('✓ Synced')
+  }catch(err){toast('❌ PNG export failed');setSS('⚠️ PNG error');console.error(err)}
   finally{hideL()}
 }
 async function exportPDF(){
-  if(!window.html2canvas||!window.jspdf?.jsPDF){toast('❌ ไม่พบ library');return}if(!state.currentProjectId){openProjModal();return}
+  if(!window.html2canvas||!window.jspdf?.jsPDF){toast('❌ Library not found');return}if(!state.currentProjectId){openProjModal();return}
   const left=document.getElementById('left'),right=document.getElementById('right')
   const pnr=state.projects.find(p=>p.id===state.currentProjectId)?.name||'project'
   const pn=pnr.replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
-  showL();setSS('⟳ กำลังสร้าง PDF...')
+  showL();setSS('⟳ Generating PDF...')
   try{
     const stage=document.createElement('div');stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
     const lc=left.cloneNode(true),rc=right.cloneNode(true)
@@ -820,8 +821,8 @@ async function exportPDF(){
     pdf.setFont('helvetica','normal');pdf.setFontSize(9);pdf.text(`Date: ${fmt(new Date())}`,pw-m,m+4,{align:'right'})
     pdf.addImage(canvas.toDataURL('image/png'),'PNG',m,m+8,imgW,imgH)
     pdf.save(`ga-schedule-${pn}-${fmt(new Date())}.pdf`)
-    toast('📄 Export PDF สำเร็จ');setSS('✓ Synced')
-  }catch(err){toast('❌ Export PDF ไม่สำเร็จ');setSS('⚠️ PDF error');console.error(err)}
+    toast('📄 PDF exported');setSS('✓ Synced')
+  }catch(err){toast('❌ PDF export failed');setSS('⚠️ PDF error');console.error(err)}
   finally{hideL()}
 }
 
@@ -830,7 +831,7 @@ function toast(msg,dur=2500){const el=document.getElementById('toast');el.textCo
 function showL(){document.getElementById('loading').style.display='flex'}
 function hideL(){document.getElementById('loading').style.display='none'}
 function markDirty(){setSS('● Unsaved changes')}
-function fmtTime(d){return d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function fmtTime(d){return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 function rememberFocus(){lastFocusEl=document.activeElement}
 function restoreFocus(){if(lastFocusEl&&typeof lastFocusEl.focus==='function')lastFocusEl.focus();lastFocusEl=null}
 
@@ -854,10 +855,10 @@ function renderColHdr(){
   const hdr=document.getElementById('col-hdr')
   if(!hdr)return
   const cols=[
-    {lbl:'#',align:'center'},{lbl:'',align:'center'},{lbl:'ชื่อ Task',align:'left'},
-    {lbl:'เริ่ม',align:'center'},{lbl:'สิ้นสุด',align:'center'},{lbl:'ผู้รับผิดชอบ',align:'center'},
-    {lbl:'วัน',align:'center'},{lbl:'%',align:'center'},{lbl:'สถานะ',align:'center'},
-    {lbl:'หมวด',align:'center'},{lbl:'Actions',align:'center'}
+    {lbl:'#',align:'center'},{lbl:'',align:'center'},{lbl:'Task Name',align:'left'},
+    {lbl:'Start',align:'center'},{lbl:'End',align:'center'},{lbl:'Assignee',align:'center'},
+    {lbl:'Days',align:'center'},{lbl:'%',align:'center'},{lbl:'Status',align:'center'},
+    {lbl:'Category',align:'center'},{lbl:'Actions',align:'center'}
   ]
   hdr.innerHTML=cols.map((c,i)=>`<div style="position:relative;text-align:${c.align};${c.align==='left'?'padding-left:4px':''}">${c.lbl}<div class="resizer" data-col="${i}"></div></div>`).join('')
   hdr.querySelectorAll('.resizer').forEach(el=>el.addEventListener('mousedown',onColResizerDown))
