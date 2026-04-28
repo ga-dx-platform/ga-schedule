@@ -167,6 +167,11 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .gms{position:absolute;border-radius:2px;transform:rotate(45deg);cursor:pointer}
 .gms:hover{filter:brightness(.85)}
 .dep-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:3;overflow:visible}
+#right.hide-gtxt .gb-txt{display:none}
+/* TOOLBAR SWITCH */
+.sw-opt{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2);cursor:pointer;padding:0 8px;height:calc(var(--tb-h) - 14px);border-radius:var(--r-sm);border:1px solid var(--bdr);user-select:none;white-space:nowrap;transition:all .15s}
+.sw-opt:hover{background:rgba(59,0,255,.06);color:#3B00FF;border-color:var(--bdr-mid)}
+.sw-opt input[type=checkbox]{accent-color:#3B00FF;cursor:pointer;width:12px;height:12px;flex-shrink:0}
 
 /* STATUS BAR */
 #status-bar{height:26px;display:flex;align-items:center;padding:0 12px;gap:12px;flex-shrink:0;border-top:1px solid var(--gbdr);background:var(--glass-hi)}
@@ -258,6 +263,8 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <button class="tb" onclick="exportCSV()">📊 CSV</button>
     <button class="tb" onclick="exportPNG()">🖼 PNG</button>
     <button class="tb" onclick="exportPDF()">📄 PDF</button>
+    <div class="tb-sep"></div>
+    <label class="sw-opt"><input type="checkbox" id="sw-gtxt" checked> Task Labels</label>
     <div class="tb-sep"></div>
     <button class="tb" onclick="saveBaseline()">💾 Baseline</button>
     <button class="tb" onclick="compareBaseline()">⚖️ เปรียบเทียบ Baseline</button>
@@ -362,7 +369,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 
 async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
-let state={projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60]}
+let state={settings:{showTextOnBars:true},projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60]}
 let isSS=false,dragTaskId=null
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
 let lastFocusEl=null,lastSavedAt=null
@@ -523,8 +530,8 @@ async function reorderTasks(dragId,targetId,placeAfter){
 function renderGantt(RH){
   RH=RH||getROW_H()
   const DP=Math.max(18,Math.round(window.innerWidth*0.013))*state.zoom
-  const BCH=Math.max(14,Math.round(RH*0.42))
-  const BPH=Math.max(6,Math.round(RH*0.20))
+  const BCH=Math.max(22,Math.round(RH*0.65))
+  const BPH=Math.max(8,Math.round(RH*0.22))
   const BMS=Math.max(12,Math.round(RH*0.36))
   const visible=getVisible()
   const{min,max}=getMinMax()
@@ -584,7 +591,7 @@ function renderGantt(RH){
     if(t.type==='milestone'){
       if(bt?.type==='milestone'){const bms=document.createElement('div');bms.className='gms';const bsz=BMS,bbt2=mid-bsz/2,bx=dBetween(min,pd(bt.start_date))*DP;bms.style.cssText=`left:${bx-bsz/2}px;top:${bbt2}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);opacity:.65;pointer-events:none`;row.appendChild(bms)}
       const ms=document.createElement('div');ms.className='gms';const sz=BMS,bbt2=mid-sz/2;ms.style.cssText=`left:${x-sz/2}px;top:${bbt2}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`;ms.title=tn;ms.onclick=()=>openEditModal(t.id)
-      const lbl=document.createElement('div');lbl.style.cssText=`position:absolute;font-size:9px;color:var(--txt2);left:${x+sz+3}px;top:${bbt2}px;white-space:nowrap;font-family:var(--mono)`;lbl.textContent=tn
+      const lbl=document.createElement('div');lbl.className='gb-txt';lbl.style.cssText=`position:absolute;font-size:9px;color:var(--txt2);left:${x+sz+3}px;top:${bbt2}px;white-space:nowrap;font-family:var(--mono)`;lbl.textContent=tn
       row.appendChild(ms);row.appendChild(lbl)
     } else {
       const bh=hasKids?BPH:BCH,bbt2=(RH-bh)/2
@@ -594,7 +601,7 @@ function renderGantt(RH){
       else{bar.className=`gbar ${isCan?'gb-cancel':(CAT_BAR[t.category]||'gb-general')}`;bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bbt2}px`}
       if(isLate)bar.classList.add('baseline-late')
       if(!isCan&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
-      if(w>40&&DP>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl';lbl.textContent=tn;bar.appendChild(lbl)}
+      if(w>40&&DP>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl gb-txt';lbl.textContent=tn;bar.appendChild(lbl)}
       if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${bbt2}px`;pl.textContent=pct+'%';row.appendChild(pl)}
       bar.title=`${tn} | ${t.start_date}→${fmt(e)} | ${pct}%`
       bar.onclick=()=>openEditModal(t.id)
@@ -827,6 +834,15 @@ function fmtTime(d){return d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'
 function rememberFocus(){lastFocusEl=document.activeElement}
 function restoreFocus(){if(lastFocusEl&&typeof lastFocusEl.focus==='function')lastFocusEl.focus();lastFocusEl=null}
 
+function applyGanttSettings(){
+  const right=document.getElementById('right')
+  if(right)right.classList.toggle('hide-gtxt',!state.settings.showTextOnBars)
+}
+document.getElementById('sw-gtxt').addEventListener('change',function(){
+  state.settings.showTextOnBars=this.checked
+  applyGanttSettings()
+})
+
 function applyColumnWidths(){
   const tpl=state.colWidths.map(w=>w+'px').join(' ')
   const hdr=document.getElementById('col-hdr')
@@ -882,7 +898,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();cl
 let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>render(),200)})
 
 async function init(){
-  showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();render()
+  showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();applyGanttSettings();render()
   if(state.projects.length===1)selectProject(state.projects[0].id)
   else if(state.projects.length>1)openProjModal()
 }
