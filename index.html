@@ -648,8 +648,6 @@ function renderTaskList() {
       <span><span class="sbadge ${sc}">${safeStatus}</span></span>
       <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${safeCategory}</span></span>
       <span class="acts">
-        <button class="act" data-outdent="${t.id}" title="ลดระดับ">&lt;</button>
-        <button class="act" data-indent="${t.id}" title="เพิ่มระดับ">&gt;</button>
         <button class="act" data-edit="${t.id}" title="แก้ไข">✎</button>
         <button class="act del" data-del="${t.id}" title="ลบ">🗑</button>
       </span>`
@@ -670,10 +668,6 @@ function renderTaskList() {
     if (editBtn) { openEditModal(editBtn.dataset.edit); return }
     const delBtn = e.target.closest('[data-del]')
     if (delBtn) { confirmDelete(delBtn.dataset.del); return }
-    const outdentBtn = e.target.closest('[data-outdent]')
-    if (outdentBtn) { outdentTask(outdentBtn.dataset.outdent); return }
-    const indentBtn = e.target.closest('[data-indent]')
-    if (indentBtn) { indentTask(indentBtn.dataset.indent); return }
     const row = e.target.closest('.trow')
     if (row) openEditModal(row.dataset.id)
   }
@@ -886,6 +880,8 @@ function renderGantt() {
   const gb = document.getElementById('gantt-body')
   gb.innerHTML = ''
   gb.style.cssText = `width:${W}px;position:relative`
+  const rowContainer = document.createElement('div')
+  rowContainer.style.position = 'relative'
   const bodyFrag = document.createDocumentFragment()
 
   // Weekend bg
@@ -965,7 +961,7 @@ function renderGantt() {
       bar.onclick=()=>openEditModal(t.id)
       row.appendChild(bar)
     }
-    bodyFrag.appendChild(row)
+    rowContainer.appendChild(row)
   })
 
   // Dep arrows SVG
@@ -1001,8 +997,9 @@ function renderGantt() {
     lbl.textContent=dep.dep_type
     svg.appendChild(path);svg.appendChild(arrow);svg.appendChild(bg);svg.appendChild(lbl)
   })
-  bodyFrag.appendChild(svg)
+  rowContainer.appendChild(svg)
   gb.appendChild(bodyFrag)
+  gb.appendChild(rowContainer)
 
   const gw = document.getElementById('gantt-wrap')
   gw.style.width = W+'px'
