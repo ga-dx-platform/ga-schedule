@@ -156,7 +156,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .s-cancel{background:var(--red-s);color:var(--red);border:1px solid rgba(225,29,72,.18)}
 .cat-cell{display:flex;align-items:center;gap:3px;justify-content:center}
 .cat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.cat-lbl{font-size:10px;color:var(--txt2,#475569)}
+.cat-lbl{font-size:10px;color:#475569}
 .acts{display:flex;gap:1px}
 .act{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bdr);background:transparent;cursor:pointer;font-size:9px;color:var(--txt3);transition:all .1s}
 .act:hover{background:rgba(59,0,255,.08);color:#3B00FF;border-color:var(--bdr-mid)}
@@ -641,7 +641,7 @@ function renderTaskList() {
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
       <span><span class="sbadge ${sc}">${safeStatus}</span></span>
-      <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${safeCategory}</span></span>
+      <span class="cat-cell"><div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div><span class="cat-lbl">${t.category||'General'}</span></span>
       <span class="acts">
         <button class="act" data-edit="${t.id}" title="แก้ไข">✎</button>
         <button class="act del" data-del="${t.id}" title="ลบ">🗑</button>
