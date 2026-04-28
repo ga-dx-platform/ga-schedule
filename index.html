@@ -103,7 +103,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #main{display:flex;flex:1;overflow:hidden}
 
 /* LEFT — TASK TABLE */
-#left{width:clamp(640px,38vw,760px);min-width:480px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gbdr);overflow:hidden;background:var(--glass-hi)}
+#left{width:clamp(580px,42vw,760px);min-width:480px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gbdr);overflow:hidden;background:var(--glass-hi)}
 #col-hdr{
   display:grid;grid-template-columns: var(--col-grid);
   gap:clamp(2px,.2vw,6px);padding:0 clamp(8px,.8vw,16px);height:28px;align-items:center;flex-shrink:0;
@@ -155,8 +155,8 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .s-none{background:#f1f5f9;color:var(--txt3);border:1px solid var(--bdr)}
 .s-cancel{background:var(--red-s);color:var(--red);border:1px solid rgba(225,29,72,.18)}
 .cat-cell{display:flex;align-items:center;gap:3px;justify-content:center}
-.cat-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.cat-lbl{font-size:var(--fs-mono);color:var(--txt2)}
+.cat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cat-lbl{font-size:10px;color:var(--txt2,#475569)}
 .acts{display:flex;gap:1px}
 .act{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bdr);background:transparent;cursor:pointer;font-size:9px;color:var(--txt3);transition:all .1s}
 .act:hover{background:rgba(59,0,255,.08);color:#3B00FF;border-color:var(--bdr-mid)}
@@ -505,13 +505,8 @@ function getMinMax() {
     if(!max||e>max) max=e
   })
   if (!min) { min=new Date(); max=new Date(); max.setDate(max.getDate()+30) }
-  const spanDays = daysBetween(min, max) + 1
-  const minTimelineDays = 60
-  if (spanDays < minTimelineDays) {
-    max.setDate(max.getDate() + (minTimelineDays - spanDays))
-  }
-  const a=new Date(min); a.setDate(a.getDate()-4)
-  const b=new Date(max); b.setDate(b.getDate()+8)
+  const a=new Date(min); a.setDate(a.getDate()-3)
+  const b=new Date(max); b.setDate(b.getDate()+7)
   return { min:a, max:b }
 }
 
