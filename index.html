@@ -1396,6 +1396,16 @@ function autoFitAll(){
     state.colWidths[colIndex]=Math.min(Math.max(maxWidth+16,30),600)
   }
   applyColumnWidths()
+  // Snap the panel splitter to exactly fit the table content.
+  // After applyColumnWidths() the header's scrollWidth reflects the true
+  // content width (column sum + grid gaps + row padding), so use it directly.
+  const hdr=document.getElementById('col-hdr')
+  if(hdr){
+    const contentW=hdr.scrollWidth
+    const newW=Math.min(Math.max(contentW,320),window.innerWidth*0.8)
+    document.getElementById('left').style.width=newW+'px'
+  }
+  render()
   toast('✅ จัดขนาดคอลัมน์อัตโนมัติสำเร็จ')
 }
 function expandAll(){state.collapsed={};render()}
