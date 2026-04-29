@@ -206,8 +206,11 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 /* MODALS */
 .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .modal-bd.show{display:flex}
-#task-modal{width:420px;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
+#task-modal{max-width:800px;width:95vw;max-height:90vh;overflow-y:auto;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08);padding:20px}
 #task-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90);z-index:1}
+.s-hold{background:#fef08a;color:#b45309;border:1px solid rgba(180,83,9,.2)}
+.s-delay{background:#fee2e2;color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+.btn{font-size:12px;padding:6px 16px;border-radius:var(--r-sm);cursor:pointer;font-family:var(--font);font-weight:500;border:none;transition:all .15s}
 .m-hdr{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bdr);background:linear-gradient(90deg,rgba(59,0,255,.05),rgba(0,245,170,.03))}
 .m-title{font-size:14px;font-weight:600;color:var(--txt)}
 .m-close{width:24px;height:24px;border-radius:6px;border:1px solid var(--bdr);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--txt3);transition:all .12s}
@@ -351,25 +354,109 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 
 <!-- TASK MODAL -->
 <div class="modal-bd" id="task-modal-bd">
-  <div id="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="m-hdr"><span class="m-title" id="modal-title">Add Task</span><button class="m-close" onclick="closeTaskModal()" aria-label="Close">×</button></div>
-    <div class="m-body">
-      <div class="full"><label class="flbl">Task Name *</label><input class="finput" id="f-name" placeholder="e.g. Survey 15F layout"/></div>
-      <div class="full"><label class="flbl">Phase / Parent Task</label><select class="finput" id="f-parent"><option value="">— Root level —</option></select></div>
-      <div><label class="flbl">Type</label><select class="finput" id="f-type"><option value="task">Task</option><option value="milestone">Milestone</option><option value="parent">Phase/Group</option></select></div>
-      <div><label class="flbl">Category</label><select class="finput" id="f-cat"><option value="General">General</option><option value="Develop">Develop</option><option value="Test">Test</option><option value="Meeting">Meeting</option></select></div>
-      <div><label class="flbl">Start Date</label><input type="date" class="finput" id="f-start"/></div>
-      <div><label class="flbl">Duration (working days)</label><input type="number" class="finput" id="f-dur" value="5" min="1"/></div>
-      <div class="full"><label class="flbl">Status</label><select class="finput" id="f-status"><option value="Not Started">Not Started</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>
-      <div class="full"><label class="flbl">Assignee</label><input class="finput" id="f-assign" placeholder="e.g. Micky, Sunthorn"/></div>
-      <div class="full"><label class="flbl">Progress %</label><div class="pct-row"><input type="range" id="f-pct" min="0" max="100" step="5" value="0"/><span id="f-pct-lbl">0%</span></div></div>
-      <div class="full"><label class="flbl">Notes</label><input class="finput" id="f-notes" placeholder="(optional)"/></div>
+  <div id="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:16px">
+      <h3 id="modal-title" style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px;font-family:var(--font)">
+        <span id="modal-title-icon" style="background:#0f172a;color:#fff;padding:2px 7px;border-radius:4px;font-size:14px">+</span>
+        <span id="modal-title-text">Add Task</span>
+      </h3>
+      <button style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--txt3);line-height:1" onclick="closeTaskModal()" aria-label="Close">✕</button>
     </div>
-    <div class="m-footer">
-      <button class="mbtn del-m" id="btn-del-task" style="display:none" onclick="deleteTask()">Delete</button>
-      <button class="mbtn cancel" onclick="closeTaskModal()">Cancel</button>
-      <button class="mbtn save" onclick="saveTask()">Save</button>
+
+    <!-- Form -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- Row 1: Task Name -->
+      <div>
+        <label class="flbl">Task Name *</label>
+        <input type="text" id="t-name" class="finput" style="width:100%" placeholder="e.g. Survey 15F layout">
+      </div>
+
+      <!-- Row 2: Type · Category · Status Flags -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:16px">
+        <div>
+          <label class="flbl">Type</label>
+          <select id="t-type" class="finput" style="width:100%">
+            <option value="task">Task</option>
+            <option value="milestone">Milestone</option>
+            <option value="parent">Phase/Group</option>
+          </select>
+        </div>
+        <div>
+          <label class="flbl">Category</label>
+          <select id="t-category" class="finput" style="width:100%">
+            <option value="General">General</option>
+            <option value="Develop">Develop</option>
+            <option value="Test">Test</option>
+            <option value="Meeting">Meeting</option>
+          </select>
+        </div>
+        <div>
+          <label class="flbl">Status Flags <span style="font-size:10px;color:var(--txt3);font-weight:normal">(overrides derived)</span></label>
+          <div style="display:flex;gap:8px;margin-top:6px;font-size:11px;font-weight:600;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="f-delayed"> <span style="background:#fee2e2;color:#ef4444;padding:2px 6px;border-radius:4px">DELAYED</span></label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="f-onhold"> <span style="background:#fef08a;color:#b45309;padding:2px 6px;border-radius:4px">ON HOLD</span></label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="f-cancelled"> <span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px">CANCELLED</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Dates -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div>
+          <label class="flbl">Start Date *</label>
+          <input type="date" id="t-start" class="finput" style="width:100%" onchange="calcTaskEndDate()">
+        </div>
+        <div>
+          <label class="flbl">Duration (days)</label>
+          <input type="number" id="t-duration" class="finput" style="width:100%" min="1" oninput="calcTaskEndDate()">
+        </div>
+        <div>
+          <label class="flbl">End Date</label>
+          <input type="date" id="t-end" class="finput" style="width:100%;background:#f8fafc;color:var(--txt3);pointer-events:none" readonly>
+        </div>
+      </div>
+
+      <!-- Row 4: Progress · Assignee · Parent -->
+      <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:16px;align-items:end">
+        <div>
+          <label class="flbl">Progress (%)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" id="t-progress-slide" min="0" max="100" style="flex:1;accent-color:#3B00FF" oninput="document.getElementById('t-progress-num').value=this.value">
+            <input type="number" id="t-progress-num" class="finput" style="width:65px" min="0" max="100" oninput="document.getElementById('t-progress-slide').value=this.value">
+          </div>
+        </div>
+        <div>
+          <label class="flbl">Assignee</label>
+          <input type="text" id="t-assignee" class="finput" style="width:100%" placeholder="Name">
+        </div>
+        <div>
+          <label class="flbl">Parent Task</label>
+          <select id="t-parent" class="finput" style="width:100%">
+            <option value="">None (Root)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 5: Lock -->
+      <div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txt2);cursor:pointer;user-select:none">
+          <input type="checkbox" id="t-locked"> 🔒 Lock Task
+        </label>
+      </div>
     </div>
+
+    <!-- Footer -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0">
+      <button id="btn-del-task" class="mbtn del-m" style="display:none" onclick="deleteTask()">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="mbtn cancel" onclick="closeTaskModal()">Cancel</button>
+        <button class="mbtn save" onclick="saveTask()">Save Task</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -568,8 +655,8 @@ let lastFocusEl=null,lastSavedAt=null,confirmCallback=null
 
 const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
 const CAT_BAR={General:'gb-general',Develop:'gb-develop',Test:'gb-test',Meeting:'gb-meeting'}
-const STATUS_CLASS={'Not Started':'s-none','In Progress':'s-prog',Completed:'s-done',Cancelled:'s-cancel'}
-const STATUS_LABELS={'Not Started':'Not Started','In Progress':'In Progress',Completed:'Completed',Cancelled:'Cancelled'}
+const STATUS_CLASS={'Not Started':'s-none','In Progress':'s-prog',Completed:'s-done',Cancelled:'s-cancel','On Hold':'s-hold',Delayed:'s-delay'}
+const STATUS_LABELS={'Not Started':'Not Started','In Progress':'In Progress',Completed:'Completed',Cancelled:'Cancelled','On Hold':'On Hold',Delayed:'Delayed'}
 
 const pd=s=>new Date(s+'T00:00:00')
 const fmtISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -1031,30 +1118,43 @@ async function saveDependency(){
 }
 async function deleteDep(id){const{error}=await db.from('dependencies').delete().eq('id',id);if(error){toast('❌ Failed to delete link');return}await loadDeps();render();renderDepList();toast('🗑 Link removed')}
 
-function openAddModal(){
-  if(!state.currentProjectId){openProjModal();return}state.editingTaskId=null
+function openTaskModal(taskId){
+  if(!state.currentProjectId){openProjModal();return}
+  state.editingTaskId=taskId||null
   rememberFocus()
-  document.getElementById('modal-title').textContent='Add Task'
-  document.getElementById('f-name').value='';document.getElementById('f-start').value=fmtISO(new Date())
-  document.getElementById('f-dur').value=5;document.getElementById('f-pct').value=0;document.getElementById('f-pct-lbl').textContent='0%'
-  document.getElementById('f-assign').value='';document.getElementById('f-notes').value=''
-  document.getElementById('f-type').value='task';document.getElementById('f-cat').value='General';document.getElementById('f-status').value='Not Started'
-  document.getElementById('btn-del-task').style.display='none'
-  populateParentSel(null);document.getElementById('task-modal-bd').classList.add('show')
-  setTimeout(()=>document.getElementById('f-name').focus(),100)
+  const isEdit=!!taskId
+  const t=isEdit?state.tasks.find(x=>x.id===taskId):null
+  // Header
+  document.getElementById('modal-title-icon').textContent=isEdit?'✎':'+'
+  document.getElementById('modal-title-text').textContent=isEdit?'Edit Task':'Add Task'
+  document.getElementById('btn-del-task').style.display=isEdit?'inline-flex':'none'
+  // Basic fields
+  document.getElementById('t-name').value=t?.name||''
+  document.getElementById('t-type').value=t?.type||'task'
+  document.getElementById('t-category').value=t?.category||'General'
+  document.getElementById('t-start').value=t?.start_date||fmtISO(new Date())
+  document.getElementById('t-duration').value=t?.duration_days||5
+  // Progress (keep slider + number in sync)
+  const pct=t?.progress_pct||0
+  document.getElementById('t-progress-slide').value=pct
+  document.getElementById('t-progress-num').value=pct
+  // Other fields
+  document.getElementById('t-assignee').value=t?.assignee||''
+  document.getElementById('t-locked').checked=!!(t?.locked)
+  // Status flags
+  const st=t?.status||''
+  document.getElementById('f-cancelled').checked=st==='Cancelled'
+  document.getElementById('f-onhold').checked=st==='On Hold'
+  document.getElementById('f-delayed').checked=st==='Delayed'
+  // Parent dropdown
+  populateParentSel(t?.parent_id||null)
+  // Compute end date and show
+  calcTaskEndDate()
+  document.getElementById('task-modal-bd').classList.add('show')
+  setTimeout(()=>document.getElementById('t-name').focus(),100)
 }
-function openEditModal(id){
-  const t=state.tasks.find(x=>x.id===id);if(!t)return;state.editingTaskId=id
-  rememberFocus()
-  document.getElementById('modal-title').textContent='Edit Task'
-  document.getElementById('f-name').value=t.name;document.getElementById('f-start').value=t.start_date
-  document.getElementById('f-dur').value=t.duration_days;document.getElementById('f-pct').value=t.progress_pct;document.getElementById('f-pct-lbl').textContent=t.progress_pct+'%'
-  document.getElementById('f-assign').value=t.assignee||'';document.getElementById('f-notes').value=t.notes||''
-  document.getElementById('f-type').value=t.type||'task';document.getElementById('f-cat').value=t.category||'General';document.getElementById('f-status').value=t.status||'Not Started'
-  document.getElementById('btn-del-task').style.display='block'
-  populateParentSel(t.parent_id);document.getElementById('task-modal-bd').classList.add('show')
-  setTimeout(()=>document.getElementById('f-name').focus(),100)
-}
+function openAddModal(){openTaskModal(null)}
+function openEditModal(id){openTaskModal(id)}
 function closeTaskModal(){document.getElementById('task-modal-bd').classList.remove('show');state.editingTaskId=null;render();restoreFocus()}
 function showConfirm(message,callback){document.getElementById('confirm-msg').textContent=message;confirmCallback=callback;document.getElementById('confirm-modal-bd').classList.add('show')}
 function closeConfirmModal(){document.getElementById('confirm-modal-bd').classList.remove('show');confirmCallback=null}
@@ -1231,16 +1331,34 @@ function loadSettings(){
   if(s.holCol)r.style.setProperty('--holiday-color',s.holCol)
 }
 function populateParentSel(sel){
-  const s=document.getElementById('f-parent');s.innerHTML='<option value="">— Root level —</option>'
+  const s=document.getElementById('t-parent');if(!s)return
+  s.innerHTML='<option value="">None (Root)</option>'
   state.tasks.filter(t=>t.id!==state.editingTaskId).forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name;if(t.id===sel)o.selected=true;s.appendChild(o)})
 }
-document.getElementById('f-pct').oninput=function(){document.getElementById('f-pct-lbl').textContent=this.value+'%'}
+
+function calcTaskEndDate(){
+  const s=document.getElementById('t-start').value
+  const d=parseInt(document.getElementById('t-duration').value)||0
+  if(!s||d<1){document.getElementById('t-end').value='';return}
+  const end=new Date(pd(s));end.setDate(end.getDate()+(d-1))
+  document.getElementById('t-end').value=fmtISO(end)
+}
 
 async function saveTask(){
-  const name=document.getElementById('f-name').value.trim();if(!name){toast('⚠️ Please enter a task name');return}
-  let pct=parseInt(document.getElementById('f-pct').value)||0,status=document.getElementById('f-status').value
-  if(pct===100)status='Completed'
-  const payload={project_id:state.currentProjectId,parent_id:document.getElementById('f-parent').value||null,name,type:document.getElementById('f-type').value,category:document.getElementById('f-cat').value,start_date:document.getElementById('f-start').value,duration_days:parseInt(document.getElementById('f-dur').value)||1,progress_pct:pct,status,assignee:document.getElementById('f-assign').value||null,notes:document.getElementById('f-notes').value||null,sort_order:state.editingTaskId?undefined:state.tasks.length}
+  const name=document.getElementById('t-name').value.trim();if(!name){toast('⚠️ Please enter a task name');return}
+  const pct=Math.min(100,Math.max(0,parseInt(document.getElementById('t-progress-num').value)||0))
+  const isCancelled=document.getElementById('f-cancelled').checked
+  const isOnHold=document.getElementById('f-onhold').checked
+  const isDelayed=document.getElementById('f-delayed').checked
+  let status
+  if(isCancelled)status='Cancelled'
+  else if(isOnHold)status='On Hold'
+  else if(isDelayed)status='Delayed'
+  else if(pct===100)status='Completed'
+  else if(pct>0)status='In Progress'
+  else status='Not Started'
+  const locked=document.getElementById('t-locked').checked
+  const payload={project_id:state.currentProjectId,parent_id:document.getElementById('t-parent').value||null,name,type:document.getElementById('t-type').value,category:document.getElementById('t-category').value,start_date:document.getElementById('t-start').value,duration_days:parseInt(document.getElementById('t-duration').value)||1,progress_pct:pct,status,assignee:document.getElementById('t-assignee').value||null,locked,sort_order:state.editingTaskId?undefined:state.tasks.length}
   setSS('⟳ Saving...')
   if(state.editingTaskId){const{error}=await db.from('tasks').update(payload).eq('id',state.editingTaskId);if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}}
   else{const{error}=await db.from('tasks').insert(payload);if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}}
@@ -1578,7 +1696,7 @@ document.getElementById('settings-modal-bd').onclick=e=>{if(e.target===e.current
 document.getElementById('dep-unified-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeDependencyModal()}
 document.getElementById('confirm-btn').addEventListener('click',()=>{if(confirmCallback)confirmCallback();closeConfirmModal()})
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeDepModal();closeProjModal();closeConfirmModal();closeSettings();closeDependencyModal()}if(e.key==='n'&&(e.metaKey||e.ctrlKey)){e.preventDefault();openAddModal()}})
-;['f-name','f-parent','f-type','f-cat','f-start','f-dur','f-status','f-assign','f-pct','f-notes'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',markDirty);el.addEventListener('change',markDirty)}})
+;['t-name','t-parent','t-type','t-category','t-start','t-duration','t-assignee','t-progress-num','f-delayed','f-onhold','f-cancelled','t-locked'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',markDirty);el.addEventListener('change',markDirty)}})
 
 let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>render(),200)})
 
