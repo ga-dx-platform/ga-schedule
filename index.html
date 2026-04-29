@@ -924,12 +924,15 @@ document.getElementById('col-hdr').addEventListener('dblclick',e=>{
   if(!resizer)return
   const colIdx=parseInt(resizer.dataset.col)
   let maxWidth=0
-  const hdrCell=document.querySelector(`#col-hdr > *:nth-child(${colIdx+1})`)
-  if(hdrCell)maxWidth=Math.max(maxWidth,hdrCell.scrollWidth)
-  document.querySelectorAll(`.trow > *:nth-child(${colIdx+1})`).forEach(cell=>{
-    maxWidth=Math.max(maxWidth,cell.scrollWidth)
+  document.querySelectorAll(`#col-hdr > *:nth-child(${colIdx+1}), .trow > *:nth-child(${colIdx+1})`).forEach(cell=>{
+    const clone=cell.cloneNode(true)
+    clone.style.cssText='position:absolute;visibility:hidden;width:auto;max-width:none;white-space:nowrap;overflow:visible;display:inline-block;z-index:-9999'
+    clone.querySelectorAll('*').forEach(el=>{el.style.overflow='visible';el.style.maxWidth='none';el.style.width='auto'})
+    document.body.appendChild(clone)
+    maxWidth=Math.max(maxWidth,clone.getBoundingClientRect().width)
+    clone.remove()
   })
-  state.colWidths[colIdx]=Math.min(Math.max(maxWidth+16,40),600)
+  state.colWidths[colIdx]=Math.min(Math.max(maxWidth+12,40),600)
   applyColumnWidths()
 })
 
