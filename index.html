@@ -759,70 +759,83 @@ function renderGantt(RH){
   const totalDays=dBetween(min,max)+1
   const W=totalDays*DP,today=new Date()
 
-  // Header
+  // ── Header ──────────────────────────────────────────────────────────────
   const gh=document.getElementById('gantt-hdr');gh.innerHTML='';gh.style.width=W+'px'
   const mr=document.createElement('div');mr.className='g-month-row'
   const dr=document.createElement('div');dr.className='g-day-row'
 
   if(state.zoomLevel==='day'){
-    // Top row: months. Bottom row: individual days
+    // Top row: month groups. Bottom row: one cell per day.
     let cur=new Date(min),cm='',cpx=0
     for(let i=0;i<totalDays;i++){
-      const m=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
-      if(m!==cm){if(cm){const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)}cm=m;cpx=0}
+      const mLabel=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
+      if(mLabel!==cm){
+        if(cm){const el=document.createElement('div');el.className='g-month';el.style.width=cpx+'px';el.textContent=cm;mr.appendChild(el)}
+        cm=mLabel;cpx=0
+      }
       cpx+=DP
-      const dc=document.createElement('div');dc.className='g-day'
       const wd=state.settings.weekendDays||[0,6]
       const isWE=wd.includes(cur.getDay()),isTd=cur.toDateString()===today.toDateString()
       const isHol=(state.settings.holidays||[]).some(h=>h.date===fmtISO(cur))
-      if(isWE||isHol)dc.classList.add('weekend');if(isTd)dc.classList.add('today-d')
-      dc.style.width=DP+'px';dc.textContent=cur.getDate()
+      const dc=document.createElement('div');dc.className='g-day';dc.style.width=DP+'px';dc.textContent=cur.getDate()
+      if(isWE||isHol)dc.classList.add('weekend')
+      if(isTd)dc.classList.add('today-d')
       dr.appendChild(dc);cur.setDate(cur.getDate()+1)
     }
-    const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)
+    if(cm){const el=document.createElement('div');el.className='g-month';el.style.width=cpx+'px';el.textContent=cm;mr.appendChild(el)}
+
   } else if(state.zoomLevel==='week'){
-    // Top row: months. Bottom row: week cells (7 days each)
+    // Top row: month groups (day-by-day accumulation keeps pixel widths exact).
+    // Bottom row: one cell per 7-day week, labelled "Mon DD".
     let cur=new Date(min),cm='',cpx=0
     for(let i=0;i<totalDays;i++){
-      const m=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
-      if(m!==cm){if(cm){const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)}cm=m;cpx=0}
+      const mLabel=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
+      if(mLabel!==cm){
+        if(cm){const el=document.createElement('div');el.className='g-month';el.style.width=cpx+'px';el.textContent=cm;mr.appendChild(el)}
+        cm=mLabel;cpx=0
+      }
       cpx+=DP;cur.setDate(cur.getDate()+1)
     }
-    const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)
-    let wCur=new Date(min),dayOff=0
-    while(dayOff<totalDays){
-      const colDays=Math.min(7,totalDays-dayOff)
+    if(cm){const el=document.createElement('div');el.className='g-month';el.style.width=cpx+'px';el.textContent=cm;mr.appendChild(el)}
+    let wCur=new Date(min),wOff=0
+    while(wOff<totalDays){
+      const colDays=Math.min(7,totalDays-wOff),colW=colDays*DP
       const wc=document.createElement('div');wc.className='g-day'
-      wc.style.width=(colDays*DP)+'px'
-      wc.textContent=wCur.toLocaleString('en',{month:'short'})+' '+wCur.getDate()
-      dr.appendChild(wc);dayOff+=7;wCur.setDate(wCur.getDate()+7)
+      wc.style.cssText=`width:${colW}px;overflow:hidden;white-space:nowrap`
+      if(colW>=40)wc.textContent=wCur.toLocaleString('en',{month:'short'})+' '+wCur.getDate()
+      dr.appendChild(wc);wOff+=7;wCur.setDate(wCur.getDate()+7)
     }
+
   } else {
-    // Month view. Top row: years. Bottom row: months
-    let cur=new Date(min),cy='',ypx=0
+    // Month view. Single pass builds both rows: top = year groups, bottom = month cells.
+    let cur=new Date(min),cy='',cypx=0,cmo='',cmoLbl='',cmopx=0
     for(let i=0;i<totalDays;i++){
-      const y=cur.getFullYear().toString()
-      if(y!==cy){if(cy){const yc=document.createElement('div');yc.className='g-month';yc.style.width=ypx+'px';yc.textContent=cy;mr.appendChild(yc)}cy=y;ypx=0}
-      ypx+=DP;cur.setDate(cur.getDate()+1)
+      const yLabel=cur.getFullYear().toString()
+      if(yLabel!==cy){
+        if(cy){const el=document.createElement('div');el.className='g-month';el.style.width=cypx+'px';el.textContent=cy;mr.appendChild(el)}
+        cy=yLabel;cypx=0
+      }
+      cypx+=DP
+      const moKey=cur.getFullYear()+'-'+cur.getMonth()
+      const moLbl=cur.toLocaleString('en',{month:'short'})
+      if(moKey!==cmo){
+        if(cmo){const el=document.createElement('div');el.className='g-day';el.style.cssText=`width:${cmopx}px;overflow:hidden;white-space:nowrap`;if(cmopx>=20)el.textContent=cmoLbl;dr.appendChild(el)}
+        cmo=moKey;cmoLbl=moLbl;cmopx=0
+      }
+      cmopx+=DP;cur.setDate(cur.getDate()+1)
     }
-    if(cy){const yc=document.createElement('div');yc.className='g-month';yc.style.width=ypx+'px';yc.textContent=cy;mr.appendChild(yc)}
-    let cur2=new Date(min),cmo='',cmoLbl='',mpx=0
-    for(let i=0;i<totalDays;i++){
-      const moKey=cur2.getFullYear()+'-'+cur2.getMonth()
-      const moLbl=cur2.toLocaleString('en',{month:'short'})
-      if(moKey!==cmo){if(cmo){const mc=document.createElement('div');mc.className='g-day';mc.style.width=mpx+'px';mc.textContent=cmoLbl;dr.appendChild(mc)}cmo=moKey;cmoLbl=moLbl;mpx=0}
-      mpx+=DP;cur2.setDate(cur2.getDate()+1)
-    }
-    if(cmo){const mc=document.createElement('div');mc.className='g-day';mc.style.width=mpx+'px';mc.textContent=cmoLbl;dr.appendChild(mc)}
+    if(cy){const el=document.createElement('div');el.className='g-month';el.style.width=cypx+'px';el.textContent=cy;mr.appendChild(el)}
+    if(cmo){const el=document.createElement('div');el.className='g-day';el.style.cssText=`width:${cmopx}px;overflow:hidden;white-space:nowrap`;if(cmopx>=20)el.textContent=cmoLbl;dr.appendChild(el)}
   }
+
   gh.appendChild(mr);gh.appendChild(dr)
 
-  // Body
+  // ── Body ────────────────────────────────────────────────────────────────
   const gb=document.getElementById('gantt-body');gb.innerHTML='';gb.style.cssText=`width:${W}px;position:relative`
   const rowCont=document.createElement('div');rowCont.style.position='relative'
   const bfrag=document.createDocumentFragment()
 
-  // Weekend/holiday bg stripes (day view only) + today line
+  // Background column stripes: weekends + holidays in day view only
   if(state.zoomLevel==='day'){
     const wd2=state.settings.weekendDays||[0,6]
     const d2=new Date(min)
@@ -834,6 +847,7 @@ function renderGantt(RH){
       d2.setDate(d2.getDate()+1)
     }
   }
+  // Today vertical line present at all zoom levels
   const tx=dBetween(min,today)*DP
   if(tx>=0&&tx<=W){
     const tv=document.createElement('div');tv.className='today-vline';tv.style.left=tx+'px';bfrag.appendChild(tv)
