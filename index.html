@@ -158,7 +158,10 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .today-vlbl{position:absolute;top:1px;font-size:var(--fs-mono);color:var(--red);font-family:var(--mono);font-weight:600;transform:translateX(-50%);white-space:nowrap;z-index:5}
 .gbar{position:absolute;border-radius:3px;cursor:grab;overflow:hidden;display:flex;align-items:center;transition:filter .12s}
 .gbar:hover{filter:brightness(.9)}
-.gbar.dragging{cursor:grabbing!important;opacity:.88;z-index:20;transition:none!important;box-shadow:0 6px 24px rgba(0,0,0,.22)!important;filter:brightness(.85)!important}
+.gbar.dragging{opacity:.88;z-index:20;transition:none!important;box-shadow:0 6px 24px rgba(0,0,0,.22)!important;filter:brightness(.85)!important}
+.gbar::before,.gbar::after{content:'';position:absolute;top:0;bottom:0;width:8px;z-index:10;cursor:ew-resize}
+.gbar::before{left:0}
+.gbar::after{right:0}
 .gbar-ghost{position:absolute;border-radius:3px;background:rgba(100,116,139,.22);border:1px dashed rgba(100,116,139,.45);pointer-events:none}
 .gbar.baseline-late{outline:1.5px solid rgba(225,29,72,.85);outline-offset:1px}
 .gbar-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.3)}
@@ -384,7 +387,7 @@ async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(
 
 let state={settings:{showTextOnBars:true},projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60]}
 let isSS=false,dragTaskId=null
-let isDraggingBar=false,dragBarStartX=0,dragBarOrigStart=null,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
+let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
 let lastFocusEl=null,lastSavedAt=null
 
@@ -995,66 +998,120 @@ document.addEventListener('mouseup',()=>{
   document.body.style.userSelect=''
 })
 
-// === GANTT BAR DRAG-TO-MOVE ===
+// === GANTT BAR DRAG / RESIZE ===
 document.getElementById('right').addEventListener('mousedown',e=>{
   if(isResizingPanel||colResize.active)return
   const bar=e.target.closest('.gbar')
   if(!bar||!bar.dataset.taskId)return
   const task=state.tasks.find(t=>t.id===bar.dataset.taskId)
   if(!task)return
+  const rect=bar.getBoundingClientRect()
+  const offsetX=e.clientX-rect.left
+  const HANDLE=8
+  if(offsetX<=HANDLE) dragMode='resize-left'
+  else if(offsetX>=rect.width-HANDLE) dragMode='resize-right'
+  else dragMode='move'
   isDraggingBar=true
   dragBarStartX=e.clientX
   dragBarOrigStart=task.start_date
+  dragBarOrigDur=task.duration_days||1
+  dragBarOrigLeft=bar.offsetLeft
+  dragBarOrigWidth=bar.offsetWidth
   dragBarTaskId=task.id
   dragBarEl=bar
   bar.classList.add('dragging')
   document.body.style.userSelect='none'
-  document.body.style.cursor='grabbing'
+  document.body.style.cursor=dragMode==='move'?'grabbing':'ew-resize'
   e.preventDefault()
 })
 
 document.addEventListener('mousemove',e=>{
   if(!isDraggingBar||!dragBarEl)return
-  dragBarEl.style.transform=`translateX(${e.clientX-dragBarStartX}px)`
+  const deltaX=e.clientX-dragBarStartX
+  const DP=dayPx()
+  switch(dragMode){
+    case 'move':
+      dragBarEl.style.transform=`translateX(${deltaX}px)`
+      break
+    case 'resize-right':
+      dragBarEl.style.width=Math.max(DP,dragBarOrigWidth+deltaX)+'px'
+      break
+    case 'resize-left':{
+      // clamp so bar can't shrink below 1 day
+      const clamped=Math.min(deltaX,dragBarOrigWidth-DP)
+      dragBarEl.style.left=(dragBarOrigLeft+clamped)+'px'
+      dragBarEl.style.width=Math.max(DP,dragBarOrigWidth-clamped)+'px'
+      break
+    }
+  }
 })
 
 document.addEventListener('mouseup',async e=>{
   if(!isDraggingBar)return
   const deltaX=e.clientX-dragBarStartX
+  const DP=dayPx()
+  const savedMode=dragMode
   isDraggingBar=false
+  dragMode=null
   document.body.style.userSelect=''
   document.body.style.cursor=''
-  if(dragBarEl){dragBarEl.classList.remove('dragging');dragBarEl.style.transform=''}
+  if(dragBarEl){
+    dragBarEl.classList.remove('dragging')
+    dragBarEl.style.transform=''
+    dragBarEl.style.width=''
+    dragBarEl.style.left=''
+  }
 
-  // Treat tiny movements as a click — don't suppress onclick, don't save
+  // Tiny movement = click, not drag — let onclick fire normally
   if(Math.abs(deltaX)<5){dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null;return}
 
   barWasDragged=true
   const task=state.tasks.find(t=>t.id===dragBarTaskId)
   if(!task){dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null;return}
 
-  const deltaDays=Math.round(deltaX/dayPx())
-  if(deltaDays===0){dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null;barWasDragged=false;return}
+  const deltaDays=Math.round(deltaX/DP)
+  if(deltaDays===0){barWasDragged=false;dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null;return}
 
-  const newStart=new Date(pd(dragBarOrigStart))
-  newStart.setDate(newStart.getDate()+deltaDays)
-  const newStartISO=fmtISO(newStart)
-  const prevStart=task.start_date
-  task.start_date=newStartISO
+  const prevStart=task.start_date,prevDur=task.duration_days
+  let newStart=prevStart,newDur=prevDur
 
-  // Optimistic render so bar snaps to final position immediately
+  switch(savedMode){
+    case 'move':{
+      const d=new Date(pd(dragBarOrigStart))
+      d.setDate(d.getDate()+deltaDays)
+      newStart=fmtISO(d)
+      newDur=dragBarOrigDur
+      break
+    }
+    case 'resize-right':
+      newStart=dragBarOrigStart
+      newDur=Math.max(1,dragBarOrigDur+deltaDays)
+      break
+    case 'resize-left':{
+      const d=new Date(pd(dragBarOrigStart))
+      d.setDate(d.getDate()+deltaDays)
+      newStart=fmtISO(d)
+      newDur=Math.max(1,dragBarOrigDur-deltaDays)
+      break
+    }
+  }
+
+  task.start_date=newStart
+  task.duration_days=newDur
   render()
 
   setSS('⟳ Saving...')
-  const{error}=await db.from('tasks').update({start_date:newStartISO}).eq('id',task.id)
+  const{error}=await db.from('tasks').update({start_date:newStart,duration_days:newDur}).eq('id',task.id)
   if(error){
-    toast('❌ Failed to save date: '+error.message)
+    toast('❌ Failed to save: '+error.message)
     task.start_date=prevStart
+    task.duration_days=prevDur
     setSS('✗ Error')
     render()
   } else {
+    const label=savedMode==='move'?'moved':savedMode==='resize-right'?'end updated':'start updated'
     setSS('✓ Synced')
-    toast('✅ Task moved')
+    toast(`✅ Task ${label}`)
   }
 
   dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null
