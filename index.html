@@ -687,8 +687,9 @@ function renderProjList(){
   state.projects.forEach(p=>{
     const item=document.createElement('div');item.className=`proj-item${p.id===state.currentProjectId?' active':''}`;item.onclick=()=>selectProject(p.id)
     const dot=document.createElement('div');dot.className='proj-dot';dot.style.background=p.color||'#3B00FF'
-    const tw=document.createElement('div');const nm=document.createElement('div');nm.className='proj-item-name';nm.textContent=p.name||'';const sb=document.createElement('div');sb.className='proj-item-sub';sb.textContent=p.description||'No description'
-    tw.appendChild(nm);tw.appendChild(sb);item.appendChild(dot);item.appendChild(tw);frag.appendChild(item)
+    const tw=document.createElement('div');tw.style.flex='1';const nm=document.createElement('div');nm.className='proj-item-name';nm.textContent=p.name||'';const sb=document.createElement('div');sb.className='proj-item-sub';sb.textContent=p.description||'No description'
+    const eb=document.createElement('button');eb.className='act';eb.title='Rename';eb.textContent='✎';eb.onclick=e=>{e.stopPropagation();renameProject(p.id,p.name||'')}
+    tw.appendChild(nm);tw.appendChild(sb);item.appendChild(dot);item.appendChild(tw);item.appendChild(eb);frag.appendChild(item)
   })
   pl.appendChild(frag)
 }
@@ -697,6 +698,16 @@ async function selectProject(id){
   const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
   document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
   closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render()
+}
+async function renameProject(id,oldName){
+  const newName=prompt('ชื่อโปรเจกต์ใหม่:',oldName)?.trim()
+  if(!newName||newName===oldName)return
+  const{error}=await db.from('projects').update({name:newName}).eq('id',id)
+  if(error){toast('❌ เปลี่ยนชื่อไม่สำเร็จ: '+error.message);return}
+  const p=state.projects.find(x=>x.id===id);if(p)p.name=newName
+  if(state.currentProjectId===id)document.getElementById('proj-name').textContent=newName
+  renderProjList()
+  toast('✅ เปลี่ยนชื่อโปรเจกต์สำเร็จ')
 }
 async function createProject(){
   const name=document.getElementById('new-proj-name').value.trim();if(!name){toast('⚠️ Please enter a project name');return}
