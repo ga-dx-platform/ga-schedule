@@ -78,6 +78,9 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .tb-tab{border:none!important;border-radius:0!important;background:transparent;color:var(--txt2)}
 .tb-tab:hover{background:#f1f5f9!important;color:var(--txt)!important}
 .tb-tab.active{background:#e2e8f0!important;color:var(--txt)!important;font-weight:600}
+.tb-input{font-size:clamp(10px,0.64vw,12px);padding:0 9px;height:calc(var(--tb-h) - 14px);border-radius:var(--r-sm);border:1px solid var(--bdr);background:rgba(255,255,255,.75);color:var(--txt);font-family:var(--font);width:175px;transition:all .15s}
+.tb-input:focus{outline:none;border-color:#3B00FF;background:#fff;box-shadow:0 0 0 3px rgba(59,0,255,.1)}
+.tb-input::placeholder{color:var(--txt3)}
 
 /* MAIN */
 #main{display:flex;flex:1;overflow:hidden}
@@ -260,7 +263,9 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <button class="nav-btn primary" onclick="openAddModal()">+ Add Task</button>
   </div>
   <div id="toolbar">
-        <button class="tb link" id="btn-link" onclick="openDepModal()" disabled>→ Add Link</button>
+    <input type="text" id="search-box" class="tb-input" placeholder="🔍 Search tasks..." oninput="handleSearch(this.value)">
+    <div class="tb-sep"></div>
+    <button class="tb link" id="btn-link" onclick="openDepModal()" disabled>→ Add Link</button>
     <div class="tb-sep"></div>
     <button class="tb save" onclick="saveAll()">💾 Save</button>
     <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>🗑 Clear</button>
@@ -385,7 +390,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 
 async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
-let state={settings:{showTextOnBars:true},projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60]}
+let state={settings:{showTextOnBars:true},projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:''}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -446,6 +451,17 @@ function getVisible(){
   function walk(pid,lv){state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order).forEach(t=>{vis.push({task:t,level:lv});if(!state.collapsed[t.id])walk(t.id,lv+1)})}
   walk(null,0);return vis
 }
+function getFilteredVisible(){
+  const q=state.searchQuery
+  if(!q)return getVisible()
+  const matchIds=new Set()
+  state.tasks.forEach(t=>{if(t.name.toLowerCase().includes(q)||(t.assignee||'').toLowerCase().includes(q))matchIds.add(t.id)})
+  const visIds=new Set(matchIds)
+  function addAncestors(id){const t=state.tasks.find(x=>x.id===id);if(t&&t.parent_id&&!visIds.has(t.parent_id)){visIds.add(t.parent_id);addAncestors(t.parent_id)}}
+  matchIds.forEach(id=>addAncestors(id))
+  return getVisible().filter(({task})=>visIds.has(task.id))
+}
+function handleSearch(query){state.searchQuery=query.toLowerCase();render()}
 
 async function loadProjects(){const{data,error}=await db.from('projects').select('*').order('created_at');if(error){toast('❌ Failed to load projects');return}state.projects=data||[]}
 async function loadTasks(){if(!state.currentProjectId)return;setSS('⟳ Loading...');const{data,error}=await db.from('tasks').select('*').eq('project_id',state.currentProjectId).order('sort_order');if(error){toast('❌ Failed to load tasks');return}state.tasks=data||[];setSS('✓ Synced')}
@@ -466,7 +482,7 @@ function renderLegend(){
 
 function renderTaskList(){
   renderColHdr()
-  const{wbs,ri}=getWBS(),visible=getVisible()
+  const{wbs,ri}=getWBS(),visible=getFilteredVisible()
   const tl=document.getElementById('task-list');tl.innerHTML=''
   const frag=document.createDocumentFragment()
   visible.forEach(({task:t,level})=>{
@@ -559,7 +575,7 @@ function renderGantt(RH){
   const BCH=Math.max(22,Math.round(RH*0.65))
   const BPH=Math.max(8,Math.round(RH*0.22))
   const BMS=Math.max(12,Math.round(RH*0.36))
-  const visible=getVisible()
+  const visible=getFilteredVisible()
   const{min,max}=getMinMax()
   const bMap=new Map((state.comparedBaseline?.tasks||[]).map(t=>[t.id,t]))
   const totalDays=dBetween(min,max)+1
