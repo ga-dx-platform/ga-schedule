@@ -36,6 +36,11 @@
   --fs-mono:clamp(11px,0.6vw,12px);
   /* 11 columns: # ▼ name start end assign dur % status cat actions */
   --col-grid:24px 18px minmax(180px,1.5fr) 75px 75px 80px 45px 50px 90px 70px 100px;
+  /* User-customisable theme */
+  --parent-task-color:#1e3a8a;
+  --child-task-color:#6366f1;
+  --weekend-bg-color:#fcf0f0;
+  --weekend-text-color:#d32f2f;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -152,11 +157,11 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .g-month{font-size:var(--fs-hdr);color:var(--txt2);padding:0 5px;border-right:1px solid var(--bdr);text-align:center;font-weight:600;font-family:var(--mono);line-height:13px}
 .g-day-row{display:flex;height:15px;flex-shrink:0}
 .g-day{font-size:var(--fs-mono);color:var(--txt3);text-align:center;flex-shrink:0;border-right:1px solid rgba(0,0,0,.04);padding:1px 0;font-family:var(--mono)}
-.g-day.weekend{color:#d32f2f!important;font-weight:bold}.g-day.today-d{background:rgba(225,29,72,.08);color:var(--red);font-weight:600}
+.g-day.weekend{color:var(--weekend-text-color)!important;font-weight:bold}.g-day.today-d{background:rgba(225,29,72,.08);color:var(--red);font-weight:600}
 #gantt-body{position:relative}
 .g-row{height:var(--row-h);position:relative;border-bottom:1px solid rgba(59,0,255,.04);overflow:visible}
 .g-row:hover{background:rgba(0,245,170,.015)}
-.g-wknd{position:absolute;top:0;bottom:0;background:#fcf0f0!important;pointer-events:none}
+.g-wknd{position:absolute;top:0;bottom:0;background:var(--weekend-bg-color)!important;pointer-events:none}
 .today-vline{position:absolute;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,transparent,var(--red),transparent);opacity:.65;z-index:4;pointer-events:none}
 .today-vlbl{position:absolute;top:1px;font-size:var(--fs-mono);color:var(--red);font-family:var(--mono);font-weight:600;transform:translateX(-50%);white-space:nowrap;z-index:5}
 .gbar{position:absolute;border-radius:3px;cursor:grab;overflow:hidden;display:flex;align-items:center;transition:filter .12s}
@@ -170,11 +175,11 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .gbar-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.3)}
 .gbar-lbl{position:relative;font-size:var(--fs-mono);color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;z-index:1;font-weight:500}
 .gbar-pct{position:absolute;font-size:var(--fs-mono);color:var(--txt3);white-space:nowrap;font-family:var(--mono)}
-.gb-general{background:linear-gradient(90deg,#3B00FF,#5a20ff);box-shadow:0 1px 6px rgba(59,0,255,.25)}
+.gb-general{background:var(--child-task-color);box-shadow:0 1px 6px rgba(59,0,255,.25)}
 .gb-develop{background:linear-gradient(90deg,#00b87a,#00F5AA);box-shadow:0 1px 6px rgba(0,245,170,.25)}
 .gb-test{background:linear-gradient(90deg,#059669,#10b981)}
 .gb-meeting{background:linear-gradient(90deg,#c05621,#d97706)}
-.gb-parent{background:#1e3a5f!important;border-radius:2px!important;box-shadow:0 1px 4px rgba(30,58,95,.4)!important}
+.gb-parent{background:var(--parent-task-color)!important;border-radius:2px!important;box-shadow:0 1px 4px rgba(30,58,95,.4)!important}
 .gb-cancel{background:rgba(0,0,0,.08)!important;border:1px dashed rgba(0,0,0,.14)!important;box-shadow:none!important}
 .gb-cancel .gbar-lbl{color:var(--txt3)}
 .gms{position:absolute;border-radius:2px;transform:rotate(45deg);cursor:pointer}
@@ -236,6 +241,12 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #proj-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90)}
 #confirm-modal{width:400px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(225,29,72,.18),0 2px 8px rgba(0,0,0,.08)}
 #confirm-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ef4444,#dc2626)}
+#settings-modal{width:400px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
+#settings-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90)}
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr)}
+.set-row:last-child{border-bottom:none}
+.set-lbl{font-size:12px;font-weight:500;color:var(--txt2)}
+.set-row input[type=color]{cursor:pointer;border:1px solid var(--bdr-mid);border-radius:4px;width:40px;height:28px;padding:2px;background:none}
 .proj-item{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--bdr);transition:background .1s}
 .proj-item:hover{background:rgba(59,0,255,.05)}.proj-item.active{background:rgba(59,0,255,.08)}
 .proj-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -290,6 +301,8 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <div class="tb-sep"></div>
     <button class="tb" onclick="saveBaseline()">💾 Baseline</button>
     <button class="tb" onclick="compareBaseline()">⚖️ Compare Baseline</button>
+    <div class="tb-sep"></div>
+    <button class="tb" onclick="openSettings()">⚙️ Settings</button>
     <div class="tb-sep"></div>
     <span style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</span>
   </div>
@@ -381,6 +394,23 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
         <input class="finput" id="new-proj-name" placeholder="New project name" style="flex:1"/>
         <button class="mbtn save" onclick="createProject()" style="padding:6px 14px">Create</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-bd" id="settings-modal-bd">
+  <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="m-hdr"><span class="m-title" id="settings-title">⚙️ Settings</span><button class="m-close" onclick="closeSettings()" aria-label="Close">×</button></div>
+    <div style="padding:16px 18px">
+      <div class="set-row"><span class="set-lbl">Parent Task Color</span><input type="color" id="set-parent-color"></div>
+      <div class="set-row"><span class="set-lbl">Child Task Color (General)</span><input type="color" id="set-child-color"></div>
+      <div class="set-row"><span class="set-lbl">Weekend Highlight</span><input type="color" id="set-weekend-bg"></div>
+      <div class="set-row"><span class="set-lbl">Weekend Text Color</span><input type="color" id="set-weekend-text"></div>
+    </div>
+    <div class="m-footer" style="gap:8px">
+      <button class="mbtn cancel" onclick="closeSettings()">Cancel</button>
+      <button class="mbtn save" onclick="applySettings()">Apply</button>
     </div>
   </div>
 </div>
@@ -814,6 +844,37 @@ function openEditModal(id){
 function closeTaskModal(){document.getElementById('task-modal-bd').classList.remove('show');state.editingTaskId=null;render();restoreFocus()}
 function showConfirm(message,callback){document.getElementById('confirm-msg').textContent=message;confirmCallback=callback;document.getElementById('confirm-modal-bd').classList.add('show')}
 function closeConfirmModal(){document.getElementById('confirm-modal-bd').classList.remove('show');confirmCallback=null}
+function openSettings(){
+  const rs=getComputedStyle(document.documentElement)
+  document.getElementById('set-parent-color').value=rs.getPropertyValue('--parent-task-color').trim()||'#1e3a8a'
+  document.getElementById('set-child-color').value=rs.getPropertyValue('--child-task-color').trim()||'#6366f1'
+  document.getElementById('set-weekend-bg').value=rs.getPropertyValue('--weekend-bg-color').trim()||'#fcf0f0'
+  document.getElementById('set-weekend-text').value=rs.getPropertyValue('--weekend-text-color').trim()||'#d32f2f'
+  document.getElementById('settings-modal-bd').classList.add('show')
+}
+function closeSettings(){document.getElementById('settings-modal-bd').classList.remove('show')}
+function applySettings(){
+  const p=document.getElementById('set-parent-color').value
+  const c=document.getElementById('set-child-color').value
+  const wb=document.getElementById('set-weekend-bg').value
+  const wt=document.getElementById('set-weekend-text').value
+  const r=document.documentElement
+  r.style.setProperty('--parent-task-color',p)
+  r.style.setProperty('--child-task-color',c)
+  r.style.setProperty('--weekend-bg-color',wb)
+  r.style.setProperty('--weekend-text-color',wt)
+  localStorage.setItem('gaScheduleSettings',JSON.stringify({p,c,wb,wt}))
+  closeSettings();toast('✅ Settings applied')
+}
+function loadSettings(){
+  const s=localStorage.getItem('gaScheduleSettings');if(!s)return
+  let d;try{d=JSON.parse(s)}catch{return}
+  const r=document.documentElement
+  if(d.p)r.style.setProperty('--parent-task-color',d.p)
+  if(d.c)r.style.setProperty('--child-task-color',d.c)
+  if(d.wb)r.style.setProperty('--weekend-bg-color',d.wb)
+  if(d.wt)r.style.setProperty('--weekend-text-color',d.wt)
+}
 function populateParentSel(sel){
   const s=document.getElementById('f-parent');s.innerHTML='<option value="">— Root level —</option>'
   state.tasks.filter(t=>t.id!==state.editingTaskId).forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name;if(t.id===sel)o.selected=true;s.appendChild(o)})
@@ -1160,14 +1221,15 @@ document.getElementById('task-modal-bd').onclick=e=>{if(e.target===e.currentTarg
 document.getElementById('dep-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeDepModal()}
 document.getElementById('proj-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeProjModal()}
 document.getElementById('confirm-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeConfirmModal()}
+document.getElementById('settings-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeSettings()}
 document.getElementById('confirm-btn').addEventListener('click',()=>{if(confirmCallback)confirmCallback();closeConfirmModal()})
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeDepModal();closeProjModal();closeConfirmModal()}if(e.key==='n'&&(e.metaKey||e.ctrlKey)){e.preventDefault();openAddModal()}})
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeDepModal();closeProjModal();closeConfirmModal();closeSettings()}if(e.key==='n'&&(e.metaKey||e.ctrlKey)){e.preventDefault();openAddModal()}})
 ;['f-name','f-parent','f-type','f-cat','f-start','f-dur','f-status','f-assign','f-pct','f-notes'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',markDirty);el.addEventListener('change',markDirty)}})
 
 let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>render(),200)})
 
 async function init(){
-  showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();applyGanttSettings();render()
+  loadSettings();showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();applyGanttSettings();render()
   if(state.projects.length===1)selectProject(state.projects[0].id)
   else if(state.projects.length>1)openProjModal()
 }
