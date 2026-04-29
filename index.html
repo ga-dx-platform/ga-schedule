@@ -269,6 +269,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <button class="tb today" onclick="scrollToday()">📅 วันนี้</button>
     <button class="tb" onclick="expandAll()">↧ ขยายทั้งหมด</button>
     <button class="tb" onclick="collapseAll()">↥ ย่อทั้งหมด</button>
+    <button class="tb" onclick="autoFitAll()">⇿ Auto-fit All</button>
     <div class="tb-sep"></div>
     <button class="tb" onclick="exportCSV()">📊 CSV</button>
     <button class="tb" onclick="exportPNG()">🖼 PNG</button>
@@ -793,6 +794,24 @@ function setView(mode){
   else if(mode==='month')state.zoom=0.25;
   ['day','week','month'].forEach(m=>document.getElementById('tab-'+m).classList.toggle('active',m===mode));
   render();
+}
+function autoFitAll(){
+  const colCount=11
+  if(!state.colWidths||state.colWidths.length!==colCount)state.colWidths=new Array(colCount).fill(80)
+  for(let colIndex=0;colIndex<colCount;colIndex++){
+    let maxWidth=0
+    document.querySelectorAll(`#col-hdr > *:nth-child(${colIndex+1}), .trow > *:nth-child(${colIndex+1})`).forEach(cell=>{
+      const clone=cell.cloneNode(true)
+      clone.style.cssText='position:absolute;visibility:hidden;width:auto;max-width:none;white-space:nowrap;overflow:visible;display:inline-block;z-index:-9999'
+      clone.querySelectorAll('*').forEach(el=>{el.style.overflow='visible';el.style.maxWidth='none';el.style.width='auto'})
+      document.body.appendChild(clone)
+      maxWidth=Math.max(maxWidth,clone.getBoundingClientRect().width)
+      clone.remove()
+    })
+    state.colWidths[colIndex]=Math.min(Math.max(maxWidth+16,30),600)
+  }
+  applyColumnWidths()
+  toast('✅ จัดขนาดคอลัมน์อัตโนมัติสำเร็จ')
 }
 function expandAll(){state.collapsed={};render()}
 function collapseAll(){
