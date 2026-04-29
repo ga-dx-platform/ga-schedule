@@ -41,6 +41,10 @@
   --child-task-color:#6366f1;
   --weekend-bg-color:#fcf0f0;
   --weekend-text-color:#d32f2f;
+  --nav-bg:#0a0f1e;
+  --today-col:#e11d48;
+  --grid-line-color:#e2e8f0;
+  --holiday-color:#fef08a;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -52,7 +56,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* NAVBAR */
-#navbar{height:var(--nav-h);padding:0 18px;display:flex;align-items:center;gap:10px;background:var(--bg-nav);flex-shrink:0;position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3),0 1px 0 rgba(255,255,255,.06) inset}
+#navbar{height:var(--nav-h);padding:0 18px;display:flex;align-items:center;gap:10px;background:var(--nav-bg);flex-shrink:0;position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3),0 1px 0 rgba(255,255,255,.06) inset}
 #navbar::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,rgba(0,245,170,.5),rgba(59,0,255,.5),transparent)}
 .nav-icon{width:30px;height:30px;border-radius:7px;flex-shrink:0;background:linear-gradient(135deg,rgba(0,245,170,.2),rgba(59,0,255,.25));border:1px solid rgba(0,245,170,.25);display:flex;align-items:center;justify-content:center}
 .nav-icon svg{width:14px;height:14px;fill:none;stroke:#00F5AA;stroke-width:2.2}
@@ -156,14 +160,15 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .g-month-row{display:flex;height:13px;flex-shrink:0}
 .g-month{font-size:var(--fs-hdr);color:var(--txt2);padding:0 5px;border-right:1px solid var(--bdr);text-align:center;font-weight:600;font-family:var(--mono);line-height:13px}
 .g-day-row{display:flex;height:15px;flex-shrink:0}
-.g-day{font-size:var(--fs-mono);color:var(--txt3);text-align:center;flex-shrink:0;border-right:1px solid rgba(0,0,0,.04);padding:1px 0;font-family:var(--mono)}
+.g-day{font-size:var(--fs-mono);color:var(--txt3);text-align:center;flex-shrink:0;border-right:1px solid var(--grid-line-color);padding:1px 0;font-family:var(--mono)}
 .g-day.weekend{color:var(--weekend-text-color)!important;font-weight:bold}.g-day.today-d{background:rgba(225,29,72,.08);color:var(--red);font-weight:600}
 #gantt-body{position:relative}
-.g-row{height:var(--row-h);border-bottom:1px solid rgba(59,0,255,.04);overflow:visible}
+.g-row{height:var(--row-h);border-bottom:1px solid var(--grid-line-color);overflow:visible}
 .g-row:hover{background:rgba(0,245,170,.015)}
 .g-wknd{position:absolute;top:0;bottom:0;background:var(--weekend-bg-color)!important;pointer-events:none}
-.today-vline{position:absolute;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,transparent,var(--red),transparent);opacity:.65;z-index:4;pointer-events:none}
-.today-vlbl{position:absolute;top:1px;font-size:var(--fs-mono);color:var(--red);font-family:var(--mono);font-weight:600;transform:translateX(-50%);white-space:nowrap;z-index:5}
+.g-hol{position:absolute;top:0;bottom:0;background:var(--holiday-color);pointer-events:none;opacity:.55}
+.today-vline{position:absolute;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,transparent,var(--today-col),transparent);opacity:.65;z-index:4;pointer-events:none}
+.today-vlbl{position:absolute;top:1px;font-size:var(--fs-mono);color:var(--today-col);font-family:var(--mono);font-weight:600;transform:translateX(-50%);white-space:nowrap;z-index:5}
 .gbar{position:absolute;border-radius:3px;cursor:grab;overflow:hidden;display:flex;align-items:center;transition:filter .12s}
 .gbar:hover{filter:brightness(.9)}
 .gbar.dragging{opacity:.88;z-index:20;transition:none!important;box-shadow:0 6px 24px rgba(0,0,0,.22)!important;filter:brightness(.85)!important}
@@ -241,7 +246,12 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #proj-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90)}
 #confirm-modal{width:400px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(225,29,72,.18),0 2px 8px rgba(0,0,0,.08)}
 #confirm-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ef4444,#dc2626)}
-#settings-modal{width:480px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
+#settings-modal{width:720px;border-radius:var(--r-xl);background:rgba(255,255,255,.96);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
+.set-table{width:100%;border-collapse:collapse;font-size:13px}
+.set-table th,.set-table td{padding:10px 12px;border:1px solid #e2e8f0;vertical-align:middle}
+.set-table th{background:#f8fafc;font-weight:600;color:#334155;font-size:12px}
+.set-desc{font-size:12px;color:#64748b;margin:0 0 12px}
+.status-badge-preview{display:inline-block;padding:2px 8px;border-radius:12px;font-weight:600;font-size:11px;text-transform:uppercase}
 #settings-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90)}
 #dep-unified-modal{width:580px;border-radius:var(--r-xl);background:rgba(255,255,255,.9);backdrop-filter:blur(36px) saturate(2);border:1px solid rgba(255,255,255,.98);position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(59,0,255,.15),0 2px 8px rgba(0,245,170,.08)}
 #dep-unified-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--nt-grad90)}
@@ -435,39 +445,95 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 <!-- SETTINGS MODAL -->
 <div class="modal-bd" id="settings-modal-bd">
   <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-    <div class="m-hdr"><span class="m-title" id="settings-title">⚙️ Settings</span><button class="m-close" onclick="closeSettings()" aria-label="Close">×</button></div>
-    <div style="padding:4px 18px 0;border-bottom:1px solid var(--bdr)">
+    <div style="padding:13px 18px;display:flex;justify-content:space-between;align-items:center;background:var(--nav-bg)">
+      <span style="font-size:14px;font-weight:600;color:#fff" id="settings-title">⚙️ Settings</span>
+      <button style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;cursor:pointer;color:rgba(255,255,255,.7);font-size:15px;line-height:1" onclick="closeSettings()" aria-label="Close">×</button>
+    </div>
+    <div style="padding:0 20px;border-bottom:1px solid var(--bdr)">
       <div class="set-tabs">
-        <button class="set-tab active" onclick="switchSetTab('colors',this)">Colors</button>
+        <button class="set-tab active" onclick="switchSetTab('appearance',this)">Appearance</button>
+        <button class="set-tab" onclick="switchSetTab('theme',this)">Theme</button>
+        <button class="set-tab" onclick="switchSetTab('grid',this)">Gantt Grid</button>
+        <button class="set-tab" onclick="switchSetTab('status',this)">Status Colors</button>
         <button class="set-tab" onclick="switchSetTab('calendar',this)">Calendar</button>
-        <button class="set-tab" onclick="switchSetTab('status',this)">Status</button>
       </div>
     </div>
-    <div style="padding:16px 18px;min-height:180px">
-      <div id="set-colors" class="set-pane active">
-        <div class="set-row"><span class="set-lbl">Parent Task Color</span><input type="color" id="set-parent-color"></div>
-        <div class="set-row"><span class="set-lbl">Child Task Color (General)</span><input type="color" id="set-child-color"></div>
-        <div class="set-row"><span class="set-lbl">Weekend Highlight</span><input type="color" id="set-weekend-bg"></div>
-        <div class="set-row"><span class="set-lbl">Weekend Text Color</span><input type="color" id="set-weekend-text"></div>
+    <div style="padding:16px 20px;min-height:220px;max-height:58vh;overflow-y:auto">
+
+      <!-- Appearance -->
+      <div id="set-appearance" class="set-pane active">
+        <p class="set-desc">Visual presentation settings for the application.</p>
+        <table class="set-table">
+          <tr><td style="width:38%">Font Family</td><td><select id="set-font" class="finput"><option value="'Noto Sans Thai',sans-serif">Noto Sans Thai (Default)</option><option value="system-ui,sans-serif">System Default</option><option value="'Sarabun',sans-serif">Sarabun</option><option value="'IBM Plex Sans Thai',sans-serif">IBM Plex Sans Thai</option></select></td></tr>
+          <tr><td>Date Display Format</td><td><select id="set-date-fmt" class="finput"><option value="DD/MM/YYYY">DD/MM/YYYY (Default)</option><option value="YYYY-MM-DD">YYYY-MM-DD</option><option value="MM/DD/YYYY">MM/DD/YYYY</option></select></td></tr>
+        </table>
       </div>
-      <div id="set-calendar" class="set-pane">
-        <p style="margin-top:0;font-size:12px;color:#64748b;margin-bottom:14px">Custom holidays appear as highlighted columns in the Gantt chart.</p>
-        <label style="font-size:12px;color:#475569;font-weight:500">Holidays & Off-days</label>
-        <div style="display:flex;gap:8px;margin-top:8px;margin-bottom:10px;align-items:center">
-          <input type="date" id="new-holiday-date" class="tb-input" style="flex:1">
-          <input type="text" id="new-holiday-name" placeholder="Holiday name (e.g. New Year)" class="tb-input" style="flex:2">
-          <button class="mbtn save" style="padding:0 12px;height:30px;flex-shrink:0" onclick="addHoliday()">+ Add</button>
-        </div>
-        <div id="holiday-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--bdr);border-radius:var(--r-sm);padding:4px"></div>
+
+      <!-- Theme -->
+      <div id="set-theme" class="set-pane">
+        <p class="set-desc">Customize key UI colors across the application.</p>
+        <table class="set-table">
+          <tr><td style="width:38%">Navbar background</td><td><input type="color" id="set-nav-bg"></td></tr>
+          <tr><td>Parent task bar</td><td><input type="color" id="set-parent-color"></td></tr>
+          <tr><td>Child task bar</td><td><input type="color" id="set-child-color"></td></tr>
+        </table>
       </div>
+
+      <!-- Gantt Grid -->
+      <div id="set-grid" class="set-pane">
+        <p class="set-desc">Fine-tune how the Gantt chart grid looks.</p>
+        <table class="set-table">
+          <tr><td style="width:38%">Today line color</td><td><input type="color" id="set-today-col"></td></tr>
+          <tr><td>Weekend highlight</td><td><input type="color" id="set-wknd-bg"></td></tr>
+          <tr><td>Weekend text color</td><td><input type="color" id="set-wknd-txt"></td></tr>
+          <tr><td>Grid line color</td><td><input type="color" id="set-grid-line"></td></tr>
+        </table>
+      </div>
+
+      <!-- Status Colors -->
       <div id="set-status" class="set-pane">
-        <p style="margin-top:0;font-size:12px;color:#64748b;margin-bottom:14px">Customize badge color for each task status.</p>
-        <div id="status-color-list" style="display:flex;flex-direction:column;gap:0"></div>
+        <p class="set-desc">When "Override?" is checked, the status badge uses the custom color instead of the default style.</p>
+        <table class="set-table">
+          <thead><tr><th>Status</th><th style="width:90px;text-align:center">Override?</th><th style="width:70px">Color</th><th>Preview</th></tr></thead>
+          <tbody id="status-settings-body"></tbody>
+        </table>
       </div>
+
+      <!-- Calendar -->
+      <div id="set-calendar" class="set-pane">
+        <p class="set-desc">Define non-working days. Weekend columns get the weekend highlight; holiday columns get the holiday highlight.</p>
+        <table class="set-table" style="margin-bottom:14px">
+          <tr>
+            <td style="width:38%">Weekend Days</td>
+            <td><div style="display:flex;gap:14px;flex-wrap:wrap" id="set-weekends-group">
+              <label style="font-size:12px"><input type="checkbox" value="0" style="margin-right:3px">Sun</label>
+              <label style="font-size:12px"><input type="checkbox" value="1" style="margin-right:3px">Mon</label>
+              <label style="font-size:12px"><input type="checkbox" value="2" style="margin-right:3px">Tue</label>
+              <label style="font-size:12px"><input type="checkbox" value="3" style="margin-right:3px">Wed</label>
+              <label style="font-size:12px"><input type="checkbox" value="4" style="margin-right:3px">Thu</label>
+              <label style="font-size:12px"><input type="checkbox" value="5" style="margin-right:3px">Fri</label>
+              <label style="font-size:12px"><input type="checkbox" value="6" style="margin-right:3px">Sat</label>
+            </div></td>
+          </tr>
+          <tr><td>Holiday highlight color</td><td><input type="color" id="set-hol-col"></td></tr>
+        </table>
+        <label class="flbl" style="margin-bottom:6px">Add Holiday / Off-day</label>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+          <input type="date" id="new-hol-date" class="finput" style="flex:1">
+          <input type="text" id="new-hol-name" placeholder="Holiday name (optional)" class="finput" style="flex:2">
+          <button class="mbtn save" style="padding:0 14px;height:32px;flex-shrink:0" onclick="addHoliday()">+ Add</button>
+        </div>
+        <table class="set-table">
+          <thead><tr><th>Date</th><th>Name</th><th style="width:40px"></th></tr></thead>
+          <tbody id="holiday-settings-body"></tbody>
+        </table>
+      </div>
+
     </div>
     <div class="m-footer" style="gap:8px">
+      <button class="mbtn del-m" onclick="resetDefaults()" style="margin-right:auto">↺ Reset Defaults</button>
       <button class="mbtn cancel" onclick="closeSettings()">Cancel</button>
-      <button class="mbtn save" onclick="applySettings()">Apply</button>
+      <button class="mbtn save" onclick="applySettings()">✓ Apply</button>
     </div>
   </div>
 </div>
@@ -493,7 +559,8 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 
 async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
-let state={settings:{showTextOnBars:true,statusColors:{'Not Started':'#94a3b8','In Progress':'#3b82f6','Completed':'#22c55e','Cancelled':'#ef4444'},holidays:[]},projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:''}
+const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Noto Sans Thai',sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0a0f1e',parentColor:'#1e3a8a',childColor:'#6366f1',todayCol:'#e11d48',wkndBg:'#fcf0f0',wkndTxt:'#d32f2f',gridLineCol:'#e2e8f0',holCol:'#fef08a',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#3b82f6',override:false},'Completed':{color:'#22c55e',override:false},'Delayed':{color:'#f59e0b',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#ef4444',override:false}},holidays:[]}
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:''}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -594,8 +661,8 @@ function renderTaskList(){
     const{s:rs,e:re}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
     const e=re,pct=hasKids?rollupPct(t.id):t.progress_pct
     const sc=STATUS_CLASS[t.status]||'s-none'
-    const statusClr=(state.settings.statusColors||{})[t.status]
-    const badgeStyle=statusClr?`background:${statusClr}22;color:${statusClr};border:1px solid ${statusClr}44`:''
+    const ov=(state.settings.statusOverrides||{})[t.status]
+    const badgeStyle=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
     const preds=state.deps.filter(d=>d.to_task_id===t.id).map(d=>visIdxMap.get(d.from_task_id)).filter(Boolean)
     const isCan=t.status==='Cancelled'
     const row=document.createElement('div')
@@ -697,7 +764,8 @@ function renderGantt(RH){
     if(m!==cm){if(cm){const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)}cm=m;cpx=0}
     cpx+=DP
     const dc=document.createElement('div');dc.className='g-day'
-    const isWE=cur.getDay()===0||cur.getDay()===6,isTd=cur.toDateString()===today.toDateString()
+    const wd=state.settings.weekendDays||[0,6]
+    const isWE=wd.includes(cur.getDay()),isTd=cur.toDateString()===today.toDateString()
     const isHol=(state.settings.holidays||[]).some(h=>h.date===fmtISO(cur))
     if(isWE||isHol)dc.classList.add('weekend');if(isTd)dc.classList.add('today-d')
     dc.style.width=DP+'px';if(DP>=14)dc.textContent=cur.getDate()
@@ -712,11 +780,13 @@ function renderGantt(RH){
   const bfrag=document.createDocumentFragment()
 
   // Weekend bg + holidays + today
+  const wd2=state.settings.weekendDays||[0,6]
   const d2=new Date(min)
   for(let i=0;i<totalDays;i++){
-    const isWknd=d2.getDay()===0||d2.getDay()===6
-    const isHol2=(state.settings.holidays||[]).some(h=>h.date===fmtISO(d2))
-    if(isWknd||isHol2){const bg=document.createElement('div');bg.className='g-wknd';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
+    const isWknd2=wd2.includes(d2.getDay())
+    const isHol2=!isWknd2&&(state.settings.holidays||[]).some(h=>h.date===fmtISO(d2))
+    if(isWknd2){const bg=document.createElement('div');bg.className='g-wknd';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
+    else if(isHol2){const bg=document.createElement('div');bg.className='g-hol';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
     d2.setDate(d2.getDate()+1)
   }
   const tx=dBetween(min,today)*DP
@@ -930,37 +1000,60 @@ function closeTaskModal(){document.getElementById('task-modal-bd').classList.rem
 function showConfirm(message,callback){document.getElementById('confirm-msg').textContent=message;confirmCallback=callback;document.getElementById('confirm-modal-bd').classList.add('show')}
 function closeConfirmModal(){document.getElementById('confirm-modal-bd').classList.remove('show');confirmCallback=null}
 function openSettings(){
-  const rs=getComputedStyle(document.documentElement)
-  document.getElementById('set-parent-color').value=rs.getPropertyValue('--parent-task-color').trim()||'#1e3a8a'
-  document.getElementById('set-child-color').value=rs.getPropertyValue('--child-task-color').trim()||'#6366f1'
-  document.getElementById('set-weekend-bg').value=rs.getPropertyValue('--weekend-bg-color').trim()||'#fcf0f0'
-  document.getElementById('set-weekend-text').value=rs.getPropertyValue('--weekend-text-color').trim()||'#d32f2f'
-  switchSetTab('colors',document.querySelector('.set-tab'))
-  renderStatusSettings()
+  const s=state.settings
+  // Appearance
+  const fontEl=document.getElementById('set-font')
+  if(fontEl)Array.from(fontEl.options).forEach(o=>{o.selected=o.value===s.fontFamily})
+  const dfEl=document.getElementById('set-date-fmt')
+  if(dfEl)Array.from(dfEl.options).forEach(o=>{o.selected=o.value===s.dateFmt})
+  // Theme
+  document.getElementById('set-nav-bg').value=s.navBg||'#0a0f1e'
+  document.getElementById('set-parent-color').value=s.parentColor||'#1e3a8a'
+  document.getElementById('set-child-color').value=s.childColor||'#6366f1'
+  // Gantt Grid
+  document.getElementById('set-today-col').value=s.todayCol||'#e11d48'
+  document.getElementById('set-wknd-bg').value=s.wkndBg||'#fcf0f0'
+  document.getElementById('set-wknd-txt').value=s.wkndTxt||'#d32f2f'
+  document.getElementById('set-grid-line').value=s.gridLineCol||'#e2e8f0'
+  // Status Colors
+  buildStatusSettingsBody()
+  // Calendar
+  document.getElementById('set-weekends-group').querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=(s.weekendDays||[0,6]).includes(parseInt(cb.value))})
+  document.getElementById('set-hol-col').value=s.holCol||'#fef08a'
   renderHolidayList()
+  switchSetTab('appearance',document.querySelector('.set-tab'))
   document.getElementById('settings-modal-bd').classList.add('show')
 }
 function switchSetTab(id,el){
-  document.querySelectorAll('.set-pane').forEach(p=>p.classList.remove('active'))
-  document.querySelectorAll('.set-tab').forEach(b=>b.classList.remove('active'))
+  document.querySelectorAll('#settings-modal .set-pane').forEach(p=>p.classList.remove('active'))
+  document.querySelectorAll('#settings-modal .set-tab').forEach(b=>b.classList.remove('active'))
   document.getElementById('set-'+id).classList.add('active')
   el.classList.add('active')
 }
-function renderStatusSettings(){
-  const sc=state.settings.statusColors||{}
-  const statuses=['Not Started','In Progress','Completed','Cancelled']
-  const defs={'Not Started':'#94a3b8','In Progress':'#3b82f6','Completed':'#22c55e','Cancelled':'#ef4444'}
-  const list=document.getElementById('status-color-list');if(!list)return
-  list.innerHTML=statuses.map(s=>{
-    const col=sc[s]||defs[s]
-    return`<div class="set-row"><span class="set-lbl">${s}</span><input type="color" class="status-color-inp" data-status="${s}" value="${col}"></div>`
+function buildStatusSettingsBody(){
+  const tbody=document.getElementById('status-settings-body');if(!tbody)return
+  const overrides=state.settings.statusOverrides||{}
+  const rows=[{key:'Not Started',def:'#94a3b8'},{key:'In Progress',def:'#3b82f6'},{key:'Completed',def:'#22c55e'},{key:'Delayed',def:'#f59e0b'},{key:'On Hold',def:'#8b5cf6'},{key:'Cancelled',def:'#ef4444'}]
+  tbody.innerHTML=rows.map(({key,def})=>{
+    const ov=overrides[key]||{color:def,override:false}
+    const pStyle=ov.override?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
+    return`<tr>
+      <td style="font-size:13px;color:var(--txt2)">${key}</td>
+      <td style="text-align:center"><input type="checkbox" class="status-ov-chk" data-status="${key}"${ov.override?' checked':''}></td>
+      <td><input type="color" class="status-ov-col" data-status="${key}" value="${ov.color||def}"></td>
+      <td><span class="status-badge-preview sbadge" style="${pStyle}">${key}</span></td>
+    </tr>`
   }).join('')
 }
+function resetDefaults(){
+  state.settings=Object.assign({},DEFAULT_SETTINGS,{holidays:[...DEFAULT_SETTINGS.holidays],statusOverrides:JSON.parse(JSON.stringify(DEFAULT_SETTINGS.statusOverrides))})
+  openSettings()
+  toast('↺ Reset to defaults')
+}
 function addHoliday(){
-  const dateEl=document.getElementById('new-holiday-date'),nameEl=document.getElementById('new-holiday-name')
-  const date=dateEl.value,name=nameEl.value.trim()
+  const dateEl=document.getElementById('new-hol-date'),nameEl=document.getElementById('new-hol-name')
+  const date=dateEl.value,name=nameEl.value.trim()||'Holiday'
   if(!date){toast('⚠️ Please select a date');return}
-  if(!name){toast('⚠️ Please enter a name');return}
   if(!state.settings.holidays)state.settings.holidays=[]
   if(state.settings.holidays.some(h=>h.date===date)){toast('⚠️ Date already added');return}
   state.settings.holidays.push({date,name})
@@ -969,14 +1062,14 @@ function addHoliday(){
   renderHolidayList()
 }
 function renderHolidayList(){
-  const list=document.getElementById('holiday-list');if(!list)return
+  const tbody=document.getElementById('holiday-settings-body');if(!tbody)return
   const holidays=state.settings.holidays||[]
-  if(!holidays.length){list.innerHTML='<div style="padding:8px;color:var(--txt3);text-align:center;font-size:12px">No holidays added</div>';return}
-  list.innerHTML=holidays.map((h,i)=>`<div style="display:flex;align-items:center;padding:4px 8px;border-bottom:1px solid var(--bdr);gap:8px">
-    <span style="font-family:var(--mono);font-size:11px;color:var(--txt3);flex-shrink:0">${h.date}</span>
-    <span style="font-size:12px;color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.name)}</span>
-    <button class="act del" onclick="removeHoliday(${i})" title="Remove">🗑</button>
-  </div>`).join('')
+  if(!holidays.length){tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--txt3);padding:10px;font-size:12px">No holidays added</td></tr>';return}
+  tbody.innerHTML=holidays.map((h,i)=>`<tr>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--txt3)">${h.date}</td>
+    <td style="font-size:13px;color:var(--txt2)">${esc(h.name)}</td>
+    <td style="text-align:center"><button class="act del" onclick="removeHoliday(${i})" title="Remove">🗑</button></td>
+  </tr>`).join('')
 }
 function removeHoliday(i){state.settings.holidays.splice(i,1);renderHolidayList()}
 function closeSettings(){document.getElementById('settings-modal-bd').classList.remove('show')}
@@ -1028,32 +1121,55 @@ function confirmDeleteDep(id){
   })
 }
 function applySettings(){
-  const p=document.getElementById('set-parent-color').value
-  const c=document.getElementById('set-child-color').value
-  const wb=document.getElementById('set-weekend-bg').value
-  const wt=document.getElementById('set-weekend-text').value
-  const r=document.documentElement
-  r.style.setProperty('--parent-task-color',p)
-  r.style.setProperty('--child-task-color',c)
-  r.style.setProperty('--weekend-bg-color',wb)
-  r.style.setProperty('--weekend-text-color',wt)
-  const statusColors={}
-  document.querySelectorAll('.status-color-inp').forEach(inp=>{statusColors[inp.dataset.status]=inp.value})
-  state.settings.statusColors=statusColors
-  if(!state.settings.holidays)state.settings.holidays=[]
-  localStorage.setItem('gaScheduleSettings',JSON.stringify({p,c,wb,wt,statusColors,holidays:state.settings.holidays}))
+  const s=state.settings,r=document.documentElement
+  // Appearance
+  s.fontFamily=document.getElementById('set-font').value
+  s.dateFmt=document.getElementById('set-date-fmt').value
+  document.body.style.fontFamily=s.fontFamily
+  // Theme
+  s.navBg=document.getElementById('set-nav-bg').value
+  s.parentColor=document.getElementById('set-parent-color').value
+  s.childColor=document.getElementById('set-child-color').value
+  r.style.setProperty('--nav-bg',s.navBg)
+  r.style.setProperty('--parent-task-color',s.parentColor)
+  r.style.setProperty('--child-task-color',s.childColor)
+  // Gantt Grid
+  s.todayCol=document.getElementById('set-today-col').value
+  s.wkndBg=document.getElementById('set-wknd-bg').value
+  s.wkndTxt=document.getElementById('set-wknd-txt').value
+  s.gridLineCol=document.getElementById('set-grid-line').value
+  r.style.setProperty('--today-col',s.todayCol)
+  r.style.setProperty('--weekend-bg-color',s.wkndBg)
+  r.style.setProperty('--weekend-text-color',s.wkndTxt)
+  r.style.setProperty('--grid-line-color',s.gridLineCol)
+  // Status Overrides
+  const statusOverrides={}
+  document.querySelectorAll('#status-settings-body tr').forEach(row=>{
+    const chk=row.querySelector('.status-ov-chk'),col=row.querySelector('.status-ov-col')
+    if(chk&&col)statusOverrides[chk.dataset.status]={color:col.value,override:chk.checked}
+  })
+  s.statusOverrides=statusOverrides
+  // Calendar
+  s.weekendDays=Array.from(document.getElementById('set-weekends-group').querySelectorAll('input:checked')).map(cb=>parseInt(cb.value))
+  s.holCol=document.getElementById('set-hol-col').value
+  r.style.setProperty('--holiday-color',s.holCol)
+  localStorage.setItem('gaScheduleSettings',JSON.stringify(s))
   closeSettings();render();toast('✅ Settings applied')
 }
 function loadSettings(){
-  const s=localStorage.getItem('gaScheduleSettings');if(!s)return
-  let d;try{d=JSON.parse(s)}catch{return}
-  const r=document.documentElement
-  if(d.p)r.style.setProperty('--parent-task-color',d.p)
-  if(d.c)r.style.setProperty('--child-task-color',d.c)
-  if(d.wb)r.style.setProperty('--weekend-bg-color',d.wb)
-  if(d.wt)r.style.setProperty('--weekend-text-color',d.wt)
-  if(d.statusColors)state.settings.statusColors=d.statusColors
-  if(d.holidays)state.settings.holidays=d.holidays
+  const saved=localStorage.getItem('gaScheduleSettings');if(!saved)return
+  let d;try{d=JSON.parse(saved)}catch{return}
+  Object.assign(state.settings,d)
+  const r=document.documentElement,s=state.settings
+  if(s.fontFamily)document.body.style.fontFamily=s.fontFamily
+  if(s.navBg)r.style.setProperty('--nav-bg',s.navBg)
+  if(s.parentColor)r.style.setProperty('--parent-task-color',s.parentColor)
+  if(s.childColor)r.style.setProperty('--child-task-color',s.childColor)
+  if(s.todayCol)r.style.setProperty('--today-col',s.todayCol)
+  if(s.wkndBg)r.style.setProperty('--weekend-bg-color',s.wkndBg)
+  if(s.wkndTxt)r.style.setProperty('--weekend-text-color',s.wkndTxt)
+  if(s.gridLineCol)r.style.setProperty('--grid-line-color',s.gridLineCol)
+  if(s.holCol)r.style.setProperty('--holiday-color',s.holCol)
 }
 function populateParentSel(sel){
   const s=document.getElementById('f-parent');s.innerHTML='<option value="">— Root level —</option>'
