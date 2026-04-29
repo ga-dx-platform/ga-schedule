@@ -148,7 +148,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .resizer:hover,.resizer.is-resizing{background:rgba(59,0,255,.28)}
 
 /* RIGHT — GANTT */
-#right{flex:1;overflow:auto;background:var(--bg-page)}
+#right{flex:1;overflow:auto;background:var(--bg-page);position:relative}
 #right::-webkit-scrollbar{width:4px;height:4px}
 #right::-webkit-scrollbar-thumb{background:var(--bdr-mid);border-radius:2px}
 #gantt-wrap{position:relative;min-width:100%}
@@ -322,7 +322,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
       <div class="add-row" onclick="openAddModal()">+ Add Task...</div>
     </div>
     <div id="panel-resizer"></div>
-    <div id="right"><div id="gantt-wrap"><div id="gantt-hdr"></div><div id="gantt-body"></div></div></div>
+    <div id="right"><svg id="links-svg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;overflow:visible"></svg><div id="gantt-wrap"><div id="gantt-hdr"></div><div id="gantt-body"></div></div></div>
   </div>
   <div id="status-bar">
     <span class="sb-txt" id="sb-tasks">0 tasks</span>
@@ -729,50 +729,55 @@ function renderGantt(RH){
   gb.appendChild(bfrag);gb.appendChild(rowCont)
   document.getElementById('gantt-wrap').style.cssText=`width:${W}px;min-width:${W}px`
 
-  // Dep SVG — offsetParent traversal: scroll-invariant, stays in rowCont coordinate space
-  if(state.deps.length){
-    const svgH=visible.length*RH+10
-    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg')
-    svg.className='dep-svg';svg.style.cssText=`width:${W}px;height:${svgH}px`;svg.setAttribute('viewBox',`0 0 ${W} ${svgH}`)
-    const DC={FS:'#3B00FF',SS:'#00b87a',FF:'#d97706',SF:'#e11d48'}
-    state.deps.forEach(dep=>{
-      const fEl=document.getElementById('bar-'+dep.from_task_id)
-      const tEl=document.getElementById('bar-'+dep.to_task_id)
-      if(!fEl||!tEl)return
-      // .g-row is no longer positioned, so offsetParent for all bars is rowCont.
-      // offsetLeft/offsetTop are therefore direct SVG coordinates — no chain needed.
-      const y1=fEl.offsetTop+fEl.offsetHeight/2
-      const y2=tEl.offsetTop+tEl.offsetHeight/2
-      const fMs=fEl.classList.contains('gms'),tMs=tEl.classList.contains('gms')
-      const color=DC[dep.dep_type]||'#3B00FF';let x1,x2
-      if(dep.dep_type==='FS'){
-        x1=fMs?fEl.offsetLeft+fEl.offsetWidth/2:fEl.offsetLeft+fEl.offsetWidth
-        x2=tMs?tEl.offsetLeft+tEl.offsetWidth/2:tEl.offsetLeft
-      } else if(dep.dep_type==='SS'){
-        x1=fEl.offsetLeft+(fMs?fEl.offsetWidth/2:0)
-        x2=tEl.offsetLeft+(tMs?tEl.offsetWidth/2:0)
-      } else if(dep.dep_type==='FF'){
-        x1=fMs?fEl.offsetLeft+fEl.offsetWidth/2:fEl.offsetLeft+fEl.offsetWidth
-        x2=tMs?tEl.offsetLeft+tEl.offsetWidth/2:tEl.offsetLeft+tEl.offsetWidth
-      } else {
-        x1=fEl.offsetLeft+(fMs?fEl.offsetWidth/2:0)
-        x2=tMs?tEl.offsetLeft+tEl.offsetWidth/2:tEl.offsetLeft+tEl.offsetWidth
-      }
-      const cx=(x1+x2)/2
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path')
-      path.setAttribute('d',`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`)
-      path.setAttribute('fill','none');path.setAttribute('stroke',color);path.setAttribute('stroke-width','1.5');path.setAttribute('stroke-dasharray','4,3');path.setAttribute('opacity','.6')
-      const arrow=document.createElementNS('http://www.w3.org/2000/svg','polygon')
-      if(dep.dep_type==='FS'||dep.dep_type==='SS')arrow.setAttribute('points',`${x2},${y2} ${x2-6},${y2-3} ${x2-6},${y2+3}`)
-      else arrow.setAttribute('points',`${x2},${y2} ${x2+6},${y2-3} ${x2+6},${y2+3}`)
-      arrow.setAttribute('fill',color);arrow.setAttribute('opacity','.6')
-      const lx=(x1+x2)/2,ly=(y1+y2)/2-5
-      const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill','white');bg.setAttribute('opacity','.9')
-      const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','8');lbl.setAttribute('fill',color);lbl.setAttribute('font-family','DM Mono');lbl.setAttribute('font-weight','600');lbl.textContent=dep.dep_type
-      svg.appendChild(path);svg.appendChild(arrow);svg.appendChild(bg);svg.appendChild(lbl)
-    })
-    rowCont.appendChild(svg)
-  }
+  renderLinks()
+}
+
+function renderLinks(){
+  const svgCanvas=document.getElementById('links-svg')
+  if(!svgCanvas)return
+  svgCanvas.innerHTML=''
+  if(!state.deps.length)return
+  const svgRect=svgCanvas.getBoundingClientRect()
+  if(!svgRect.width)return
+  const DC={FS:'#3B00FF',SS:'#00b87a',FF:'#d97706',SF:'#e11d48'}
+  state.deps.forEach(dep=>{
+    const fEl=document.getElementById('bar-'+dep.from_task_id)
+    const tEl=document.getElementById('bar-'+dep.to_task_id)
+    if(!fEl||!tEl)return
+    const fromRect=fEl.getBoundingClientRect()
+    const toRect=tEl.getBoundingClientRect()
+    if(!fromRect.width||!toRect.width)return
+    const fMs=fEl.classList.contains('gms'),tMs=tEl.classList.contains('gms')
+    const color=DC[dep.dep_type]||'#3B00FF'
+    let x1,x2
+    if(dep.dep_type==='FS'){
+      x1=fMs?(fromRect.left+fromRect.right)/2-svgRect.left:fromRect.right-svgRect.left
+      x2=tMs?(toRect.left+toRect.right)/2-svgRect.left:toRect.left-svgRect.left
+    } else if(dep.dep_type==='SS'){
+      x1=fMs?(fromRect.left+fromRect.right)/2-svgRect.left:fromRect.left-svgRect.left
+      x2=tMs?(toRect.left+toRect.right)/2-svgRect.left:toRect.left-svgRect.left
+    } else if(dep.dep_type==='FF'){
+      x1=fMs?(fromRect.left+fromRect.right)/2-svgRect.left:fromRect.right-svgRect.left
+      x2=tMs?(toRect.left+toRect.right)/2-svgRect.left:toRect.right-svgRect.left
+    } else {
+      x1=fMs?(fromRect.left+fromRect.right)/2-svgRect.left:fromRect.left-svgRect.left
+      x2=tMs?(toRect.left+toRect.right)/2-svgRect.left:toRect.right-svgRect.left
+    }
+    const y1=fromRect.top-svgRect.top+fromRect.height/2
+    const y2=toRect.top-svgRect.top+toRect.height/2
+    const cx=(x1+x2)/2
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path')
+    path.setAttribute('d',`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`)
+    path.setAttribute('fill','none');path.setAttribute('stroke',color);path.setAttribute('stroke-width','1.5');path.setAttribute('stroke-dasharray','4,3');path.setAttribute('opacity','.6')
+    const arrow=document.createElementNS('http://www.w3.org/2000/svg','polygon')
+    if(dep.dep_type==='FS'||dep.dep_type==='SS')arrow.setAttribute('points',`${x2},${y2} ${x2-6},${y2-3} ${x2-6},${y2+3}`)
+    else arrow.setAttribute('points',`${x2},${y2} ${x2+6},${y2-3} ${x2+6},${y2+3}`)
+    arrow.setAttribute('fill',color);arrow.setAttribute('opacity','.6')
+    const lx=(x1+x2)/2,ly=(y1+y2)/2-5
+    const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill','white');bg.setAttribute('opacity','.9')
+    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','8');lbl.setAttribute('fill',color);lbl.setAttribute('font-family','DM Mono');lbl.setAttribute('font-weight','600');lbl.textContent=dep.dep_type
+    svgCanvas.appendChild(path);svgCanvas.appendChild(arrow);svgCanvas.appendChild(bg);svgCanvas.appendChild(lbl)
+  })
 }
 
 function renderSB(){
