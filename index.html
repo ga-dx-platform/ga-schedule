@@ -404,6 +404,13 @@ function addWD(date,n){
   return d
 }
 function taskEnd(t){const d=pd(t.start_date);d.setDate(d.getDate()+(t.duration_days||1)-1);return d}
+function getParentDates(taskId){
+  const children=state.tasks.filter(c=>c.parent_id===taskId)
+  if(!children.length){const t=state.tasks.find(t=>t.id===taskId);return t?{s:pd(t.start_date),e:taskEnd(t)}:null}
+  let minS=null,maxE=null
+  children.forEach(c=>{const d=getParentDates(c.id);if(!d)return;if(!minS||d.s<minS)minS=d.s;if(!maxE||d.e>maxE)maxE=d.e})
+  return{s:minS,e:maxE}
+}
 function dayPx(){return Math.max(18,Math.round(window.innerWidth*0.013))*state.zoom}
 function getROW_H(){return Math.max(40,Math.round(window.innerHeight*0.048))}
 
@@ -458,7 +465,8 @@ function renderTaskList(){
   const frag=document.createDocumentFragment()
   visible.forEach(({task:t,level})=>{
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
-    const e=taskEnd(t),pct=hasKids?rollupPct(t.id):t.progress_pct
+    const{s:rs,e:re}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
+    const e=re,pct=hasKids?rollupPct(t.id):t.progress_pct
     const sc=STATUS_CLASS[t.status]||'s-none'
     const tdeps=state.deps.filter(d=>d.from_task_id===t.id||d.to_task_id===t.id)
     const isCan=t.status==='Cancelled'
@@ -473,7 +481,7 @@ function renderTaskList(){
         <span class="lbl" title="${esc(t.name)}">${esc(t.name)}</span>
         ${tdeps.length?`<span class="dep-count">${tdeps.length}</span>`:''}
       </span>
-      <span class="r-date">${fmtS(pd(t.start_date))}</span>
+      <span class="r-date">${fmtS(rs)}</span>
       <span class="r-date">${t.type==='milestone'?'—':fmtS(e)}</span>
       <span class="r-date">${esc(t.assignee||'—')}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
@@ -590,9 +598,9 @@ function renderGantt(RH){
   const barPos={}
   visible.forEach(({task:t},rowIdx)=>{
     const row=document.createElement('div');row.className='g-row';row.style.width=W+'px'
-    const s=pd(t.start_date),e=taskEnd(t)
-    const x=dBetween(min,s)*DP,w=Math.max((dBetween(s,e)+1)*DP,DP)
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
+    const{s,e}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
+    const x=dBetween(min,s)*DP,w=Math.max((dBetween(s,e)+1)*DP,DP)
     const pct=hasKids?rollupPct(t.id):t.progress_pct
     const absCy=rowIdx*RH+RH/2
     barPos[t.id]={x1:x,x2:x+w,y:absCy}
