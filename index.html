@@ -35,7 +35,7 @@
   --fs-hdr:clamp(11px,0.62vw,12px);
   --fs-mono:clamp(11px,0.6vw,12px);
   /* 11 columns: # ▼ name start end assign dur % status cat actions */
-  --col-grid:28px 20px 1fr 58px 58px 62px 36px 44px 86px 68px 60px;
+  --col-grid:24px 18px minmax(180px,1.5fr) 75px 75px 80px 45px 50px 90px 70px 100px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -83,7 +83,7 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 #main{display:flex;flex:1;overflow:hidden}
 
 /* LEFT */
-#left{width:clamp(580px,43vw,780px);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:var(--glass-hi)}
+#left{width:780px;min-width:400px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:var(--glass-hi)}
 #panel-resizer{flex-shrink:0;width:5px;cursor:col-resize;background:var(--gbdr);position:relative;z-index:10;transition:background .12s}
 #panel-resizer::after{content:'';position:absolute;top:0;bottom:0;left:-5px;right:-5px}
 #panel-resizer:hover,#panel-resizer.is-dragging{background:var(--bdr-mid)}
