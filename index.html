@@ -874,7 +874,7 @@ document.getElementById('sw-gtxt').addEventListener('change',function(){
 })
 
 function applyColumnWidths(){
-  const tpl=state.colWidths.map(w=>w+'px').join(' ')
+  const tpl=state.colWidths.map(w=>typeof w==='string'?w:w+'px').join(' ')
   const hdr=document.getElementById('col-hdr')
   if(hdr)hdr.style.gridTemplateColumns=tpl
   document.querySelectorAll('.trow').forEach(r=>r.style.gridTemplateColumns=tpl)
@@ -917,6 +917,24 @@ document.addEventListener('mouseup',()=>{
   document.body.style.cursor=''
   document.body.style.userSelect=''
   document.querySelectorAll('.resizer.is-resizing').forEach(el=>el.classList.remove('is-resizing'))
+})
+
+document.getElementById('col-hdr').addEventListener('dblclick',e=>{
+  const resizer=e.target.closest('.resizer')
+  if(!resizer)return
+  const colIdx=parseInt(resizer.dataset.col)
+  const hdr=document.getElementById('col-hdr')
+  const cells=hdr.children
+  if(colIdx<0||colIdx>=cells.length)return
+  // Temporarily set col to max-content to let browser measure natural width
+  const saved=state.colWidths.slice()
+  state.colWidths[colIdx]='max-content'
+  applyColumnWidths()
+  const natural=cells[colIdx].getBoundingClientRect().width
+  // Restore others, set measured+buffer for this col (clamped 40–500px)
+  state.colWidths=saved
+  state.colWidths[colIdx]=Math.min(500,Math.max(40,Math.round(natural)+10))
+  applyColumnWidths()
 })
 
 // Panel splitter
