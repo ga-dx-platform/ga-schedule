@@ -547,6 +547,7 @@ function renderLegend(){
 function renderTaskList(){
   renderColHdr()
   const{wbs,ri}=getWBS(),visible=getFilteredVisible()
+  const visIdxMap=new Map(visible.map(({task},i)=>[task.id,i+1]))
   const tl=document.getElementById('task-list');tl.innerHTML=''
   const frag=document.createDocumentFragment()
   visible.forEach(({task:t,level})=>{
@@ -554,7 +555,7 @@ function renderTaskList(){
     const{s:rs,e:re}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
     const e=re,pct=hasKids?rollupPct(t.id):t.progress_pct
     const sc=STATUS_CLASS[t.status]||'s-none'
-    const tdeps=state.deps.filter(d=>d.from_task_id===t.id||d.to_task_id===t.id)
+    const preds=state.deps.filter(d=>d.to_task_id===t.id).map(d=>visIdxMap.get(d.from_task_id)).filter(Boolean)
     const isCan=t.status==='Cancelled'
     const row=document.createElement('div')
     row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}`
@@ -565,7 +566,7 @@ function renderTaskList(){
       <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
         <span class="lbl" title="${esc(t.name)}">${esc(t.name)}</span>
-        ${tdeps.length?`<span class="dep-count">${tdeps.length}</span>`:''}
+        ${preds.length?`<span class="dep-count" title="Predecessors: rows ${preds.join(', ')}">${preds.join(',')}</span>`:''}
       </span>
       <span class="r-date">${fmtS(rs)}</span>
       <span class="r-date">${t.type==='milestone'?'—':fmtS(e)}</span>
@@ -681,28 +682,25 @@ function renderGantt(RH){
   }
 
   // Bars
-  const barPos={}
-  visible.forEach(({task:t},rowIdx)=>{
+  visible.forEach(({task:t})=>{
     const row=document.createElement('div');row.className='g-row';row.style.width=W+'px'
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
     const{s,e}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
     const x=dBetween(min,s)*DP,w=Math.max((dBetween(s,e)+1)*DP,DP)
     const pct=hasKids?rollupPct(t.id):t.progress_pct
-    const absCy=rowIdx*RH+RH/2
-    barPos[t.id]={x1:x,x2:x+w,y:absCy}
     const isCan=t.status==='Cancelled',bt=bMap.get(t.id)
     const isLate=!!(bt&&taskEnd(t)>taskEnd(bt))
     const tn=t.name||'',mid=RH/2
 
     if(t.type==='milestone'){
       if(bt?.type==='milestone'){const bms=document.createElement('div');bms.className='gms';const bsz=BMS,bbt2=mid-bsz/2,bx=dBetween(min,pd(bt.start_date))*DP;bms.style.cssText=`left:${bx-bsz/2}px;top:${bbt2}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);opacity:.65;pointer-events:none`;row.appendChild(bms)}
-      const ms=document.createElement('div');ms.className='gms';const sz=BMS,bbt2=mid-sz/2;ms.style.cssText=`left:${x-sz/2}px;top:${bbt2}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`;ms.title=tn;ms.onclick=()=>openEditModal(t.id)
+      const ms=document.createElement('div');ms.className='gms';const sz=BMS,bbt2=mid-sz/2;ms.style.cssText=`left:${x-sz/2}px;top:${bbt2}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`;ms.title=tn;ms.onclick=()=>openEditModal(t.id);ms.id='bar-'+t.id
       const lbl=document.createElement('div');lbl.className='gb-txt';lbl.style.cssText=`position:absolute;font-size:9px;color:var(--txt2);left:${x+sz+3}px;top:${bbt2}px;white-space:nowrap;font-family:var(--mono)`;lbl.textContent=tn
       row.appendChild(ms);row.appendChild(lbl)
     } else {
       const bh=hasKids?BPH:BCH,bbt2=(RH-bh)/2
       if(bt&&bt.type!=='milestone'){const bs=pd(bt.start_date),be=taskEnd(bt);const bx=dBetween(min,bs)*DP,bw=Math.max((dBetween(bs,be)+1)*DP,DP);const ghost=document.createElement('div');ghost.className='gbar-ghost';ghost.style.cssText=`left:${bx}px;width:${bw}px;height:${bh}px;top:${bbt2}px`;row.appendChild(ghost)}
-      const bar=document.createElement('div')
+      const bar=document.createElement('div');bar.id='bar-'+t.id
       if(hasKids){bar.className='gbar gb-parent';bar.style.cssText=`position:absolute;left:${x}px;width:${w}px;height:${bh}px;top:${bbt2}px`}
       else{bar.className=`gbar ${isCan?'gb-cancel':(CAT_BAR[t.category]||'gb-general')}`;bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${bbt2}px`}
       if(isLate)bar.classList.add('baseline-late')
@@ -717,34 +715,54 @@ function renderGantt(RH){
     rowCont.appendChild(row)
   })
 
-  // Dep SVG
-  const svgH=visible.length*RH+10
-  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg')
-  svg.className='dep-svg';svg.style.cssText=`width:${W}px;height:${svgH}px`;svg.setAttribute('viewBox',`0 0 ${W} ${svgH}`)
-  const DC={FS:'#3B00FF',SS:'#00b87a',FF:'#d97706',SF:'#e11d48'}
-  state.deps.forEach(dep=>{
-    const f=barPos[dep.from_task_id],t2=barPos[dep.to_task_id];if(!f||!t2)return
-    const color=DC[dep.dep_type]||'#3B00FF';let x1,y1,x2,y2
-    if(dep.dep_type==='FS'){x1=f.x2;y1=f.y;x2=t2.x1;y2=t2.y}
-    else if(dep.dep_type==='SS'){x1=f.x1;y1=f.y;x2=t2.x1;y2=t2.y}
-    else if(dep.dep_type==='FF'){x1=f.x2;y1=f.y;x2=t2.x2;y2=t2.y}
-    else{x1=f.x1;y1=f.y;x2=t2.x2;y2=t2.y}
-    const cx=(x1+x2)/2
-    const path=document.createElementNS('http://www.w3.org/2000/svg','path')
-    path.setAttribute('d',`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`)
-    path.setAttribute('fill','none');path.setAttribute('stroke',color);path.setAttribute('stroke-width','1.5');path.setAttribute('stroke-dasharray','4,3');path.setAttribute('opacity','.6')
-    const arrow=document.createElementNS('http://www.w3.org/2000/svg','polygon')
-    if(dep.dep_type==='FS'||dep.dep_type==='SS')arrow.setAttribute('points',`${x2},${y2} ${x2-6},${y2-3} ${x2-6},${y2+3}`)
-    else arrow.setAttribute('points',`${x2},${y2} ${x2+6},${y2-3} ${x2+6},${y2+3}`)
-    arrow.setAttribute('fill',color);arrow.setAttribute('opacity','.6')
-    const lx=(x1+x2)/2,ly=(y1+y2)/2-5
-    const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill','white');bg.setAttribute('opacity','.9')
-    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','8');lbl.setAttribute('fill',color);lbl.setAttribute('font-family','DM Mono');lbl.setAttribute('font-weight','600');lbl.textContent=dep.dep_type
-    svg.appendChild(path);svg.appendChild(arrow);svg.appendChild(bg);svg.appendChild(lbl)
-  })
-  rowCont.appendChild(svg)
+  // Attach to live DOM first — getBoundingClientRect requires rendered elements
   gb.appendChild(bfrag);gb.appendChild(rowCont)
   document.getElementById('gantt-wrap').style.cssText=`width:${W}px;min-width:${W}px`
+
+  // Dep SVG — coordinates from actual DOM positions, not computed row indices
+  if(state.deps.length){
+    const svgH=visible.length*RH+10
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg')
+    svg.className='dep-svg';svg.style.cssText=`width:${W}px;height:${svgH}px`;svg.setAttribute('viewBox',`0 0 ${W} ${svgH}`)
+    const DC={FS:'#3B00FF',SS:'#00b87a',FF:'#d97706',SF:'#e11d48'}
+    const cRect=rowCont.getBoundingClientRect()
+    state.deps.forEach(dep=>{
+      const fEl=document.getElementById('bar-'+dep.from_task_id)
+      const tEl=document.getElementById('bar-'+dep.to_task_id)
+      if(!fEl||!tEl)return
+      const fR=fEl.getBoundingClientRect(),tR=tEl.getBoundingClientRect()
+      const fMs=fEl.classList.contains('gms'),tMs=tEl.classList.contains('gms')
+      const color=DC[dep.dep_type]||'#3B00FF';let x1,x2
+      if(dep.dep_type==='FS'){
+        x1=fMs?fR.left+fR.width/2-cRect.left:fR.right-cRect.left
+        x2=tMs?tR.left+tR.width/2-cRect.left:tR.left-cRect.left
+      } else if(dep.dep_type==='SS'){
+        x1=fMs?fR.left+fR.width/2-cRect.left:fR.left-cRect.left
+        x2=tMs?tR.left+tR.width/2-cRect.left:tR.left-cRect.left
+      } else if(dep.dep_type==='FF'){
+        x1=fMs?fR.left+fR.width/2-cRect.left:fR.right-cRect.left
+        x2=tMs?tR.left+tR.width/2-cRect.left:tR.right-cRect.left
+      } else {
+        x1=fMs?fR.left+fR.width/2-cRect.left:fR.left-cRect.left
+        x2=tMs?tR.left+tR.width/2-cRect.left:tR.right-cRect.left
+      }
+      const y1=fR.top+fR.height/2-cRect.top
+      const y2=tR.top+tR.height/2-cRect.top
+      const cx=(x1+x2)/2
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path')
+      path.setAttribute('d',`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`)
+      path.setAttribute('fill','none');path.setAttribute('stroke',color);path.setAttribute('stroke-width','1.5');path.setAttribute('stroke-dasharray','4,3');path.setAttribute('opacity','.6')
+      const arrow=document.createElementNS('http://www.w3.org/2000/svg','polygon')
+      if(dep.dep_type==='FS'||dep.dep_type==='SS')arrow.setAttribute('points',`${x2},${y2} ${x2-6},${y2-3} ${x2-6},${y2+3}`)
+      else arrow.setAttribute('points',`${x2},${y2} ${x2+6},${y2-3} ${x2+6},${y2+3}`)
+      arrow.setAttribute('fill',color);arrow.setAttribute('opacity','.6')
+      const lx=(x1+x2)/2,ly=(y1+y2)/2-5
+      const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill','white');bg.setAttribute('opacity','.9')
+      const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','8');lbl.setAttribute('fill',color);lbl.setAttribute('font-family','DM Mono');lbl.setAttribute('font-weight','600');lbl.textContent=dep.dep_type
+      svg.appendChild(path);svg.appendChild(arrow);svg.appendChild(bg);svg.appendChild(lbl)
+    })
+    rowCont.appendChild(svg)
+  }
 }
 
 function renderSB(){
