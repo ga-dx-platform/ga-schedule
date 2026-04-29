@@ -302,9 +302,9 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>🗑 Clear</button>
     <div class="tb-sep"></div>
     <div class="tb-group">
-      <button class="tb tb-tab active" id="tab-day" onclick="setView('day')">Day</button>
-      <button class="tb tb-tab" id="tab-week" onclick="setView('week')">Week</button>
-      <button class="tb tb-tab" id="tab-month" onclick="setView('month')">Month</button>
+      <button class="tb tb-tab active" id="tab-day" onclick="setZoom('day')">Day</button>
+      <button class="tb tb-tab" id="tab-week" onclick="setZoom('week')">Week</button>
+      <button class="tb tb-tab" id="tab-month" onclick="setZoom('month')">Month</button>
     </div>
     <button class="tb today" onclick="scrollToday()">📅 วันนี้</button>
     <button class="tb" onclick="expandAll()">↧ ขยายทั้งหมด</button>
@@ -560,7 +560,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Noto Sans Thai',sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0a0f1e',parentColor:'#1e3a8a',childColor:'#6366f1',todayCol:'#e11d48',wkndBg:'#fcf0f0',wkndTxt:'#d32f2f',gridLineCol:'#e2e8f0',holCol:'#fef08a',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#3b82f6',override:false},'Completed':{color:'#22c55e',override:false},'Delayed':{color:'#f59e0b',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#ef4444',override:false}},holidays:[]}
-let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:''}
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:''}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -592,7 +592,12 @@ function getParentDates(taskId){
   children.forEach(c=>{const d=getParentDates(c.id);if(!d)return;if(!minS||d.s<minS)minS=d.s;if(!maxE||d.e>maxE)maxE=d.e})
   return{s:minS,e:maxE}
 }
-function dayPx(){return Math.max(18,Math.round(window.innerWidth*0.013))*state.zoom}
+function getPxPerDay(){
+  if(state.zoomLevel==='month')return 3;
+  if(state.zoomLevel==='week')return 10;
+  return 30;
+}
+function dayPx(){return getPxPerDay()}
 function getROW_H(){return Math.max(40,Math.round(window.innerHeight*0.048))}
 
 function getMinMax(){
@@ -744,7 +749,7 @@ async function reorderTasks(dragId,targetId,placeAfter){
 
 function renderGantt(RH){
   RH=RH||getROW_H()
-  const DP=Math.max(18,Math.round(window.innerWidth*0.013))*state.zoom
+  const DP=getPxPerDay()
   const BCH=Math.max(22,Math.round(RH*0.65))
   const BPH=Math.max(8,Math.round(RH*0.22))
   const BMS=Math.max(12,Math.round(RH*0.36))
@@ -758,20 +763,58 @@ function renderGantt(RH){
   const gh=document.getElementById('gantt-hdr');gh.innerHTML='';gh.style.width=W+'px'
   const mr=document.createElement('div');mr.className='g-month-row'
   const dr=document.createElement('div');dr.className='g-day-row'
-  let cur=new Date(min),cm='',cpx=0
-  for(let i=0;i<totalDays;i++){
-    const m=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
-    if(m!==cm){if(cm){const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)}cm=m;cpx=0}
-    cpx+=DP
-    const dc=document.createElement('div');dc.className='g-day'
-    const wd=state.settings.weekendDays||[0,6]
-    const isWE=wd.includes(cur.getDay()),isTd=cur.toDateString()===today.toDateString()
-    const isHol=(state.settings.holidays||[]).some(h=>h.date===fmtISO(cur))
-    if(isWE||isHol)dc.classList.add('weekend');if(isTd)dc.classList.add('today-d')
-    dc.style.width=DP+'px';if(DP>=14)dc.textContent=cur.getDate()
-    dr.appendChild(dc);cur.setDate(cur.getDate()+1)
+
+  if(state.zoomLevel==='day'){
+    // Top row: months. Bottom row: individual days
+    let cur=new Date(min),cm='',cpx=0
+    for(let i=0;i<totalDays;i++){
+      const m=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
+      if(m!==cm){if(cm){const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)}cm=m;cpx=0}
+      cpx+=DP
+      const dc=document.createElement('div');dc.className='g-day'
+      const wd=state.settings.weekendDays||[0,6]
+      const isWE=wd.includes(cur.getDay()),isTd=cur.toDateString()===today.toDateString()
+      const isHol=(state.settings.holidays||[]).some(h=>h.date===fmtISO(cur))
+      if(isWE||isHol)dc.classList.add('weekend');if(isTd)dc.classList.add('today-d')
+      dc.style.width=DP+'px';dc.textContent=cur.getDate()
+      dr.appendChild(dc);cur.setDate(cur.getDate()+1)
+    }
+    const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)
+  } else if(state.zoomLevel==='week'){
+    // Top row: months. Bottom row: week cells (7 days each)
+    let cur=new Date(min),cm='',cpx=0
+    for(let i=0;i<totalDays;i++){
+      const m=cur.toLocaleString('en',{month:'short'})+' '+cur.getFullYear()
+      if(m!==cm){if(cm){const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)}cm=m;cpx=0}
+      cpx+=DP;cur.setDate(cur.getDate()+1)
+    }
+    const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)
+    let wCur=new Date(min),dayOff=0
+    while(dayOff<totalDays){
+      const colDays=Math.min(7,totalDays-dayOff)
+      const wc=document.createElement('div');wc.className='g-day'
+      wc.style.width=(colDays*DP)+'px'
+      wc.textContent=wCur.toLocaleString('en',{month:'short'})+' '+wCur.getDate()
+      dr.appendChild(wc);dayOff+=7;wCur.setDate(wCur.getDate()+7)
+    }
+  } else {
+    // Month view. Top row: years. Bottom row: months
+    let cur=new Date(min),cy='',ypx=0
+    for(let i=0;i<totalDays;i++){
+      const y=cur.getFullYear().toString()
+      if(y!==cy){if(cy){const yc=document.createElement('div');yc.className='g-month';yc.style.width=ypx+'px';yc.textContent=cy;mr.appendChild(yc)}cy=y;ypx=0}
+      ypx+=DP;cur.setDate(cur.getDate()+1)
+    }
+    if(cy){const yc=document.createElement('div');yc.className='g-month';yc.style.width=ypx+'px';yc.textContent=cy;mr.appendChild(yc)}
+    let cur2=new Date(min),cmo='',cmoLbl='',mpx=0
+    for(let i=0;i<totalDays;i++){
+      const moKey=cur2.getFullYear()+'-'+cur2.getMonth()
+      const moLbl=cur2.toLocaleString('en',{month:'short'})
+      if(moKey!==cmo){if(cmo){const mc=document.createElement('div');mc.className='g-day';mc.style.width=mpx+'px';mc.textContent=cmoLbl;dr.appendChild(mc)}cmo=moKey;cmoLbl=moLbl;mpx=0}
+      mpx+=DP;cur2.setDate(cur2.getDate()+1)
+    }
+    if(cmo){const mc=document.createElement('div');mc.className='g-day';mc.style.width=mpx+'px';mc.textContent=cmoLbl;dr.appendChild(mc)}
   }
-  const mc=document.createElement('div');mc.className='g-month';mc.style.width=cpx+'px';mc.textContent=cm;mr.appendChild(mc)
   gh.appendChild(mr);gh.appendChild(dr)
 
   // Body
@@ -779,15 +822,17 @@ function renderGantt(RH){
   const rowCont=document.createElement('div');rowCont.style.position='relative'
   const bfrag=document.createDocumentFragment()
 
-  // Weekend bg + holidays + today
-  const wd2=state.settings.weekendDays||[0,6]
-  const d2=new Date(min)
-  for(let i=0;i<totalDays;i++){
-    const isWknd2=wd2.includes(d2.getDay())
-    const isHol2=!isWknd2&&(state.settings.holidays||[]).some(h=>h.date===fmtISO(d2))
-    if(isWknd2){const bg=document.createElement('div');bg.className='g-wknd';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
-    else if(isHol2){const bg=document.createElement('div');bg.className='g-hol';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
-    d2.setDate(d2.getDate()+1)
+  // Weekend/holiday bg stripes (day view only) + today line
+  if(state.zoomLevel==='day'){
+    const wd2=state.settings.weekendDays||[0,6]
+    const d2=new Date(min)
+    for(let i=0;i<totalDays;i++){
+      const isWknd2=wd2.includes(d2.getDay())
+      const isHol2=!isWknd2&&(state.settings.holidays||[]).some(h=>h.date===fmtISO(d2))
+      if(isWknd2){const bg=document.createElement('div');bg.className='g-wknd';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
+      else if(isHol2){const bg=document.createElement('div');bg.className='g-hol';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
+      d2.setDate(d2.getDate()+1)
+    }
   }
   const tx=dBetween(min,today)*DP
   if(tx>=0&&tx<=W){
@@ -1198,11 +1243,9 @@ async function deleteTask(){
 function confirmDelete(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;state.editingTaskId=id;deleteTask()}
 function getDesc(id){const kids=state.tasks.filter(t=>t.parent_id===id).map(t=>t.id);return[...kids,...kids.flatMap(k=>getDesc(k))]}
 
-function setView(mode){
-  if(mode==='day')state.zoom=1;
-  else if(mode==='week')state.zoom=0.5;
-  else if(mode==='month')state.zoom=0.25;
-  ['day','week','month'].forEach(m=>document.getElementById('tab-'+m).classList.toggle('active',m===mode));
+function setZoom(level){
+  state.zoomLevel=level;
+  ['day','week','month'].forEach(m=>document.getElementById('tab-'+m).classList.toggle('active',m===level));
   render();
 }
 function autoFitAll(){
