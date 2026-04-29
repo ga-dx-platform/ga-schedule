@@ -74,7 +74,10 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .tb.danger{background:var(--red-s);color:var(--red);border-color:rgba(225,29,72,.2)}
 .tb.today{background:rgba(59,0,255,.06);color:#3B00FF;border-color:var(--bdr-mid)}
 .tb-sep{width:1px;height:20px;background:var(--bdr);margin:0 2px;flex-shrink:0}
-#zoom-lbl{font-size:10px;color:var(--txt3);min-width:26px;text-align:center;font-family:var(--mono)}
+.tb-group{display:flex;align-items:center;border:1px solid var(--bdr-mid);border-radius:var(--r-sm);overflow:hidden;flex-shrink:0}
+.tb-tab{border:none!important;border-radius:0!important;background:transparent;color:var(--txt2)}
+.tb-tab:hover{background:#f1f5f9!important;color:var(--txt)!important}
+.tb-tab.active{background:#e2e8f0!important;color:var(--txt)!important;font-weight:600}
 
 /* MAIN */
 #main{display:flex;flex:1;overflow:hidden}
@@ -258,10 +261,14 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     <button class="tb save" onclick="saveAll()">💾 Save</button>
     <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>🗑 Clear</button>
     <div class="tb-sep"></div>
-    <button class="tb" onclick="zoomOut()">−</button>
-    <span id="zoom-lbl">Day</span>
-    <button class="tb" onclick="zoomIn()">+</button>
-    <button class="tb today" onclick="scrollToday()">📅 Today</button>
+    <div class="tb-group">
+      <button class="tb tb-tab active" id="tab-day" onclick="setView('day')">Day</button>
+      <button class="tb tb-tab" id="tab-week" onclick="setView('week')">Week</button>
+      <button class="tb tb-tab" id="tab-month" onclick="setView('month')">Month</button>
+    </div>
+    <button class="tb today" onclick="scrollToday()">📅 วันนี้</button>
+    <button class="tb" onclick="expandAll()">↧ ขยายทั้งหมด</button>
+    <button class="tb" onclick="collapseAll()">↥ ย่อทั้งหมด</button>
     <div class="tb-sep"></div>
     <button class="tb" onclick="exportCSV()">📊 CSV</button>
     <button class="tb" onclick="exportPNG()">🖼 PNG</button>
@@ -772,9 +779,19 @@ async function deleteTask(){
 function confirmDelete(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;state.editingTaskId=id;deleteTask()}
 function getDesc(id){const kids=state.tasks.filter(t=>t.parent_id===id).map(t=>t.id);return[...kids,...kids.flatMap(k=>getDesc(k))]}
 
-function zoomIn(){state.zoom=Math.min(state.zoom*1.4,3);updateZL();render()}
-function zoomOut(){state.zoom=Math.max(state.zoom/1.4,.25);updateZL();render()}
-function updateZL(){document.getElementById('zoom-lbl').textContent=state.zoom>=2?'Week':state.zoom>=.8?'Day':'Month'}
+function setView(mode){
+  if(mode==='day')state.zoom=1;
+  else if(mode==='week')state.zoom=0.5;
+  else if(mode==='month')state.zoom=0.25;
+  ['day','week','month'].forEach(m=>document.getElementById('tab-'+m).classList.toggle('active',m===mode));
+  render();
+}
+function expandAll(){state.collapsed={};render()}
+function collapseAll(){
+  const parentIds=new Set(state.tasks.filter(t=>t.parent_id).map(t=>t.parent_id));
+  parentIds.forEach(id=>{state.collapsed[id]=true});
+  render();
+}
 function scrollToday(){const{min}=getMinMax();document.getElementById('right').scrollLeft=Math.max(0,dBetween(min,new Date())*dayPx()-120)}
 
 async function saveAll(){if(!state.currentProjectId)return;setSS('⟳ Saving...');showL();await loadTasks();await loadDeps();hideL();render();lastSavedAt=new Date();setSS(`✓ Saved ${fmtTime(lastSavedAt)}`);toast('✅ Synced with Supabase')}
