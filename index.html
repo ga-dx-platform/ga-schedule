@@ -177,6 +177,8 @@ body{font-family:var(--font);background:var(--bg-page);background-attachment:fix
 .gbar::after{right:0}
 .gbar-ghost{position:absolute;border-radius:3px;background:rgba(100,116,139,.22);border:1px dashed rgba(100,116,139,.45);pointer-events:none}
 .gbar.baseline-late{outline:1.5px solid rgba(225,29,72,.85);outline-offset:1px}
+.gbar.locked-bar{cursor:not-allowed!important;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.22) 0 6px,rgba(0,0,0,.08) 6px 12px)}
+.gbar.locked-bar::before,.gbar.locked-bar::after{cursor:not-allowed!important}
 .gbar-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.3)}
 .gbar-lbl{position:relative;font-size:var(--fs-mono);color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;z-index:1;font-weight:500}
 .gbar-pct{position:absolute;font-size:var(--fs-mono);color:var(--txt3);white-space:nowrap;font-family:var(--mono)}
@@ -714,6 +716,7 @@ function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
   links.forEach(link=>{
     const targetTask=state.tasks.find(t=>t.id===link.to_task_id)
     if(!targetTask)return
+    if(targetTask.locked)return
 
     const nextStart=nextWorkingDayAfter(sourceEnd)
     const nextStartIso=fmtISO(nextStart)
@@ -831,6 +834,7 @@ function renderTaskList(){
       <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
         <span class="lbl" title="${esc(t.name)}">${esc(t.name)}</span>
+        ${t.locked?'<span class="lock-ind" title="Locked task" aria-label="Locked task">🔒</span>':''}
         ${preds.length?`<span class="dep-count" title="Predecessors: rows ${preds.join(', ')}">${preds.join(',')}</span>`:''}
       </span>
       <span class="r-date">${fmtS(rs)}</span>
@@ -1028,6 +1032,7 @@ function renderGantt(RH){
       const bar=document.createElement('div');bar.id='bar-'+t.id
       if(hasKids){bar.className='gbar gb-parent';bar.style.cssText=`position:absolute;left:${x}px;width:${w}px;height:${bh}px;top:${rowTop+bbt2}px`}
       else{bar.className=`gbar ${isCan?'gb-cancel':(CAT_BAR[t.category]||'gb-general')}`;bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${rowTop+bbt2}px`}
+      if(t.locked)bar.classList.add('locked-bar')
       if(isLate)bar.classList.add('baseline-late')
       if(!isCan&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
       if(w>40&&DP>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl gb-txt';lbl.textContent=tn;bar.appendChild(lbl)}
@@ -1695,6 +1700,7 @@ document.getElementById('right').addEventListener('mousedown',e=>{
   if(!bar||!bar.dataset.taskId)return
   const task=state.tasks.find(t=>t.id===bar.dataset.taskId)
   if(!task)return
+  if(task.locked)return
   const rect=bar.getBoundingClientRect()
   const offsetX=e.clientX-rect.left
   const HANDLE=8
