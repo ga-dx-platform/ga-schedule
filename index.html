@@ -1712,6 +1712,7 @@ let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>
 
 async function init(){
   loadSettings();showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();applyGanttSettings();render()
+  setTimeout(()=>{if(typeof autoFitAll==='function')autoFitAll()},50)
   if(state.projects.length===1)selectProject(state.projects[0].id)
   else if(state.projects.length>1)openProjModal()
 }
