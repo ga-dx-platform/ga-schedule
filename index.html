@@ -771,6 +771,13 @@ function rollupPct(id){
   if(!ch.length)return state.tasks.find(t=>t.id===id)?.progress_pct||0
   return Math.round(ch.reduce((s,c)=>s+rollupPct(c.id),0)/ch.length)
 }
+function getDerivedStatus(task,actualPct){
+  const overrideStatuses=['Cancelled','On Hold','Delayed']
+  if(overrideStatuses.includes(task.status))return task.status
+  if(actualPct===100)return'Completed'
+  if(actualPct>0)return'In Progress'
+  return'Not Started'
+}
 function getWBS(){
   const wbs={},ri={};let cnt=0
   function walk(pid,pre){state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order).forEach((t,i)=>{const w=pre+(i+1);wbs[t.id]=w;ri[t.id]=++cnt;walk(t.id,w+'.')})}
@@ -820,8 +827,9 @@ function renderTaskList(){
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
     const{s:rs,e:re}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
     const e=re,pct=hasKids?rollupPct(t.id):t.progress_pct
-    const sc=STATUS_CLASS[t.status]||'s-none'
-    const ov=(state.settings.statusOverrides||{})[t.status]
+    const displayStatus=getDerivedStatus(t,pct)
+    const sc=STATUS_CLASS[displayStatus]||'s-none'
+    const ov=(state.settings.statusOverrides||{})[displayStatus]
     const badgeStyle=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
     const preds=state.deps.filter(d=>d.to_task_id===t.id).map(d=>visIdxMap.get(d.from_task_id)).filter(Boolean)
     const isCan=t.status==='Cancelled'
@@ -845,7 +853,7 @@ function renderTaskList(){
         <span>${pct}%</span>
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
-      <span><span class="sbadge ${sc}" style="${badgeStyle}">${esc(STATUS_LABELS[t.status]||t.status)}</span></span>
+      <span><span class="sbadge ${sc}" style="${badgeStyle}">${esc(STATUS_LABELS[displayStatus]||displayStatus)}</span></span>
       <span class="cat-cell">
         <div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div>
         <span class="cat-lbl">${esc(t.category||'General')}</span>
