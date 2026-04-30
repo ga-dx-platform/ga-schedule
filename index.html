@@ -1715,6 +1715,9 @@ document.getElementById('col-hdr').addEventListener('dblclick',e=>{
 let isResizingPanel=false,startPanelX=0,startLeftWidth=0
 const panelResizer=document.getElementById('panel-resizer')
 const leftPanel=document.getElementById('left')
+panelResizer.addEventListener('dblclick',()=>{
+  if(typeof autoFitAll==='function')autoFitAll()
+})
 panelResizer.addEventListener('mousedown',e=>{
   e.preventDefault()
   isResizingPanel=true
