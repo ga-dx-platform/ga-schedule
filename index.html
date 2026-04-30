@@ -1066,7 +1066,7 @@ async function selectProject(id){
   state.currentProjectId=id;state.comparedBaseline=null
   const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
   document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
-  closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render()
+  closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render();triggerAutoFitOnNextPaint()
 }
 async function renameProject(id,oldName){
   const newName=prompt('ชื่อโปรเจกต์ใหม่:',oldName)?.trim()
@@ -1408,6 +1408,7 @@ function autoFitAll(){
   render()
   toast('✅ จัดขนาดคอลัมน์อัตโนมัติสำเร็จ')
 }
+function triggerAutoFitOnNextPaint(delay=50){setTimeout(()=>{if(typeof autoFitAll==='function')autoFitAll()},delay)}
 function expandAll(){state.collapsed={};render()}
 function collapseAll(){
   const parentIds=new Set(state.tasks.filter(t=>t.parent_id).map(t=>t.parent_id));
@@ -1712,7 +1713,7 @@ let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>
 
 async function init(){
   loadSettings();showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();applyGanttSettings();render()
-  setTimeout(()=>{if(typeof autoFitAll==='function')autoFitAll()},50)
+  triggerAutoFitOnNextPaint()
   if(state.projects.length===1)selectProject(state.projects[0].id)
   else if(state.projects.length>1)openProjModal()
 }
