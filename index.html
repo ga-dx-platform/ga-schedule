@@ -1539,18 +1539,23 @@ async function clearProject(){
   })
 }
 function exportCSV(){
-  const{wbs}=getWBS(),rows=[['WBS','Task Name','Type','Category','Start','End','Duration','%','Status','Assignee']]
-  getVisible().forEach(({task:t})=>{rows.push([wbs[t.id]||'',t.name,t.type,t.category,fmt(pd(t.start_date)),fmt(taskEnd(t)),t.duration_days+'d',t.progress_pct+'%',STATUS_LABELS[t.status]||t.status,t.assignee||''])})
-  const hasKids = state.tasks.some(c => c.parent_id === t.id);
-  const {s:rs, e:re} = hasKids ? (getParentDates(t.id) || {s:pd(t.start_date), e:taskEnd(t)}) : {s:pd(t.start_date), e:taskEnd(t)}; 
-    rows.push([wbs[t.id]||'', t.name, t.type, t.category, fmt(rs), fmt(re), t.duration_days+'d', t.progress_pct+'%', STATUS_LABELS[t.status]||t.status, t.assignee||''])
-  })
-  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n')
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ga-schedule.csv';a.click();toast('📊 CSV exported')
-}
+  const {wbs} = getWBS();
+  const rows = [['WBS', 'Task Name', 'Type', 'Category', 'Start', 'End', 'Duration', '%', 'Status', 'Assignee']];
   
-  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n')
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ga-schedule.csv';a.click();toast('📊 CSV exported')
+  getVisible().forEach(({task:t}) => {
+    // โค้ดดึงวันที่จริงของ Parent ไปลง CSV
+    const hasKids = state.tasks.some(c => c.parent_id === t.id);
+    const {s:rs, e:re} = hasKids ? (getParentDates(t.id) || {s:pd(t.start_date), e:taskEnd(t)}) : {s:pd(t.start_date), e:taskEnd(t)};
+    
+    rows.push([wbs[t.id]||'', t.name, t.type, t.category, fmt(rs), fmt(re), t.duration_days+'d', t.progress_pct+'%', STATUS_LABELS[t.status]||t.status, t.assignee||'']);
+  });
+
+  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'ga-schedule.csv';
+  a.click();
+  toast('📊 CSV exported');
 }
 async function exportPNG(){
   if(!window.html2canvas){toast('❌ html2canvas not found');return}if(!state.currentProjectId){openProjModal();return}
