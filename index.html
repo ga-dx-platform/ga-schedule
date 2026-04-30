@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
 :root {
   --nt-teal:#00F5AA;--nt-ind:#3B00FF;
@@ -332,6 +333,29 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 .cal-task-bar{font-size:9px;padding:1.5px 5px;border-radius:3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;cursor:pointer;font-family:var(--mono);font-weight:500;transition:filter .1s;display:block}
 .cal-task-bar:hover{filter:brightness(.85)}
 .cal-more{font-size:9px;color:var(--txt3);margin-top:2px;font-family:var(--mono);padding-left:2px}
+
+/* DASHBOARD */
+#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px}
+.dash-section-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);font-family:var(--mono);margin-bottom:10px}
+.dash-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:14px}
+.dash-card{background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border:1px solid var(--gbdr);border-radius:var(--r-xl);box-shadow:var(--gshadow);padding:18px 20px;position:relative;overflow:hidden;transition:box-shadow .15s,transform .12s}
+.dash-card:hover{box-shadow:0 6px 28px rgba(59,0,255,.11),0 2px 8px rgba(0,245,170,.07);transform:translateY(-1px)}
+.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.dash-card-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);font-family:var(--mono);margin-bottom:8px}
+.dash-card-value{font-size:2rem;font-weight:800;line-height:1;color:var(--txt);letter-spacing:-.02em;font-family:var(--mono)}
+.dash-card-sub{font-size:11px;color:var(--txt3);margin-top:6px;font-family:var(--mono)}
+.dash-card-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:28px;opacity:.13}
+.dash-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px}
+.dash-chart-box{background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border:1px solid var(--gbdr);border-radius:var(--r-xl);box-shadow:var(--gshadow);padding:18px 20px}
+.dash-chart-title{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--txt2);font-family:var(--mono);margin-bottom:14px}
+.dash-chart-canvas{position:relative;height:260px}
+.dash-timeline{background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border:1px solid var(--gbdr);border-radius:var(--r-xl);box-shadow:var(--gshadow);padding:18px 20px}
+.dash-tl-row{display:grid;grid-template-columns:minmax(140px,1fr) 2fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(59,0,255,.05)}
+.dash-tl-row:last-child{border-bottom:none}
+.dash-tl-name{font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-tl-bar-wrap{background:#f1f5f9;border-radius:10px;height:8px;overflow:hidden}
+.dash-tl-bar{height:100%;border-radius:10px;background:var(--nt-grad90);transition:width .4s}
+.dash-tl-pct{font-size:10px;font-family:var(--mono);color:var(--txt3);min-width:30px;text-align:right}
 </style>
 </head>
 <body>
@@ -355,6 +379,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
       <button class="tb tb-tab view-tab active" data-view="gantt" onclick="switchView('gantt')">📊 Gantt</button>
       <button class="tb tb-tab view-tab" data-view="kanban" onclick="switchView('kanban')">🗂 Kanban</button>
       <button class="tb tb-tab view-tab" data-view="calendar" onclick="switchView('calendar')">📅 Calendar</button>
+      <button class="tb tb-tab view-tab" data-view="dashboard" onclick="switchView('dashboard')">📈 Dashboard</button>
     </div>
     <div class="tb-sep"></div>
     <button class="tb save" onclick="saveAll()">💾 Save</button>
@@ -402,6 +427,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     </div>
     <div id="view-kanban" style="display:none;flex:1;padding:16px"></div>
     <div id="view-calendar" style="display:none;flex:1;padding:16px"></div>
+    <div id="view-dashboard" style="display:none;flex:1;padding:24px;flex-direction:column;gap:24px"></div>
   </div>
   <div id="status-bar">
     <span class="sb-txt" id="sb-tasks">0 tasks</span>
@@ -879,6 +905,8 @@ function render(){
     renderKanban()
   } else if(state.currentView==='calendar'){
     renderCalendar()
+  } else if(state.currentView==='dashboard'){
+    renderDashboard()
   }
   renderSB()
 }
@@ -1186,6 +1214,7 @@ function switchView(name){
   document.getElementById('view-gantt').style.display=name==='gantt'?'flex':'none'
   document.getElementById('view-kanban').style.display=name==='kanban'?'block':'none'
   document.getElementById('view-calendar').style.display=name==='calendar'?'block':'none'
+  document.getElementById('view-dashboard').style.display=name==='dashboard'?'flex':'none'
   document.querySelectorAll('.view-tab').forEach(btn=>{
     btn.classList.toggle('active',btn.dataset.view===name)
   })
@@ -1358,6 +1387,183 @@ function calNav(dir){
 }
 function calNavToday(){
   const n=new Date();state.calendarYear=n.getFullYear();state.calendarMonth=n.getMonth();renderCalendar()
+}
+
+// === DASHBOARD ===
+let _chartStatus=null,_chartCategory=null
+
+function renderDashboard(){
+  const container=document.getElementById('view-dashboard')
+  if(!container)return
+
+  // ── KPI calculations ──────────────────────────────────────────
+  const tasks=state.tasks
+  const today=new Date()
+  const total=tasks.length
+  const completed=tasks.filter(t=>t.status==='Completed'||t.progress_pct===100).length
+  const inProgress=tasks.filter(t=>{const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct;return getDerivedStatus(t,pct)==='In Progress'}).length
+  const delayed=tasks.filter(t=>{
+    if(t.status==='Cancelled'||t.status==='Completed')return false
+    return taskEnd(t)<today||t.status==='Delayed'
+  }).length
+  const onHold=tasks.filter(t=>t.status==='On Hold').length
+  const cancelled=tasks.filter(t=>t.status==='Cancelled').length
+  const activeTasks=tasks.filter(t=>t.status!=='Cancelled')
+  const avgPct=activeTasks.length?Math.round(activeTasks.reduce((s,t)=>s+t.progress_pct,0)/activeTasks.length):0
+
+  // ── Status counts for donut ────────────────────────────────────
+  const statusCounts={'Not Started':0,'In Progress':0,'Completed':0,'Delayed':0,'On Hold':0,'Cancelled':0}
+  tasks.forEach(t=>{
+    const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
+    const st=getDerivedStatus(t,pct)
+    if(statusCounts[st]!==undefined)statusCounts[st]++
+  })
+  const statusColors={'Not Started':'#94a3b8','In Progress':'#3B00FF','Completed':'#059669','Delayed':'#ef4444','On Hold':'#d97706','Cancelled':'#cbd5e1'}
+
+  // ── Category counts for bar ────────────────────────────────────
+  const catCounts={}
+  tasks.forEach(t=>{const c=t.category||'General';catCounts[c]=(catCounts[c]||0)+1})
+  const catKeys=Object.keys(catCounts)
+
+  // ── Top tasks by progress (non-parent, non-cancelled) ─────────
+  const topTasks=[...tasks]
+    .filter(t=>!state.tasks.some(c=>c.parent_id===t.id)&&t.status!=='Cancelled')
+    .sort((a,b)=>b.progress_pct-a.progress_pct)
+    .slice(0,8)
+
+  // ── Render HTML ───────────────────────────────────────────────
+  const pctColor=avgPct>=75?'#059669':avgPct>=40?'#d97706':'#ef4444'
+  container.innerHTML=`
+    <div>
+      <div class="dash-section-title">Key Performance Indicators</div>
+      <div class="dash-cards">
+        <div class="dash-card" style="--card-top:#059669">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#059669;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
+          <div class="dash-card-label">Completed</div>
+          <div class="dash-card-value" style="color:#059669">${completed}</div>
+          <div class="dash-card-sub">of ${total} tasks</div>
+          <div class="dash-card-icon">✅</div>
+        </div>
+        <div class="dash-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#3B00FF;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
+          <div class="dash-card-label">In Progress</div>
+          <div class="dash-card-value" style="color:#3B00FF">${inProgress}</div>
+          <div class="dash-card-sub">active tasks</div>
+          <div class="dash-card-icon">🔄</div>
+        </div>
+        <div class="dash-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#ef4444;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
+          <div class="dash-card-label">Delayed / Overdue</div>
+          <div class="dash-card-value" style="color:#ef4444">${delayed}</div>
+          <div class="dash-card-sub">need attention</div>
+          <div class="dash-card-icon">⚠️</div>
+        </div>
+        <div class="dash-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#d97706;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
+          <div class="dash-card-label">On Hold</div>
+          <div class="dash-card-value" style="color:#d97706">${onHold}</div>
+          <div class="dash-card-sub">paused tasks</div>
+          <div class="dash-card-icon">⏸️</div>
+        </div>
+        <div class="dash-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${pctColor};border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
+          <div class="dash-card-label">Overall Progress</div>
+          <div class="dash-card-value" style="color:${pctColor}">${avgPct}<span style="font-size:1.1rem;font-weight:500;margin-left:2px">%</span></div>
+          <div class="dash-card-sub">${cancelled} cancelled</div>
+          <div class="dash-card-icon">📊</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="dash-section-title">Charts</div>
+      <div class="dash-charts">
+        <div class="dash-chart-box">
+          <div class="dash-chart-title">Task Status Breakdown</div>
+          <div class="dash-chart-canvas"><canvas id="canvas-status"></canvas></div>
+        </div>
+        <div class="dash-chart-box">
+          <div class="dash-chart-title">Tasks by Category</div>
+          <div class="dash-chart-canvas"><canvas id="canvas-category"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="dash-section-title">Task Progress — Top ${topTasks.length}</div>
+      <div class="dash-timeline">
+        ${topTasks.map(t=>`
+          <div class="dash-tl-row">
+            <div class="dash-tl-name" title="${esc(t.name)}">${esc(t.name)}</div>
+            <div class="dash-tl-bar-wrap">
+              <div class="dash-tl-bar" style="width:${t.progress_pct}%;background:${t.progress_pct===100?'#059669':t.progress_pct>0?'var(--nt-grad90)':'#e2e8f0'}"></div>
+            </div>
+            <div class="dash-tl-pct">${t.progress_pct}%</div>
+          </div>`).join('')}
+        ${!topTasks.length?'<div style="text-align:center;padding:20px;font-size:12px;color:var(--txt3)">No tasks yet</div>':''}
+      </div>
+    </div>`
+
+  // ── Destroy previous chart instances before re-creating ────────
+  if(_chartStatus){_chartStatus.destroy();_chartStatus=null}
+  if(_chartCategory){_chartCategory.destroy();_chartCategory=null}
+
+  if(!window.Chart)return
+
+  const fontFamily=state.settings.fontFamily||"'Noto Sans Thai',sans-serif"
+  Chart.defaults.font.family=fontFamily
+  Chart.defaults.font.size=11
+  Chart.defaults.color='#64748b'
+
+  // Donut — status breakdown
+  const statusLabels=Object.keys(statusCounts).filter(k=>statusCounts[k]>0)
+  const statusData=statusLabels.map(k=>statusCounts[k])
+  const statusColArr=statusLabels.map(k=>statusColors[k]||'#888')
+  const ctxS=document.getElementById('canvas-status')
+  if(ctxS&&statusData.some(v=>v>0)){
+    _chartStatus=new Chart(ctxS,{
+      type:'doughnut',
+      data:{
+        labels:statusLabels,
+        datasets:[{data:statusData,backgroundColor:statusColArr,borderColor:'rgba(255,255,255,.85)',borderWidth:2,hoverOffset:6}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        cutout:'62%',
+        plugins:{
+          legend:{position:'right',labels:{boxWidth:10,padding:14,font:{size:11}}},
+          tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} task${ctx.parsed!==1?'s':''}`}}
+        }
+      }
+    })
+  }
+
+  // Bar — category breakdown
+  const catColArr=catKeys.map(k=>CAT_COLORS[k]||'#888')
+  const ctxC=document.getElementById('canvas-category')
+  if(ctxC&&catKeys.length){
+    _chartCategory=new Chart(ctxC,{
+      type:'bar',
+      data:{
+        labels:catKeys,
+        datasets:[{
+          label:'Tasks',
+          data:catKeys.map(k=>catCounts[k]),
+          backgroundColor:catColArr.map(c=>c+'cc'),
+          borderColor:catColArr,
+          borderWidth:1.5,
+          borderRadius:6,
+          borderSkipped:false
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y} task${ctx.parsed.y!==1?'s':''}`}}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:11}}},
+          y:{beginAtZero:true,grid:{color:'rgba(59,0,255,.06)'},ticks:{stepSize:1,precision:0,font:{size:11}}}
+        }
+      }
+    })
+  }
 }
 
 // === SCROLL SYNC ===
