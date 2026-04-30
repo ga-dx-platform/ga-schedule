@@ -589,6 +589,9 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
       <!-- Calendar -->
       <div id="set-calendar" class="set-pane">
         <p class="set-desc">Define non-working days. Weekend columns get the weekend highlight; holiday columns get the holiday highlight.</p>
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;color:var(--txt2)"><input type="checkbox" id="set-skip-weekends" onchange="toggleSkipWeekends(this.checked)" style="margin-right:6px"> Skip Weekends in Date Calculations</label>
+        </div>
         <table class="set-table" style="margin-bottom:14px">
           <tr>
             <td style="width:38%">Weekend Days</td>
@@ -647,7 +650,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Noto Sans Thai',sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0a0f1e',parentColor:'#1e3a8a',childColor:'#6366f1',todayCol:'#e11d48',wkndBg:'#fcf0f0',wkndTxt:'#d32f2f',gridLineCol:'#e2e8f0',holCol:'#fef08a',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#3b82f6',override:false},'Completed':{color:'#22c55e',override:false},'Delayed':{color:'#f59e0b',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#ef4444',override:false}},holidays:[]}
-let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:''}
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:'',skipWeekends:false}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -688,6 +691,11 @@ function isNonWorkingDay(date){
   return holidaySet.has(ds)
 }
 function nextWorkingDayAfter(date){
+  if(!state.skipWeekends){
+    const d=new Date(date)
+    d.setDate(d.getDate()+1)
+    return d
+  }
   const d=new Date(date)
   do{d.setDate(d.getDate()+1)}while(isNonWorkingDay(d))
   return d
@@ -1234,6 +1242,8 @@ function openSettings(){
   // Status Colors
   buildStatusSettingsBody()
   // Calendar
+  const skipWeekendsEl=document.getElementById('set-skip-weekends')
+  if(skipWeekendsEl)skipWeekendsEl.checked=!!state.skipWeekends
   document.getElementById('set-weekends-group').querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=(s.weekendDays||[0,6]).includes(parseInt(cb.value))})
   document.getElementById('set-hol-col').value=s.holCol||'#fef08a'
   renderHolidayList()
@@ -1263,6 +1273,8 @@ function buildStatusSettingsBody(){
 }
 function resetDefaults(){
   state.settings=Object.assign({},DEFAULT_SETTINGS,{holidays:[...DEFAULT_SETTINGS.holidays],statusOverrides:JSON.parse(JSON.stringify(DEFAULT_SETTINGS.statusOverrides))})
+  state.skipWeekends=false
+  localStorage.setItem('gaScheduleSkipWeekends',JSON.stringify(state.skipWeekends))
   openSettings()
   toast('↺ Reset to defaults')
 }
@@ -1289,6 +1301,12 @@ function renderHolidayList(){
 }
 function removeHoliday(i){state.settings.holidays.splice(i,1);renderHolidayList()}
 function closeSettings(){document.getElementById('settings-modal-bd').classList.remove('show')}
+function toggleSkipWeekends(checked){
+  state.skipWeekends=!!checked
+  localStorage.setItem('gaScheduleSkipWeekends',JSON.stringify(state.skipWeekends))
+  if(document.getElementById('task-modal-bd').classList.contains('show'))calcTaskEndDate()
+  render()
+}
 function openDependencyModal(){
   if(!state.currentProjectId){openProjModal();return}
   if(!state.tasks.length){toast('⚠️ Add a task first');return}
@@ -1386,6 +1404,10 @@ function loadSettings(){
   if(s.wkndTxt)r.style.setProperty('--weekend-text-color',s.wkndTxt)
   if(s.gridLineCol)r.style.setProperty('--grid-line-color',s.gridLineCol)
   if(s.holCol)r.style.setProperty('--holiday-color',s.holCol)
+  const savedSkipWeekends=localStorage.getItem('gaScheduleSkipWeekends')
+  if(savedSkipWeekends!==null){
+    try{state.skipWeekends=!!JSON.parse(savedSkipWeekends)}catch{state.skipWeekends=false}
+  }
 }
 function populateParentSel(sel){
   const s=document.getElementById('t-parent');if(!s)return
@@ -1397,7 +1419,12 @@ function calcTaskEndDate(){
   const s=document.getElementById('t-start').value
   const d=parseInt(document.getElementById('t-duration').value)||0
   if(!s||d<1){document.getElementById('t-end').value='';return}
-  const end=new Date(pd(s));end.setDate(end.getDate()+(d-1))
+  let end=new Date(pd(s))
+  if(state.skipWeekends){
+    end=addWD(pd(s),d)
+  }else{
+    end.setDate(end.getDate()+(d-1))
+  }
   document.getElementById('t-end').value=fmtISO(end)
 }
 
