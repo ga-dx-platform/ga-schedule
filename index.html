@@ -666,12 +666,18 @@ function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').repla
 
 function addWD(date,n){
   if(n<=1)return new Date(date)
-  let d=new Date(date),c=0
-  const hols=new Set(state.holidays.map(h=>h.date))
-  while(c<n-1){d.setDate(d.getDate()+1);const ds=fmtISO(d);if(d.getDay()!==0&&d.getDay()!==6&&!hols.has(ds))c++}
+  let d=new Date(date),c=1
+  while(c<n){
+    d.setDate(d.getDate()+1)
+    if(!isNonWorkingDay(d))c++
+  }
   return d
 }
-function taskEnd(t){const d=pd(t.start_date);d.setDate(d.getDate()+(t.duration_days||1)-1);return d}
+function taskEnd(t){
+  const start=pd(t.start_date)
+  const dur=Math.max(1,parseInt(t.duration_days)||1)
+  return addWD(start,dur)
+}
 
 function isNonWorkingDay(date){
   const wd=state.settings.weekendDays||[0,6]
@@ -687,10 +693,7 @@ function nextWorkingDayAfter(date){
   return d
 }
 function calcTaskEndFromStart(startDate,duration){
-  const d=new Date(startDate)
-  const dur=Math.max(1,parseInt(duration)||1)
-  d.setDate(d.getDate()+(dur-1))
-  return d
+  return addWD(new Date(startDate),Math.max(1,parseInt(duration)||1))
 }
 function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
   if(visited.has(taskId))return changedMap
@@ -707,11 +710,8 @@ function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
     const nextStart=nextWorkingDayAfter(sourceEnd)
     const nextStartIso=fmtISO(nextStart)
     const prevStart=targetTask.start_date
-    const prevDuration=targetTask.duration_days
-    const nextEndIso=fmtISO(calcTaskEndFromStart(nextStart,targetTask.duration_days))
-    const prevEndIso=fmtISO(calcTaskEndFromStart(pd(prevStart),prevDuration))
 
-    if(prevStart!==nextStartIso||prevEndIso!==nextEndIso){
+    if(prevStart!==nextStartIso){
       targetTask.start_date=nextStartIso
       targetTask.duration_days=Math.max(1,parseInt(targetTask.duration_days)||1)
       changedMap.set(targetTask.id,{id:targetTask.id,start_date:targetTask.start_date,duration_days:targetTask.duration_days})
