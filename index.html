@@ -1196,16 +1196,40 @@ async function saveDependency(){
 }
 async function deleteDep(id){const{error}=await db.from('dependencies').delete().eq('id',id);if(error){toast('❌ Failed to delete link');return}await loadDeps();render();renderDepList();toast('🗑 Link removed')}
 
+function applyTaskModalGuards(taskId){
+  const typeEl=document.getElementById('t-type')
+  const startEl=document.getElementById('t-start')
+  const durationEl=document.getElementById('t-duration')
+  const progressSlideEl=document.getElementById('t-progress-slide')
+  const progressNumEl=document.getElementById('t-progress-num')
+  const parentLocked=!!taskId&&state.tasks.some(c=>c.parent_id===taskId)
+  const isMilestone=typeEl.value==='milestone'
+  const lockDateProgress=parentLocked||isMilestone
+  ;[startEl,progressSlideEl,progressNumEl].forEach(el=>{
+    el.disabled=lockDateProgress
+    el.style.backgroundColor=lockDateProgress?'#f8fafc':''
+  })
+  if(isMilestone){
+    durationEl.value=1
+  }
+  durationEl.disabled=lockDateProgress
+  durationEl.style.backgroundColor=lockDateProgress?'#f8fafc':''
+  calcTaskEndDate()
+}
+
 function openTaskModal(taskId){
   if(!state.currentProjectId){openProjModal();return}
   state.editingTaskId=taskId||null
   rememberFocus()
   const isEdit=!!taskId
   const t=isEdit?state.tasks.find(x=>x.id===taskId):null
+  const deleteBtn=document.getElementById('btn-del-task')
+  const isLocked=!!t?.locked
   // Header
   document.getElementById('modal-title-icon').textContent=isEdit?'✎':'+'
   document.getElementById('modal-title-text').textContent=isEdit?'Edit Task':'Add Task'
-  document.getElementById('btn-del-task').style.display=isEdit?'inline-flex':'none'
+  deleteBtn.style.display=isEdit&&!isLocked?'inline-flex':'none'
+  deleteBtn.disabled=isLocked
   // Basic fields
   document.getElementById('t-name').value=t?.name||''
   document.getElementById('t-type').value=t?.type||'task'
@@ -1226,8 +1250,7 @@ function openTaskModal(taskId){
   document.getElementById('f-delayed').checked=st==='Delayed'
   // Parent dropdown
   populateParentSel(t?.parent_id||null)
-  // Compute end date and show
-  calcTaskEndDate()
+  applyTaskModalGuards(taskId)
   document.getElementById('task-modal-bd').classList.add('show')
   setTimeout(()=>document.getElementById('t-name').focus(),100)
 }
@@ -1858,6 +1881,7 @@ document.getElementById('dep-unified-modal-bd').onclick=e=>{if(e.target===e.curr
 document.getElementById('confirm-btn').addEventListener('click',()=>{if(confirmCallback)confirmCallback();closeConfirmModal()})
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeDepModal();closeProjModal();closeConfirmModal();closeSettings();closeDependencyModal()}if(e.key==='n'&&(e.metaKey||e.ctrlKey)){e.preventDefault();openAddModal()}})
 ;['t-name','t-parent','t-type','t-category','t-start','t-duration','t-assignee','t-progress-num','f-delayed','f-onhold','f-cancelled','t-locked'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',markDirty);el.addEventListener('change',markDirty)}})
+document.getElementById('t-type').addEventListener('change',()=>applyTaskModalGuards(state.editingTaskId))
 
 let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>render(),200)})
 
