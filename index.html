@@ -666,12 +666,69 @@ function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').repla
 
 function addWD(date,n){
   if(n<=1)return new Date(date)
-  let d=new Date(date),c=0
-  const hols=new Set(state.holidays.map(h=>h.date))
-  while(c<n-1){d.setDate(d.getDate()+1);const ds=fmtISO(d);if(d.getDay()!==0&&d.getDay()!==6&&!hols.has(ds))c++}
+  let d=new Date(date),c=1
+  while(c<n){
+    d.setDate(d.getDate()+1)
+    if(!isNonWorkingDay(d))c++
+  }
   return d
 }
-function taskEnd(t){const d=pd(t.start_date);d.setDate(d.getDate()+(t.duration_days||1)-1);return d}
+function taskEnd(t){
+  const start=pd(t.start_date)
+  const dur=Math.max(1,parseInt(t.duration_days)||1)
+  return addWD(start,dur)
+}
+
+function isNonWorkingDay(date){
+  const wd=state.settings.weekendDays||[0,6]
+  const day=date.getDay()
+  if(wd.includes(day))return true
+  const ds=fmtISO(date)
+  const holidaySet=new Set([...(state.holidays||[]).map(h=>h.date),...((state.settings.holidays||[]).map(h=>h.date))])
+  return holidaySet.has(ds)
+}
+function nextWorkingDayAfter(date){
+  const d=new Date(date)
+  do{d.setDate(d.getDate()+1)}while(isNonWorkingDay(d))
+  return d
+}
+function calcTaskEndFromStart(startDate,duration){
+  return addWD(new Date(startDate),Math.max(1,parseInt(duration)||1))
+}
+function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
+  if(visited.has(taskId))return changedMap
+  visited.add(taskId)
+  const sourceTask=state.tasks.find(t=>t.id===taskId)
+  if(!sourceTask)return changedMap
+
+  const sourceEnd=taskEnd(sourceTask)
+  const links=state.deps.filter(link=>link.from_task_id===taskId&&(link.dep_type||'FS')==='FS')
+  links.forEach(link=>{
+    const targetTask=state.tasks.find(t=>t.id===link.to_task_id)
+    if(!targetTask)return
+
+    const nextStart=nextWorkingDayAfter(sourceEnd)
+    const nextStartIso=fmtISO(nextStart)
+    const prevStart=targetTask.start_date
+
+    if(prevStart!==nextStartIso){
+      targetTask.start_date=nextStartIso
+      targetTask.duration_days=Math.max(1,parseInt(targetTask.duration_days)||1)
+      changedMap.set(targetTask.id,{id:targetTask.id,start_date:targetTask.start_date,duration_days:targetTask.duration_days})
+      cascadeDates(targetTask.id,changedMap,visited)
+    }
+  })
+  return changedMap
+}
+async function persistCascadedTasks(changedMap){
+  const changed=[...changedMap.values()]
+  if(!changed.length)return
+  const updates=changed.map(t=>db.from('tasks').update({start_date:t.start_date,duration_days:t.duration_days}).eq('id',t.id))
+  const results=await Promise.all(updates)
+  const failed=results.find(r=>r.error)
+  if(failed)throw new Error(failed.error.message)
+}
+
 function getParentDates(taskId){
   const children=state.tasks.filter(c=>c.parent_id===taskId)
   if(!children.length){const t=state.tasks.find(t=>t.id===taskId);return t?{s:pd(t.start_date),e:taskEnd(t)}:null}
@@ -1360,8 +1417,32 @@ async function saveTask(){
   const locked=document.getElementById('t-locked').checked
   const payload={project_id:state.currentProjectId,parent_id:document.getElementById('t-parent').value||null,name,type:document.getElementById('t-type').value,category:document.getElementById('t-category').value,start_date:document.getElementById('t-start').value,duration_days:parseInt(document.getElementById('t-duration').value)||1,progress_pct:pct,status,assignee:document.getElementById('t-assignee').value||null,locked,sort_order:state.editingTaskId?undefined:state.tasks.length}
   setSS('⟳ Saving...')
-  if(state.editingTaskId){const{error}=await db.from('tasks').update(payload).eq('id',state.editingTaskId);if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}}
-  else{const{error}=await db.from('tasks').insert(payload);if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}}
+  if(state.editingTaskId){
+    const original=state.tasks.find(t=>t.id===state.editingTaskId)
+    const prevSnapshot=new Map()
+    state.tasks.forEach(t=>prevSnapshot.set(t.id,{start_date:t.start_date,duration_days:t.duration_days}))
+    const{error}=await db.from('tasks').update(payload).eq('id',state.editingTaskId)
+    if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}
+
+    if(original){
+      original.start_date=payload.start_date
+      original.duration_days=payload.duration_days
+      try{
+        const changedMap=cascadeDates(state.editingTaskId)
+        await persistCascadedTasks(changedMap)
+      }catch(err){
+        prevSnapshot.forEach((v,id)=>{const t=state.tasks.find(x=>x.id===id);if(t){t.start_date=v.start_date;t.duration_days=v.duration_days}})
+        toast('❌ Cascade save failed: '+err.message)
+        setSS('✗ Error')
+        await loadTasks()
+        return
+      }
+    }
+  }
+  else{
+    const{error}=await db.from('tasks').insert(payload)
+    if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}
+  }
   await loadTasks();setSS('✓ Synced');toast('✅ Task saved');closeTaskModal()
 }
 async function deleteTask(){
@@ -1678,9 +1759,11 @@ document.addEventListener('mouseup',async e=>{
     }
   }
 
+  const prevSnapshot=new Map()
+  state.tasks.forEach(t=>prevSnapshot.set(t.id,{start_date:t.start_date,duration_days:t.duration_days}))
+
   task.start_date=newStart
   task.duration_days=newDur
-  render()
 
   setSS('⟳ Saving...')
   const{error}=await db.from('tasks').update({start_date:newStart,duration_days:newDur}).eq('id',task.id)
@@ -1691,9 +1774,20 @@ document.addEventListener('mouseup',async e=>{
     setSS('✗ Error')
     render()
   } else {
-    const label=savedMode==='move'?'moved':savedMode==='resize-right'?'end updated':'start updated'
-    setSS('✓ Synced')
-    toast(`✅ Task ${label}`)
+    try{
+      const changedMap=cascadeDates(task.id)
+      await persistCascadedTasks(changedMap)
+      const label=savedMode==='move'?'moved':savedMode==='resize-right'?'end updated':'start updated'
+      setSS('✓ Synced')
+      toast(`✅ Task ${label}`)
+      render()
+    }catch(err){
+      prevSnapshot.forEach((v,id)=>{const t=state.tasks.find(x=>x.id===id);if(t){t.start_date=v.start_date;t.duration_days=v.duration_days}})
+      await loadTasks()
+      setSS('✗ Error')
+      toast('❌ Cascade save failed: '+err.message)
+      render()
+    }
   }
 
   dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null
