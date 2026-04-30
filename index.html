@@ -1541,6 +1541,14 @@ async function clearProject(){
 function exportCSV(){
   const{wbs}=getWBS(),rows=[['WBS','Task Name','Type','Category','Start','End','Duration','%','Status','Assignee']]
   getVisible().forEach(({task:t})=>{rows.push([wbs[t.id]||'',t.name,t.type,t.category,fmt(pd(t.start_date)),fmt(taskEnd(t)),t.duration_days+'d',t.progress_pct+'%',STATUS_LABELS[t.status]||t.status,t.assignee||''])})
+  const hasKids = state.tasks.some(c => c.parent_id === t.id);
+  const {s:rs, e:re} = hasKids ? (getParentDates(t.id) || {s:pd(t.start_date), e:taskEnd(t)}) : {s:pd(t.start_date), e:taskEnd(t)}; 
+    rows.push([wbs[t.id]||'', t.name, t.type, t.category, fmt(rs), fmt(re), t.duration_days+'d', t.progress_pct+'%', STATUS_LABELS[t.status]||t.status, t.assignee||''])
+  })
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n')
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ga-schedule.csv';a.click();toast('📊 CSV exported')
+}
+  
   const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n')
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ga-schedule.csv';a.click();toast('📊 CSV exported')
 }
@@ -1701,6 +1709,8 @@ document.getElementById('right').addEventListener('mousedown',e=>{
   const task=state.tasks.find(t=>t.id===bar.dataset.taskId)
   if(!task)return
   if(task.locked)return
+  const hasKids = state.tasks.some(c => c.parent_id === task.id);
+  if(hasKids) return;
   const rect=bar.getBoundingClientRect()
   const offsetX=e.clientX-rect.left
   const HANDLE=8
