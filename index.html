@@ -455,7 +455,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
       <button id="btn-del-task" class="mbtn del-m" style="display:none" onclick="deleteTask()">Delete</button>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="mbtn cancel" onclick="closeTaskModal()">Cancel</button>
-        <button class="mbtn save" onclick="saveTask()">Save Task</button>
+        <button id="btn-save-task" class="mbtn save" onclick="saveTask()">Save Task</button>
       </div>
     </div>
 
@@ -792,7 +792,7 @@ function getFilteredVisible(){
   const q=state.searchQuery
   if(!q)return getVisible()
   const matchIds=new Set()
-  state.tasks.forEach(t=>{if(t.name.toLowerCase().includes(q)||(t.assignee||'').toLowerCase().includes(q))matchIds.add(t.id)})
+  state.tasks.forEach(t=>{if(t.name.toLowerCase().includes(q)||(t.assignee||'').toLowerCase().includes(q)||(t.status||'').toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q))matchIds.add(t.id)})
   const visIds=new Set(matchIds)
   function addAncestors(id){const t=state.tasks.find(x=>x.id===id);if(t&&t.parent_id&&!visIds.has(t.parent_id)){visIds.add(t.parent_id);addAncestors(t.parent_id)}}
   matchIds.forEach(id=>addAncestors(id))
@@ -1465,6 +1465,8 @@ function calcTaskEndDate(){
 }
 
 async function saveTask(){
+  const btn=document.getElementById('btn-save-task');if(btn)btn.disabled=true
+  try{
   const name=document.getElementById('t-name').value.trim();if(!name){toast('⚠️ Please enter a task name');return}
   const pct=Math.min(100,Math.max(0,parseInt(document.getElementById('t-progress-num').value)||0))
   const isCancelled=document.getElementById('f-cancelled').checked
@@ -1506,7 +1508,9 @@ async function saveTask(){
     const{error}=await db.from('tasks').insert(payload)
     if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');return}
   }
+  if(payload.parent_id)state.collapsed[payload.parent_id]=false
   await loadTasks();setSS('✓ Synced');toast('✅ Task saved');closeTaskModal()
+  }finally{if(btn)btn.disabled=false}
 }
 async function deleteTask(){
   if(!state.editingTaskId)return;const t=state.tasks.find(x=>x.id===state.editingTaskId)
