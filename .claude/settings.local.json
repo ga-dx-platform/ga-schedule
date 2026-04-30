@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"enterprise SaaS project management gantt dashboard premium\" --design-system -p \"GA Schedule Pro Max\")"
+    ]
+  }
+}
