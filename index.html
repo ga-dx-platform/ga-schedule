@@ -335,27 +335,38 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 .cal-more{font-size:9px;color:var(--txt3);margin-top:2px;font-family:var(--mono);padding-left:2px}
 
 /* DASHBOARD */
-#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px}
-.dash-section-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);font-family:var(--mono);margin-bottom:10px}
-.dash-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:14px}
-.dash-card{background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border:1px solid var(--gbdr);border-radius:var(--r-xl);box-shadow:var(--gshadow);padding:18px 20px;position:relative;overflow:hidden;transition:box-shadow .15s,transform .12s}
-.dash-card:hover{box-shadow:0 6px 28px rgba(59,0,255,.11),0 2px 8px rgba(0,245,170,.07);transform:translateY(-1px)}
-.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
-.dash-card-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);font-family:var(--mono);margin-bottom:8px}
-.dash-card-value{font-size:2rem;font-weight:800;line-height:1;color:var(--txt);letter-spacing:-.02em;font-family:var(--mono)}
-.dash-card-sub{font-size:11px;color:var(--txt3);margin-top:6px;font-family:var(--mono)}
-.dash-card-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:28px;opacity:.13}
-.dash-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px}
-.dash-chart-box{background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border:1px solid var(--gbdr);border-radius:var(--r-xl);box-shadow:var(--gshadow);padding:18px 20px}
-.dash-chart-title{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--txt2);font-family:var(--mono);margin-bottom:14px}
-.dash-chart-canvas{position:relative;height:260px}
-.dash-timeline{background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border:1px solid var(--gbdr);border-radius:var(--r-xl);box-shadow:var(--gshadow);padding:18px 20px}
-.dash-tl-row{display:grid;grid-template-columns:minmax(140px,1fr) 2fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(59,0,255,.05)}
+#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:0}
+.dash-wrap{max-width:1440px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:28px;padding-bottom:8px}
+.dash-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.dash-section-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);font-family:var(--mono);display:flex;align-items:center;gap:7px}
+.dash-section-title::before{content:'';display:inline-block;width:3px;height:13px;border-radius:2px;background:var(--nt-grad90);flex-shrink:0}
+.dash-section-meta{font-size:10px;color:var(--txt3);font-family:var(--mono)}
+.dash-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(188px,1fr));gap:14px}
+.dash-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);padding:18px 18px 15px;position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease;display:flex;flex-direction:column;border-left:4px solid transparent}
+.dash-card:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,.11),0 2px 6px rgba(0,0,0,.06)}
+.dash-card::after{content:'';position:absolute;top:0;right:0;width:55%;height:100%;background:linear-gradient(135deg,transparent 35%,rgba(255,255,255,.55));pointer-events:none}
+.dash-card-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.dash-card-label{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);font-family:var(--mono);line-height:1.3}
+.dash-card-icon-wrap{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dash-card-value{font-size:2.35rem;font-weight:800;line-height:1;letter-spacing:-.03em;font-family:var(--mono);margin:4px 0 10px}
+.dash-card-trend{font-size:10.5px;font-family:var(--mono);color:var(--txt3);line-height:1.4}
+.dash-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.dash-chart-box{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);padding:18px 20px;transition:transform .2s ease,box-shadow .2s ease}
+.dash-chart-box:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.1)}
+.dash-chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.dash-chart-title{font-size:12px;font-weight:700;color:var(--txt2);font-family:var(--mono);letter-spacing:.02em}
+.dash-chart-badge{font-size:9px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f5f9;color:var(--txt3);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.dash-chart-canvas{position:relative;height:230px}
+.dash-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dash-panel{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);padding:18px 20px;transition:transform .2s ease,box-shadow .2s ease}
+.dash-panel:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.1)}
+.dash-tl-row{display:grid;grid-template-columns:minmax(110px,.9fr) 1fr 36px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(59,0,255,.04)}
 .dash-tl-row:last-child{border-bottom:none}
-.dash-tl-name{font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dash-tl-bar-wrap{background:#f1f5f9;border-radius:10px;height:8px;overflow:hidden}
-.dash-tl-bar{height:100%;border-radius:10px;background:var(--nt-grad90);transition:width .4s}
-.dash-tl-pct{font-size:10px;font-family:var(--mono);color:var(--txt3);min-width:30px;text-align:right}
+.dash-tl-name{font-size:11px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.dash-tl-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dash-tl-bar-wrap{background:#f1f5f9;border-radius:10px;height:6px;overflow:hidden}
+.dash-tl-bar{height:100%;border-radius:10px;transition:width .5s ease}
+.dash-tl-pct{font-size:10px;font-family:var(--mono);color:var(--txt3);text-align:right;font-weight:600}
 </style>
 </head>
 <body>
@@ -1390,7 +1401,7 @@ function calNavToday(){
 }
 
 // === DASHBOARD ===
-let _chartStatus=null,_chartCategory=null
+let _chartStatus=null,_chartCategory=null,_chartAssignee=null
 
 function renderDashboard(){
   const container=document.getElementById('view-dashboard')
@@ -1400,18 +1411,26 @@ function renderDashboard(){
   const tasks=state.tasks
   const today=new Date()
   const total=tasks.length
-  const completed=tasks.filter(t=>t.status==='Completed'||t.progress_pct===100).length
-  const inProgress=tasks.filter(t=>{const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct;return getDerivedStatus(t,pct)==='In Progress'}).length
+  const cancelled=tasks.filter(t=>t.status==='Cancelled').length
+  const activeTasks=tasks.filter(t=>t.status!=='Cancelled')
+  const completed=tasks.filter(t=>{
+    const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
+    return getDerivedStatus(t,pct)==='Completed'
+  }).length
+  const inProgress=tasks.filter(t=>{
+    const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
+    return getDerivedStatus(t,pct)==='In Progress'
+  }).length
   const delayed=tasks.filter(t=>{
     if(t.status==='Cancelled'||t.status==='Completed')return false
     return taskEnd(t)<today||t.status==='Delayed'
   }).length
   const onHold=tasks.filter(t=>t.status==='On Hold').length
-  const cancelled=tasks.filter(t=>t.status==='Cancelled').length
-  const activeTasks=tasks.filter(t=>t.status!=='Cancelled')
   const avgPct=activeTasks.length?Math.round(activeTasks.reduce((s,t)=>s+t.progress_pct,0)/activeTasks.length):0
+  const completionPct=total?Math.round(completed/total*100):0
+  const pctColor=avgPct>=75?'#059669':avgPct>=40?'#d97706':'#ef4444'
 
-  // ── Status counts for donut ────────────────────────────────────
+  // ── Status counts ─────────────────────────────────────────────
   const statusCounts={'Not Started':0,'In Progress':0,'Completed':0,'Delayed':0,'On Hold':0,'Cancelled':0}
   tasks.forEach(t=>{
     const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
@@ -1420,92 +1439,134 @@ function renderDashboard(){
   })
   const statusColors={'Not Started':'#94a3b8','In Progress':'#3B00FF','Completed':'#059669','Delayed':'#ef4444','On Hold':'#d97706','Cancelled':'#cbd5e1'}
 
-  // ── Category counts for bar ────────────────────────────────────
+  // ── Category counts ───────────────────────────────────────────
   const catCounts={}
   tasks.forEach(t=>{const c=t.category||'General';catCounts[c]=(catCounts[c]||0)+1})
   const catKeys=Object.keys(catCounts)
 
-  // ── Top tasks by progress (non-parent, non-cancelled) ─────────
+  // ── Assignee counts (top 8) ───────────────────────────────────
+  const assigneeCounts={}
+  tasks.forEach(t=>{const a=(t.assignee||'').trim()||'Unassigned';assigneeCounts[a]=(assigneeCounts[a]||0)+1})
+  const assigneeEntries=Object.entries(assigneeCounts).sort((a,b)=>b[1]-a[1]).slice(0,8)
+  const assigneeKeys=assigneeEntries.map(e=>e[0])
+  const assigneeData=assigneeEntries.map(e=>e[1])
+
+  // ── Top tasks by progress ─────────────────────────────────────
   const topTasks=[...tasks]
     .filter(t=>!state.tasks.some(c=>c.parent_id===t.id)&&t.status!=='Cancelled')
     .sort((a,b)=>b.progress_pct-a.progress_pct)
-    .slice(0,8)
+    .slice(0,10)
 
-  // ── Render HTML ───────────────────────────────────────────────
-  const pctColor=avgPct>=75?'#059669':avgPct>=40?'#d97706':'#ef4444'
+  // ── SVG icon strings ──────────────────────────────────────────
+  const IC={
+    list:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 16 16"><path d="M2 4h12M2 8h9M2 12h6"/></svg>`,
+    check:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 3-3.5"/></svg>`,
+    clock:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5"/></svg>`,
+    alert:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 16 16"><path d="M8 2.5L14 13H2L8 2.5z"/><path d="M8 7v2.5"/><circle cx="8" cy="11.8" r=".6" fill="currentColor" stroke="none"/></svg>`,
+    pause:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><line x1="5" y1="3" x2="5" y2="13"/><line x1="11" y1="3" x2="11" y2="13"/></svg>`,
+    trend:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 16 16"><polyline points="2,12 6,7 9.5,10 14,4"/><polyline points="11,4 14,4 14,7"/></svg>`
+  }
+
+  // ── Card builder ──────────────────────────────────────────────
+  const card=(label,value,suffix,color,trendHtml,icon)=>`
+    <div class="dash-card" style="border-left-color:${color}">
+      <div class="dash-card-hdr">
+        <div class="dash-card-label">${label}</div>
+        <div class="dash-card-icon-wrap" style="background:${color}18;color:${color}">${icon}</div>
+      </div>
+      <div class="dash-card-value" style="color:${color}">${value}${suffix?`<span style="font-size:1rem;font-weight:500;margin-left:2px;opacity:.65">${suffix}</span>`:''}</div>
+      <div class="dash-card-trend">${trendHtml}</div>
+    </div>`
+
+  const now=new Date().toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})
+
+  // ── Build HTML ────────────────────────────────────────────────
   container.innerHTML=`
+  <div class="dash-wrap">
+
     <div>
-      <div class="dash-section-title">Key Performance Indicators</div>
+      <div class="dash-section-hdr">
+        <span class="dash-section-title">Key Performance Indicators</span>
+        <span class="dash-section-meta">As of ${now} &nbsp;·&nbsp; ${total} total tasks</span>
+      </div>
       <div class="dash-cards">
-        <div class="dash-card" style="--card-top:#059669">
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#059669;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
-          <div class="dash-card-label">Completed</div>
-          <div class="dash-card-value" style="color:#059669">${completed}</div>
-          <div class="dash-card-sub">of ${total} tasks</div>
-          <div class="dash-card-icon">✅</div>
-        </div>
-        <div class="dash-card">
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#3B00FF;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
-          <div class="dash-card-label">In Progress</div>
-          <div class="dash-card-value" style="color:#3B00FF">${inProgress}</div>
-          <div class="dash-card-sub">active tasks</div>
-          <div class="dash-card-icon">🔄</div>
-        </div>
-        <div class="dash-card">
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#ef4444;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
-          <div class="dash-card-label">Delayed / Overdue</div>
-          <div class="dash-card-value" style="color:#ef4444">${delayed}</div>
-          <div class="dash-card-sub">need attention</div>
-          <div class="dash-card-icon">⚠️</div>
-        </div>
-        <div class="dash-card">
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#d97706;border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
-          <div class="dash-card-label">On Hold</div>
-          <div class="dash-card-value" style="color:#d97706">${onHold}</div>
-          <div class="dash-card-sub">paused tasks</div>
-          <div class="dash-card-icon">⏸️</div>
-        </div>
-        <div class="dash-card">
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${pctColor};border-radius:var(--r-xl) var(--r-xl) 0 0"></div>
-          <div class="dash-card-label">Overall Progress</div>
-          <div class="dash-card-value" style="color:${pctColor}">${avgPct}<span style="font-size:1.1rem;font-weight:500;margin-left:2px">%</span></div>
-          <div class="dash-card-sub">${cancelled} cancelled</div>
-          <div class="dash-card-icon">📊</div>
-        </div>
+        ${card('Total Tasks',total,'','#6366f1',
+          `${activeTasks.length} active &nbsp;·&nbsp; ${cancelled} cancelled`,IC.list)}
+        ${card('Completed',completed,'','#059669',
+          `<span style="color:#059669;font-weight:700">&#x2191; ${completionPct}%</span> of total project`,IC.check)}
+        ${card('In Progress',inProgress,'','#3B00FF',
+          `${inProgress} of ${activeTasks.length} active tasks`,IC.clock)}
+        ${card('Delayed / Overdue',delayed,'','#ef4444',
+          delayed>0?`<span style="color:#ef4444;font-weight:700">&#9888; Needs attention</span>`:`<span style="color:#059669">&#10003; All on track</span>`,IC.alert)}
+        ${card('On Hold',onHold,'','#d97706',
+          onHold?`${onHold} task${onHold!==1?'s':''} paused`:`None paused`,IC.pause)}
+        ${card('Overall Progress',avgPct,'%',pctColor,
+          `<span style="color:${pctColor};font-weight:700">${avgPct>=75?'&#10003; On track':avgPct>=40?'&#9651; Needs focus':'&#9888; Behind schedule'}</span>`,IC.trend)}
       </div>
     </div>
+
     <div>
-      <div class="dash-section-title">Charts</div>
+      <div class="dash-section-hdr">
+        <span class="dash-section-title">Status &amp; Category Overview</span>
+      </div>
       <div class="dash-charts">
         <div class="dash-chart-box">
-          <div class="dash-chart-title">Task Status Breakdown</div>
+          <div class="dash-chart-hdr">
+            <span class="dash-chart-title">Task Status Breakdown</span>
+            <span class="dash-chart-badge">${total} tasks</span>
+          </div>
           <div class="dash-chart-canvas"><canvas id="canvas-status"></canvas></div>
         </div>
         <div class="dash-chart-box">
-          <div class="dash-chart-title">Tasks by Category</div>
+          <div class="dash-chart-hdr">
+            <span class="dash-chart-title">Tasks by Category</span>
+            <span class="dash-chart-badge">${catKeys.length} categories</span>
+          </div>
           <div class="dash-chart-canvas"><canvas id="canvas-category"></canvas></div>
         </div>
       </div>
     </div>
-    <div>
-      <div class="dash-section-title">Task Progress — Top ${topTasks.length}</div>
-      <div class="dash-timeline">
-        ${topTasks.map(t=>`
-          <div class="dash-tl-row">
-            <div class="dash-tl-name" title="${esc(t.name)}">${esc(t.name)}</div>
-            <div class="dash-tl-bar-wrap">
-              <div class="dash-tl-bar" style="width:${t.progress_pct}%;background:${t.progress_pct===100?'#059669':t.progress_pct>0?'var(--nt-grad90)':'#e2e8f0'}"></div>
-            </div>
-            <div class="dash-tl-pct">${t.progress_pct}%</div>
-          </div>`).join('')}
-        ${!topTasks.length?'<div style="text-align:center;padding:20px;font-size:12px;color:var(--txt3)">No tasks yet</div>':''}
-      </div>
-    </div>`
 
-  // ── Destroy previous chart instances before re-creating ────────
+    <div>
+      <div class="dash-section-hdr">
+        <span class="dash-section-title">Workload &amp; Progress Detail</span>
+      </div>
+      <div class="dash-bottom">
+        <div class="dash-panel">
+          <div class="dash-chart-hdr">
+            <span class="dash-chart-title">Top Tasks by Progress</span>
+            <span class="dash-chart-badge">${topTasks.length} shown</span>
+          </div>
+          ${topTasks.map(t=>{
+            const pct=t.progress_pct
+            const barColor=pct===100?'#059669':pct>60?'#3B00FF':pct>0?'#d97706':'#e2e8f0'
+            const dotColor=statusColors[getDerivedStatus(t,pct)]||'#94a3b8'
+            return `<div class="dash-tl-row">
+              <div class="dash-tl-name"><div class="dash-tl-dot" style="background:${dotColor}"></div><span title="${esc(t.name)}">${esc(t.name)}</span></div>
+              <div class="dash-tl-bar-wrap"><div class="dash-tl-bar" style="width:${pct}%;background:${barColor}"></div></div>
+              <div class="dash-tl-pct">${pct}%</div>
+            </div>`
+          }).join('')}
+          ${!topTasks.length?'<div style="text-align:center;padding:24px;font-size:12px;color:var(--txt3)">No tasks yet</div>':''}
+        </div>
+        <div class="dash-chart-box">
+          <div class="dash-chart-hdr">
+            <span class="dash-chart-title">Tasks by Assignee</span>
+            <span class="dash-chart-badge">${assigneeKeys.length} assignees</span>
+          </div>
+          <div class="dash-chart-canvas" style="height:${Math.max(200,assigneeKeys.length*34)}px">
+            <canvas id="canvas-assignee"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>`
+
+  // ── Destroy previous instances ────────────────────────────────
   if(_chartStatus){_chartStatus.destroy();_chartStatus=null}
   if(_chartCategory){_chartCategory.destroy();_chartCategory=null}
-
+  if(_chartAssignee){_chartAssignee.destroy();_chartAssignee=null}
   if(!window.Chart)return
 
   const fontFamily=state.settings.fontFamily||"'Noto Sans Thai',sans-serif"
@@ -1513,7 +1574,7 @@ function renderDashboard(){
   Chart.defaults.font.size=11
   Chart.defaults.color='#64748b'
 
-  // Donut — status breakdown
+  // Donut — status
   const statusLabels=Object.keys(statusCounts).filter(k=>statusCounts[k]>0)
   const statusData=statusLabels.map(k=>statusCounts[k])
   const statusColArr=statusLabels.map(k=>statusColors[k]||'#888')
@@ -1523,20 +1584,31 @@ function renderDashboard(){
       type:'doughnut',
       data:{
         labels:statusLabels,
-        datasets:[{data:statusData,backgroundColor:statusColArr,borderColor:'rgba(255,255,255,.85)',borderWidth:2,hoverOffset:6}]
+        datasets:[{data:statusData,backgroundColor:statusColArr,borderColor:'#fff',borderWidth:3,hoverOffset:8}]
       },
       options:{
-        responsive:true,maintainAspectRatio:false,
-        cutout:'62%',
+        responsive:true,maintainAspectRatio:false,cutout:'65%',
         plugins:{
-          legend:{position:'right',labels:{boxWidth:10,padding:14,font:{size:11}}},
+          legend:{
+            position:'right',
+            labels:{boxWidth:10,padding:14,font:{size:11},
+              generateLabels(chart){
+                const ds=chart.data.datasets[0]
+                return chart.data.labels.map((l,i)=>({
+                  text:`${l}  (${ds.data[i]})`,
+                  fillStyle:ds.backgroundColor[i],
+                  strokeStyle:'#fff',lineWidth:1,hidden:false,index:i
+                }))
+              }
+            }
+          },
           tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} task${ctx.parsed!==1?'s':''}`}}
         }
       }
     })
   }
 
-  // Bar — category breakdown
+  // Bar — category
   const catColArr=catKeys.map(k=>CAT_COLORS[k]||'#888')
   const ctxC=document.getElementById('canvas-category')
   if(ctxC&&catKeys.length){
@@ -1547,7 +1619,7 @@ function renderDashboard(){
         datasets:[{
           label:'Tasks',
           data:catKeys.map(k=>catCounts[k]),
-          backgroundColor:catColArr.map(c=>c+'cc'),
+          backgroundColor:catColArr.map(c=>c+'bb'),
           borderColor:catColArr,
           borderWidth:1.5,
           borderRadius:6,
@@ -1559,7 +1631,38 @@ function renderDashboard(){
         plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y} task${ctx.parsed.y!==1?'s':''}`}}},
         scales:{
           x:{grid:{display:false},ticks:{font:{size:11}}},
-          y:{beginAtZero:true,grid:{color:'rgba(59,0,255,.06)'},ticks:{stepSize:1,precision:0,font:{size:11}}}
+          y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{stepSize:1,precision:0,font:{size:11}}}
+        }
+      }
+    })
+  }
+
+  // Horizontal bar — assignee
+  const ctxA=document.getElementById('canvas-assignee')
+  if(ctxA&&assigneeKeys.length){
+    const palette=['#6366f1','#059669','#d97706','#ef4444','#3B00FF','#8b5cf6','#0ea5e9','#00b87a']
+    const aColors=assigneeKeys.map((_,i)=>palette[i%palette.length])
+    _chartAssignee=new Chart(ctxA,{
+      type:'bar',
+      data:{
+        labels:assigneeKeys,
+        datasets:[{
+          label:'Tasks',
+          data:assigneeData,
+          backgroundColor:aColors.map(c=>c+'bb'),
+          borderColor:aColors,
+          borderWidth:1.5,
+          borderRadius:5,
+          borderSkipped:false
+        }]
+      },
+      options:{
+        indexAxis:'y',
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.x} task${ctx.parsed.x!==1?'s':''}`}}},
+        scales:{
+          x:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{stepSize:1,precision:0,font:{size:10}}},
+          y:{grid:{display:false},ticks:{font:{size:11}}}
         }
       }
     })
