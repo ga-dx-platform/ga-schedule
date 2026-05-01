@@ -37,11 +37,11 @@
   --amber:#D97706;--amber-s:#FEF3C7;
   --red:#DC2626;--red-s:#FEE2E2;
 
-  /* Shadow system — Soft Cloud, purple-tinted (no hard/dark shadows) */
-  --shadow-sm:0 1px 4px rgba(124,58,237,.05);
-  --shadow-md:0 10px 25px -5px rgba(124,58,237,.08),0 8px 10px -6px rgba(124,58,237,.04);
-  --shadow-lg:0 16px 40px -8px rgba(124,58,237,.11),0 6px 16px -6px rgba(124,58,237,.06);
-  --shadow-xl:0 24px 56px -12px rgba(124,58,237,.14),0 10px 24px -8px rgba(124,58,237,.08);
+  /* Shadow system — Wide Soft Cloud, purple-tinted — creates visible lift */
+  --shadow-sm:0 2px 8px -2px rgba(124,58,237,.07),0 1px 3px -1px rgba(124,58,237,.04);
+  --shadow-md:0 8px 24px -4px rgba(124,58,237,.1),0 4px 10px -4px rgba(124,58,237,.06);
+  --shadow-lg:0 20px 48px -8px rgba(124,58,237,.14),0 8px 20px -6px rgba(124,58,237,.08);
+  --shadow-xl:0 32px 72px -12px rgba(124,58,237,.18),0 12px 32px -8px rgba(124,58,237,.1);
   --gshadow:var(--shadow-md);
 
   /* Typography — Friendly, rounded geometric */
@@ -132,14 +132,17 @@ body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;fl
 .nav-btn.primary:hover{background:var(--primary-hover)}
 
 /* ============================================================
-   TOOLBAR — Frosted-glass top bar
+   TOOLBAR — Floating island pill
    ============================================================ */
 #toolbar{
-  height:var(--tb-h);padding:0 16px;
-  display:flex;align-items:center;gap:4px;flex-shrink:0;overflow:hidden;
-  background:#F1F3F7;
-  border-bottom:1px solid #E8EAF0;
-  box-shadow:none;
+  margin:14px 24px 0;
+  border-radius:16px;
+  background:#FFFFFF;
+  border:1px solid #ECEEF4;
+  box-shadow:var(--shadow-sm);
+  padding:0 20px;
+  height:var(--tb-h);
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
 }
 .tb{
   font-size:12px;padding:0 12px;height:calc(var(--tb-h) - 16px);
@@ -192,8 +195,8 @@ body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;fl
 .sw-opt:hover{background:var(--primary-light);color:var(--primary);border-color:rgba(124,58,237,.3)}
 .sw-opt input[type=checkbox]{accent-color:var(--primary);cursor:pointer;width:13px;height:13px;flex-shrink:0}
 
-/* === MAIN AREA === */
-#main{display:flex;flex:1;overflow:hidden;padding:0 12px 12px;gap:0;background:#F4F5F7}
+/* === MAIN AREA — gray canvas that shows through around islands === */
+#main{display:flex;flex:1;overflow:hidden;padding:16px 24px 24px;gap:0;background:#F4F5F7}
 
 /* ============================================================
    LEFT PANEL — Task list
@@ -205,7 +208,7 @@ body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;fl
 #col-hdr{
   display:grid;grid-template-columns:var(--col-grid);gap:3px;padding:0 12px;
   height:36px;align-items:center;flex-shrink:0;
-  background:#F4F5F7;border-bottom:1px solid var(--bdr);
+  background:#F8F9FB;border-bottom:1px solid var(--bdr);
   font-size:10px;font-weight:600;color:var(--txt3);
   letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono);
 }
@@ -279,7 +282,7 @@ body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;fl
 #gantt-wrap{position:relative;min-width:100%}
 #gantt-hdr{
   position:sticky;top:0;z-index:5;
-  background:rgba(244,245,247,.96);
+  background:rgba(248,249,251,.98);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border-bottom:1px solid var(--bdr);
   height:36px;display:flex;flex-direction:column;overflow:hidden;
@@ -471,12 +474,13 @@ body.is-exporting .today-vline { background:var(--today-col)!important; opacity:
 body.is-exporting #gantt-hdr {
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
-  background:#F4F5F7!important;
+  background:#F8F9FB!important;
 }
 
 /* 6. Toolbar (not in clone but guard anyway) */
 body.is-exporting #toolbar {
-  background:#F1F3F7!important;
+  background:#FFFFFF!important;
+  box-shadow:none!important;
 }
 
 /* 7. Hide orbs (outside clone, but safe) */
@@ -500,31 +504,31 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 /* ============================================================
    VIEW CONTAINERS — layout managed by switchView() via inline display
    ============================================================ */
-/* Gantt view — floats as a white card on the gray body */
-#view-gantt{display:flex;flex:1;width:100%;overflow:hidden;border-radius:20px;box-shadow:var(--shadow-lg);background:#fff}
-#view-kanban{flex:1;overflow-x:auto;overflow-y:hidden;min-height:0;padding:20px 20px 20px}
-#view-calendar{flex:1;overflow-y:auto;min-height:0;padding:16px}
-#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px;padding:28px 28px 28px}
+/* Gantt view — white card island floating on the gray canvas */
+#view-gantt{display:flex;flex:1;width:100%;overflow:hidden;border-radius:20px;box-shadow:var(--shadow-lg);background:#FFFFFF}
+#view-kanban{flex:1;overflow-x:auto;overflow-y:hidden;min-height:0;padding:20px 24px 24px}
+#view-calendar{flex:1;overflow-y:auto;min-height:0;padding:24px}
+#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px;padding:24px 28px 32px}
 
 /* ============================================================
    KANBAN — Floating cards with premium shadows
    ============================================================ */
 .kb-board{display:flex;gap:20px;height:100%;align-items:flex-start;min-width:max-content;padding-bottom:16px}
-.kb-col{width:300px;flex-shrink:0;border-radius:24px;background:#EBEDF2;border:1px solid #E3E4EA;display:flex;flex-direction:column;max-height:calc(100vh - 168px);min-height:80px}
-.kb-col-hdr{padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:24px 24px 0 0;border-bottom:1px solid #E0E1E8;background:rgba(255,255,255,.55)}
+.kb-col{width:308px;flex-shrink:0;border-radius:22px;background:#EDEEF4;border:1px solid #E4E5EE;display:flex;flex-direction:column;max-height:calc(100vh - 200px);min-height:80px;box-shadow:inset 0 2px 8px rgba(124,58,237,.04)}
+.kb-col-hdr{padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:22px 22px 0 0;background:transparent}
 .kb-col-title{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2)}
 .kb-col-count{font-size:10.5px;padding:2px 9px;border-radius:9999px;font-weight:700;font-family:var(--mono);background:var(--bg-surface);color:var(--txt3);border:1px solid var(--bdr)}
-.kb-col-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.kb-col-body{flex:1;overflow-y:auto;padding:10px 12px 14px;display:flex;flex-direction:column;gap:10px}
 .kb-col.drag-over-col{background:var(--primary-light)!important;border-color:rgba(124,58,237,.3)}
 .kb-card{
-  background:#fff;border:1px solid #EDEAF6;border-radius:16px;
+  background:#FFFFFF;border:1px solid rgba(124,58,237,.07);border-radius:16px;
   padding:18px 16px 16px 20px;cursor:grab;
   transition:box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease);
   position:relative;overflow:hidden;user-select:none;
-  box-shadow:var(--shadow-md);
+  box-shadow:0 4px 16px -4px rgba(124,58,237,.1),0 2px 6px -2px rgba(124,58,237,.06);
 }
 .kb-card:active{cursor:grabbing}
-.kb-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px)}
+.kb-card:hover{box-shadow:0 12px 28px -6px rgba(124,58,237,.14),0 4px 12px -4px rgba(124,58,237,.08);transform:translateY(-3px)}
 .kb-card.dragging{opacity:.6;box-shadow:var(--shadow-lg);transform:rotate(.8deg) scale(1.02);cursor:grabbing}
 .kb-card-accent{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--r-md) 0 0 var(--r-md)}
 .kb-card-name{font-size:13.5px;font-weight:700;color:var(--txt);margin-bottom:6px;line-height:1.4}
