@@ -18,8 +18,8 @@
   --nt-grad90:linear-gradient(90deg,#A78BFA,#7C3AED);
   --nt-glow:0 2px 8px rgba(124,58,237,.22),0 1px 3px rgba(124,58,237,.12);
 
-  /* Backgrounds — soft cool off-white body, pure white surfaces */
-  --bg-app:#F4F5F7;--bg-page:#F4F5F7;--bg-surface:#FFFFFF;
+  /* Backgrounds — deeper canvas so white islands pop */
+  --bg-app:#F1F5F9;--bg-page:#F1F5F9;--bg-surface:#FFFFFF;
   --glass:rgba(255,255,255,.85);--glass-hi:rgba(255,255,255,.97);
   --gbdr:rgba(255,255,255,.97);
 
@@ -80,7 +80,7 @@
 /* === RESET === */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--font);background:#F1F5F9;color:var(--txt);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
 /* === CUSTOM SCROLLBARS (global, thin & sleek) === */
 *{scrollbar-width:thin;scrollbar-color:#D1D5DB transparent}
@@ -91,9 +91,9 @@ body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;fl
 
 /* === AMBIENT ORBS (subtle) === */
 .orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(100px)}
-.o1{width:600px;height:600px;background:rgba(124,58,237,.04);top:-200px;left:-150px}
-.o2{width:500px;height:500px;background:rgba(167,139,250,.03);bottom:-150px;right:-100px}
-.o3{width:350px;height:350px;background:rgba(124,58,237,.025);top:40%;left:45%}
+.o1{width:700px;height:700px;background:rgba(124,58,237,.05);top:-250px;left:-200px}
+.o2{width:600px;height:600px;background:rgba(167,139,250,.04);bottom:-200px;right:-150px}
+.o3{width:400px;height:400px;background:rgba(124,58,237,.03);top:40%;left:45%}
 
 /* === APP SHELL === */
 #app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
@@ -135,11 +135,11 @@ body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;fl
    TOOLBAR — Floating island pill
    ============================================================ */
 #toolbar{
-  margin:14px 24px 0;
-  border-radius:16px;
-  background:#FFFFFF;
-  border:1px solid #ECEEF4;
-  box-shadow:var(--shadow-sm);
+  margin:16px 24px 0 24px !important;
+  border-radius:16px !important;
+  background:#FFFFFF !important;
+  border:none !important;
+  box-shadow:0 4px 6px -1px rgba(0,0,0,.05),0 2px 4px -2px rgba(0,0,0,.03) !important;
   padding:0 20px;
   height:var(--tb-h);
   display:flex;align-items:center;gap:6px;flex-shrink:0;
@@ -195,8 +195,8 @@ body{font-family:var(--font);background:#F4F5F7;color:var(--txt);display:flex;fl
 .sw-opt:hover{background:var(--primary-light);color:var(--primary);border-color:rgba(124,58,237,.3)}
 .sw-opt input[type=checkbox]{accent-color:var(--primary);cursor:pointer;width:13px;height:13px;flex-shrink:0}
 
-/* === MAIN AREA — gray canvas that shows through around islands === */
-#main{display:flex;flex:1;overflow:hidden;padding:16px 24px 24px;gap:0;background:#F4F5F7}
+/* === MAIN AREA — pure canvas; views handle their own island margins === */
+#main{display:flex;flex:1;overflow:hidden;padding:0;gap:0;background:#F1F5F9}
 
 /* ============================================================
    LEFT PANEL — Task list
@@ -502,33 +502,65 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 }
 
 /* ============================================================
-   VIEW CONTAINERS — layout managed by switchView() via inline display
+   VIEW CONTAINERS — Island layout: every view is a white card on the gray canvas
    ============================================================ */
-/* Gantt view — white card island floating on the gray canvas */
-#view-gantt{display:flex;flex:1;width:100%;overflow:hidden;border-radius:20px;box-shadow:var(--shadow-lg);background:#FFFFFF}
-#view-kanban{flex:1;overflow-x:auto;overflow-y:hidden;min-height:0;padding:20px 24px 24px}
-#view-calendar{flex:1;overflow-y:auto;min-height:0;padding:24px}
-#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px;padding:24px 28px 32px}
+#view-gantt{
+  display:flex;flex:1;overflow:hidden;
+  margin:20px 24px 24px !important;
+  background:#FFFFFF !important;
+  border-radius:24px !important;
+  box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
+  border:1px solid #E2E8F0 !important;
+}
+#view-kanban{
+  flex:1;overflow-x:auto;overflow-y:hidden;min-height:0;
+  margin:20px 24px 24px !important;
+  background:#FFFFFF !important;
+  border-radius:24px !important;
+  box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
+  border:1px solid #E2E8F0 !important;
+  padding:20px 24px 24px;
+}
+#view-calendar{
+  flex:1;overflow-y:auto;min-height:0;
+  margin:20px 24px 24px !important;
+  background:#FFFFFF !important;
+  border-radius:24px !important;
+  box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
+  border:1px solid #E2E8F0 !important;
+  padding:24px;
+}
+#view-dashboard{
+  flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px;
+  margin:20px 24px 24px !important;
+  background:#FFFFFF !important;
+  border-radius:24px !important;
+  box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
+  border:1px solid #E2E8F0 !important;
+  padding:28px 32px 36px;
+}
 
 /* ============================================================
    KANBAN — Floating cards with premium shadows
    ============================================================ */
 .kb-board{display:flex;gap:20px;height:100%;align-items:flex-start;min-width:max-content;padding-bottom:16px}
-.kb-col{width:308px;flex-shrink:0;border-radius:22px;background:#EDEEF4;border:1px solid #E4E5EE;display:flex;flex-direction:column;max-height:calc(100vh - 200px);min-height:80px;box-shadow:inset 0 2px 8px rgba(124,58,237,.04)}
+.kb-col{width:308px;flex-shrink:0;border-radius:20px !important;background:#F8FAFC !important;border:1px solid #E2E8F0 !important;display:flex;flex-direction:column;max-height:calc(100vh - 200px);min-height:80px}
 .kb-col-hdr{padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:22px 22px 0 0;background:transparent}
 .kb-col-title{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2)}
 .kb-col-count{font-size:10.5px;padding:2px 9px;border-radius:9999px;font-weight:700;font-family:var(--mono);background:var(--bg-surface);color:var(--txt3);border:1px solid var(--bdr)}
 .kb-col-body{flex:1;overflow-y:auto;padding:10px 12px 14px;display:flex;flex-direction:column;gap:10px}
 .kb-col.drag-over-col{background:var(--primary-light)!important;border-color:rgba(124,58,237,.3)}
 .kb-card{
-  background:#FFFFFF;border:1px solid rgba(124,58,237,.07);border-radius:16px;
+  background:#FFFFFF !important;
+  border:1px solid #E8EDF3 !important;
+  border-radius:14px;
   padding:18px 16px 16px 20px;cursor:grab;
   transition:box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease);
   position:relative;overflow:hidden;user-select:none;
-  box-shadow:0 4px 16px -4px rgba(124,58,237,.1),0 2px 6px -2px rgba(124,58,237,.06);
+  box-shadow:0 4px 6px -1px rgba(0,0,0,.05),0 2px 4px -2px rgba(0,0,0,.04) !important;
 }
 .kb-card:active{cursor:grabbing}
-.kb-card:hover{box-shadow:0 12px 28px -6px rgba(124,58,237,.14),0 4px 12px -4px rgba(124,58,237,.08);transform:translateY(-3px)}
+.kb-card:hover{box-shadow:0 10px 15px -3px rgba(0,0,0,.07),0 4px 6px -4px rgba(0,0,0,.04) !important;transform:translateY(-2px)}
 .kb-card.dragging{opacity:.6;box-shadow:var(--shadow-lg);transform:rotate(.8deg) scale(1.02);cursor:grabbing}
 .kb-card-accent{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--r-md) 0 0 var(--r-md)}
 .kb-card-name{font-size:13.5px;font-weight:700;color:var(--txt);margin-bottom:6px;line-height:1.4}
