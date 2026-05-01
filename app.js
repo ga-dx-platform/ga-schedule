@@ -268,7 +268,7 @@ function renderTaskList(){
   const qaBtn=document.createElement('div')
   qaBtn.className='quick-add-btn'
   qaBtn.setAttribute('data-html2canvas-ignore','true')
-  qaBtn.textContent='+'
+  qaBtn.innerHTML='<i class="fas fa-plus"></i> Add New Task'
   qaBtn.onclick=()=>openTaskModal(null)
   tl.appendChild(qaBtn)
   tl.onclick=e=>{
