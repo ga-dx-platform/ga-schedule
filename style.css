@@ -533,6 +533,11 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 .kb-pbar{height:100%;border-radius:10px;background:var(--nt-grad90)}
 .kb-pct{font-size:10px;color:var(--txt3);text-align:right;margin-top:3px;font-family:var(--mono)}
 .kb-empty{padding:16px;text-align:center;font-size:12px;color:var(--txt3);border:1.5px dashed var(--bdr);border-radius:var(--r-md);background:rgba(0,0,0,.01)}
+.kb-card-main{border-width:1.5px;background:#FAFBFF}
+.kb-card-main .kb-card-name{font-weight:700}
+.kb-card-sub{background:var(--bg-surface)}
+.kb-parent-ref{font-size:11px;color:var(--txt3);font-style:italic;margin-bottom:5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kb-main-badge{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:10px;background:var(--txt);color:#fff;font-family:var(--font);line-height:1.4;flex-shrink:0}
 
 /* ============================================================
    CALENDAR

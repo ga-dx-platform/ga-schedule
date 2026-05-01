@@ -561,17 +561,22 @@ function renderKanban(){
       body.appendChild(empty)
     }
     tasks.forEach(t=>{
-      const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
+      const hasKids=state.tasks.some(c=>c.parent_id===t.id)
+      const pct=hasKids?rollupPct(t.id):t.progress_pct
+      const isSubtask=!!t.parent_id
+      const parentTask=isSubtask?state.tasks.find(x=>x.id===t.parent_id):null
       const catColor=CAT_COLORS[t.category]||'#888'
       const card=document.createElement('div')
-      card.className='kb-card'
+      card.className=`kb-card ${isSubtask?'kb-card-sub':'kb-card-main'}`
       card.draggable=true
       card.dataset.taskId=t.id
       card.innerHTML=`
         <div class="kb-card-accent" style="background:${catColor}"></div>
+        ${isSubtask&&parentTask?`<div class="kb-parent-ref">↳ ${esc(parentTask.name)}</div>`:''}
         <div class="kb-card-name">${esc(t.name)}</div>
         <div class="kb-card-meta">
           <span class="kb-card-tag" style="background:${catColor}1a;color:${catColor};border:1px solid ${catColor}40">${esc(t.category)}</span>
+          ${!isSubtask&&hasKids?'<span class="kb-main-badge">Main</span>':''}
           ${t.type==='milestone'?'<span class="kb-card-tag" style="background:#fef3c7;color:#d97706;border:1px solid #fde68a">◆ MS</span>':''}
         </div>
         ${t.assignee?`<div class="kb-card-info">👤 ${esc(t.assignee)}</div>`:''}
