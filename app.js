@@ -1726,7 +1726,8 @@ document.getElementById('right').addEventListener('mousedown',e=>{
   dragBarOrigWidth=bar.offsetWidth
   dragBarTaskId=task.id
   dragBarEl=bar
-  bar.classList.add('dragging')
+  // .is-dragging disables ALL CSS transitions so JS position updates are frame-perfect
+  bar.classList.add('is-dragging')
   document.body.style.userSelect='none'
   document.body.style.cursor=dragMode==='move'?'grabbing':'ew-resize'
   e.preventDefault()
@@ -1738,7 +1739,10 @@ document.addEventListener('mousemove',e=>{
   const DP=getPxPerDay()
   switch(dragMode){
     case 'move':
-      dragBarEl.style.transform=`translateX(${deltaX}px)`
+      // Direct left manipulation keeps the cursor locked to the grab point.
+      // translateX was layered on top of the CSS `left`, causing a 1-frame
+      // coordinate mismatch when transitions fired on mousedown.
+      dragBarEl.style.left=(dragBarOrigLeft+deltaX)+'px'
       break
     case 'resize-right':
       dragBarEl.style.width=Math.max(DP,dragBarOrigWidth+deltaX)+'px'
@@ -1762,10 +1766,11 @@ document.addEventListener('mouseup',async e=>{
   document.body.style.userSelect=''
   document.body.style.cursor=''
   if(dragBarEl){
-    dragBarEl.classList.remove('dragging')
-    dragBarEl.style.transform=''
-    dragBarEl.style.width=''
-    dragBarEl.style.left=''
+    dragBarEl.classList.remove('is-dragging')
+    dragBarEl.style.transform=''   // guard against any residual transform
+    // Snap back to original position — render() will redraw at the correct new date
+    dragBarEl.style.left=dragBarOrigLeft+'px'
+    dragBarEl.style.width=dragBarOrigWidth+'px'
   }
 
   if(Math.abs(deltaX)<5){dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null;return}

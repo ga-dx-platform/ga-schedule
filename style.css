@@ -299,7 +299,17 @@ body{font-family:var(--font);background:var(--bg-app);color:var(--txt);display:f
 /* GANTT BARS */
 .gbar{position:absolute;border-radius:4px;cursor:grab;overflow:hidden;display:flex;align-items:center;transition:filter var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
 .gbar:hover{filter:brightness(.92);box-shadow:var(--shadow-md)}
-.gbar.dragging{opacity:.88;z-index:20;transition:none!important;box-shadow:var(--shadow-lg)!important;filter:brightness(.88)!important}
+/* Active Gantt-bar drag — suppresses ALL transitions so JS left/width updates are frame-perfect.
+   Scoped to .gbar so the panel-resizer's existing .is-dragging rule is unaffected. */
+.gbar.is-dragging{
+  transition:none!important;
+  cursor:grabbing!important;
+  z-index:100!important;
+  opacity:0.85;
+  box-shadow:0 8px 24px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.12)!important;
+  filter:brightness(.88)!important;
+  will-change:left,width;
+}
 .gbar::before,.gbar::after{content:'';position:absolute;top:0;bottom:0;width:8px;z-index:10;cursor:ew-resize}
 .gbar::before{left:0}.gbar::after{right:0}
 .gbar-ghost{position:absolute;border-radius:4px;background:rgba(100,116,139,.18);border:1.5px dashed rgba(100,116,139,.4);pointer-events:none}
