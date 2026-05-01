@@ -643,8 +643,8 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 #sync-status{font-size:10px;color:var(--txt3);font-family:var(--mono)}
 
 /* === QUICK ADD BUTTON === */
-.quick-add-btn{width:calc(100% - 16px);margin:8px 8px;padding:10px 16px;background:transparent;color:var(--primary,#7C3AED);border:none;border-radius:8px;font-size:13px;font-weight:700;text-align:left;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;gap:8px}
-.quick-add-btn:hover{background:#F1F5F9;color:var(--primary-dark,#5B21B6)}
+.quick-add-btn{width:max-content;margin:16px 16px;padding:8px 16px;background:#F5F3FF;color:var(--primary,#7C3AED);border:1px solid #DDD6FE;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 4px rgba(124,58,237,.08);transition:all 0.2s ease}
+.quick-add-btn:hover{background:var(--primary,#7C3AED);color:#FFFFFF;box-shadow:0 4px 8px rgba(124,58,237,.2);transform:translateY(-2px);border-color:var(--primary,#7C3AED)}
 
 /* === REDUCED MOTION === */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
