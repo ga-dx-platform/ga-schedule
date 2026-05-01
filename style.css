@@ -421,22 +421,55 @@ body{font-family:var(--font);background:var(--bg-app);color:var(--txt);display:f
 .proj-item-sub{font-size:10px;color:var(--txt3);margin-top:1px}
 
 /* === EXPORT COMPATIBILITY ===
-   Applied via body.is-exporting before html2canvas capture.
-   Strips backdrop-filter (unsupported by html2canvas → addColorStop error)
-   and makes semi-transparent backgrounds fully opaque. */
+   html2canvas 1.4.1 throws "Failed to execute 'addColorStop'" on:
+     – repeating-linear-gradient with multi-position stops (CSS Lv4)
+     – linear-gradient containing transparent stops with CSS vars
+     – backdrop-filter (not supported at all)
+   Strategy: nuke ALL gradient background-images via the class hook,
+   restore flat solid colours for the visual elements that matter. */
+
+/* 1. Strip every gradient from every element & pseudo-element */
+body.is-exporting * {
+  background-image:none!important;
+}
+body.is-exporting *::before,
+body.is-exporting *::after {
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+
+/* 2. Restore flat solid colours for Gantt bar classes */
+body.is-exporting .gb-develop  { background:#059669!important; }
+body.is-exporting .gb-test     { background:#34D399!important; }
+body.is-exporting .gb-meeting  { background:#F59E0B!important; }
+body.is-exporting .gb-general  { background:var(--child-task-color)!important; }
+body.is-exporting .gb-parent   { background:var(--parent-task-color)!important; }
+body.is-exporting .gb-cancel   { background:rgba(0,0,0,.08)!important; }
+
+/* 3. Restore progress fill bars */
+body.is-exporting .pbar-fill   { background:var(--primary)!important; }
+body.is-exporting .kb-pbar     { background:var(--primary)!important; }
+body.is-exporting .gbar-fill   { background:rgba(255,255,255,.28)!important; }
+
+/* 4. Today line — was a gradient with transparent stops */
+body.is-exporting .today-vline { background:var(--today-col)!important; opacity:.7!important; }
+
+/* 5. Gantt header — remove backdrop-filter */
 body.is-exporting #gantt-hdr {
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
   background:#F9FAFB!important;
 }
+
+/* 6. Toolbar (not in clone but guard anyway) */
 body.is-exporting #toolbar {
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
-  background:rgba(255,255,255,1)!important;
+  background:#fff!important;
 }
-body.is-exporting .today-vline {
-  background:var(--today-col)!important;
-}
+
+/* 7. Hide orbs (outside clone, but safe) */
 body.is-exporting .orb { display:none!important; }
 
 /* === LOADING === */

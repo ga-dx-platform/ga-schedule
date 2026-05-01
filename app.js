@@ -1458,6 +1458,39 @@ async function clearProject(){
   })
 }
 // === EXPORT ===
+
+// Walks every element in a cloned DOM tree and replaces any inline background
+// or backgroundImage that contains a gradient (or a CSS var that resolves to one).
+// CSS `!important` rules cannot override inline styles, so this must be done in JS.
+function stripGradientsFromClone(root){
+  const GRAD_RE=/gradient|var\(--nt-grad/i
+  const SOLID_FALLBACKS={
+    'gb-general':'#4F46E5','gb-develop':'#059669','gb-test':'#34D399',
+    'gb-meeting':'#F59E0B','gb-parent':'#1E3A8A','gb-cancel':'#e2e8f0',
+    'gbar-fill':'rgba(255,255,255,.28)','pbar-fill':'#4F46E5',
+    'kb-pbar':'#4F46E5','gms':'#4F46E5'
+  }
+  root.querySelectorAll('*').forEach(el=>{
+    // Resolve a solid fallback from the element's CSS classes
+    let solidFallback=null
+    for(const cls of el.classList){if(SOLID_FALLBACKS[cls]){solidFallback=SOLID_FALLBACKS[cls];break}}
+
+    // Strip inline background if it contains a gradient or unresolvable CSS var
+    const inlineBg=el.style.background||''
+    const inlineBgImg=el.style.backgroundImage||''
+    if(GRAD_RE.test(inlineBg)){
+      el.style.background=solidFallback||'transparent'
+      el.style.backgroundImage='none'
+    } else if(GRAD_RE.test(inlineBgImg)){
+      el.style.backgroundImage='none'
+      if(solidFallback&&!el.style.backgroundColor)el.style.backgroundColor=solidFallback
+    }
+
+    // Strip box-shadow referencing CSS vars (avoids secondary canvas errors)
+    if(el.style.boxShadow&&el.style.boxShadow.includes('var('))el.style.boxShadow='none'
+  })
+}
+
 function exportCSV(){
   const {wbs} = getWBS();
   const rows = [['WBS', 'Task Name', 'Type', 'Category', 'Start', 'End', 'Duration', '%', 'Status', 'Assignee']];
@@ -1490,12 +1523,16 @@ async function exportPNG(){
     const lc=left.cloneNode(true),rc=right.cloneNode(true)
     lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
     rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
-    // Strip backdrop-filter from gantt header — prevents html2canvas addColorStop error
+    // JS-level gradient surgery (CSS !important cannot override inline styles)
+    stripGradientsFromClone(lc)
+    stripGradientsFromClone(rc)
+    // Also explicitly fix gantt-hdr backdrop-filter (belt-and-suspenders)
     const ganttHdrClone=rc.querySelector('#gantt-hdr')
     if(ganttHdrClone){
       ganttHdrClone.style.backdropFilter='none'
       ganttHdrClone.style.webkitBackdropFilter='none'
       ganttHdrClone.style.background='#F9FAFB'
+      ganttHdrClone.style.backgroundImage='none'
     }
     stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
     const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true,logging:false})
@@ -1519,12 +1556,16 @@ async function exportPDF(){
     const lc=left.cloneNode(true),rc=right.cloneNode(true)
     lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
     rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
-    // Strip backdrop-filter from gantt header — prevents html2canvas addColorStop error
+    // JS-level gradient surgery (CSS !important cannot override inline styles)
+    stripGradientsFromClone(lc)
+    stripGradientsFromClone(rc)
+    // Also explicitly fix gantt-hdr backdrop-filter (belt-and-suspenders)
     const ganttHdrClone=rc.querySelector('#gantt-hdr')
     if(ganttHdrClone){
       ganttHdrClone.style.backdropFilter='none'
       ganttHdrClone.style.webkitBackdropFilter='none'
       ganttHdrClone.style.background='#F9FAFB'
+      ganttHdrClone.style.backgroundImage='none'
     }
     stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
     const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true,logging:false})
