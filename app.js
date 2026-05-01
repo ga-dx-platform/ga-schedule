@@ -177,17 +177,20 @@ async function loadTasks(){
   setSS('✓ Synced')
 }
 async function loadHolidays(){
-  const{data}=await db.from('thai_holidays').select('date').eq('year',new Date().getFullYear())
+  const{data,error}=await db.from('thai_holidays').select('date').eq('year',new Date().getFullYear())
+  if(error){console.warn('Failed to load holidays:',error.message);return}
   state.holidays=data||[]
 }
 async function loadDeps(){
   if(!state.currentProjectId)return
-  const{data}=await db.from('dependencies').select('*').eq('project_id',state.currentProjectId)
+  const{data,error}=await db.from('dependencies').select('*').eq('project_id',state.currentProjectId)
+  if(error){toast('❌ Failed to load dependencies');console.error(error.message);return}
   state.deps=data||[]
 }
 async function loadBaselines(){
   if(!state.currentProjectId)return
-  const{data}=await db.from('baselines').select('*').eq('project_id',state.currentProjectId).order('created_at',{ascending:false})
+  const{data,error}=await db.from('baselines').select('*').eq('project_id',state.currentProjectId).order('created_at',{ascending:false})
+  if(error){console.warn('Failed to load baselines:',error.message);return}
   state.baselines=data||[]
 }
 
@@ -507,12 +510,12 @@ function renderSB(){
 }
 
 // === VIEW SWITCHING ===
+const VIEW_DISPLAY={gantt:'flex',kanban:'block',calendar:'block',dashboard:'flex'}
 function switchView(name){
   state.currentView=name
-  document.getElementById('view-gantt').style.display=name==='gantt'?'flex':'none'
-  document.getElementById('view-kanban').style.display=name==='kanban'?'block':'none'
-  document.getElementById('view-calendar').style.display=name==='calendar'?'block':'none'
-  document.getElementById('view-dashboard').style.display=name==='dashboard'?'flex':'none'
+  Object.keys(VIEW_DISPLAY).forEach(v=>{
+    document.getElementById('view-'+v).style.display=v===name?VIEW_DISPLAY[v]:'none'
+  })
   document.querySelectorAll('.view-tab').forEach(btn=>{
     btn.classList.toggle('active',btn.dataset.view===name)
   })
@@ -1449,7 +1452,9 @@ async function clearProject(){
   if(!state.currentProjectId)return
   showConfirm('Are you sure you want to clear ALL tasks? This action cannot be undone.',async()=>{
     setSS('⟳ Clearing...')
-    await db.from('tasks').delete().eq('project_id',state.currentProjectId);await loadTasks();await loadDeps();setSS('✓ Synced');render();toast('🗑 Project cleared')
+    const{error}=await db.from('tasks').delete().eq('project_id',state.currentProjectId)
+    if(error){toast('❌ Failed to clear project: '+error.message);setSS('✗ Error');return}
+    await loadTasks();await loadDeps();setSS('✓ Synced');render();toast('🗑 Project cleared')
   })
 }
 // === EXPORT ===
@@ -1472,35 +1477,57 @@ function exportCSV(){
   toast('📊 CSV exported');
 }
 async function exportPNG(){
-  if(!window.html2canvas){toast('❌ html2canvas not found');return}if(!state.currentProjectId){openProjModal();return}
+  if(!window.html2canvas){toast('❌ html2canvas not found');return}
+  if(!state.currentProjectId){openProjModal();return}
   const left=document.getElementById('left'),right=document.getElementById('right')
   const pn=(state.projects.find(p=>p.id===state.currentProjectId)?.name||'project').replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
   showL();setSS('⟳ Generating PNG...')
+  let stage=null
   try{
-    const stage=document.createElement('div');stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+    document.body.classList.add('is-exporting')
+    stage=document.createElement('div')
+    stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
     const lc=left.cloneNode(true),rc=right.cloneNode(true)
     lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
     rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
+    // Strip backdrop-filter from gantt header — prevents html2canvas addColorStop error
+    const ganttHdrClone=rc.querySelector('#gantt-hdr')
+    if(ganttHdrClone){
+      ganttHdrClone.style.backdropFilter='none'
+      ganttHdrClone.style.webkitBackdropFilter='none'
+      ganttHdrClone.style.background='#F9FAFB'
+    }
     stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
-    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true});stage.remove()
+    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true,logging:false})
     const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=`ga-schedule-${pn}-${fmt(new Date())}.png`;a.click()
     toast('🖼 PNG exported');setSS('✓ Synced')
-  }catch(err){toast('❌ PNG export failed');setSS('⚠️ PNG error');console.error(err)}
-  finally{hideL()}
+  }catch(err){toast('❌ PNG export failed: '+err.message);setSS('⚠️ PNG error');console.error(err)}
+  finally{if(stage&&stage.parentNode)stage.parentNode.removeChild(stage);document.body.classList.remove('is-exporting');hideL()}
 }
 async function exportPDF(){
-  if(!window.html2canvas||!window.jspdf?.jsPDF){toast('❌ Library not found');return}if(!state.currentProjectId){openProjModal();return}
+  if(!window.html2canvas||!window.jspdf?.jsPDF){toast('❌ Library not found');return}
+  if(!state.currentProjectId){openProjModal();return}
   const left=document.getElementById('left'),right=document.getElementById('right')
   const pnr=state.projects.find(p=>p.id===state.currentProjectId)?.name||'project'
   const pn=pnr.replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
   showL();setSS('⟳ Generating PDF...')
+  let stage=null
   try{
-    const stage=document.createElement('div');stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+    document.body.classList.add('is-exporting')
+    stage=document.createElement('div')
+    stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
     const lc=left.cloneNode(true),rc=right.cloneNode(true)
     lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
     rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
+    // Strip backdrop-filter from gantt header — prevents html2canvas addColorStop error
+    const ganttHdrClone=rc.querySelector('#gantt-hdr')
+    if(ganttHdrClone){
+      ganttHdrClone.style.backdropFilter='none'
+      ganttHdrClone.style.webkitBackdropFilter='none'
+      ganttHdrClone.style.background='#F9FAFB'
+    }
     stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
-    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true});stage.remove()
+    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true,logging:false})
     const{jsPDF}=window.jspdf,pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'})
     const pw=pdf.internal.pageSize.getWidth(),m=8,imgW=pw-m*2
     const imgH=Math.min((canvas.height*imgW)/canvas.width,pdf.internal.pageSize.getHeight()-m*2-8)
@@ -1509,8 +1536,8 @@ async function exportPDF(){
     pdf.addImage(canvas.toDataURL('image/png'),'PNG',m,m+8,imgW,imgH)
     pdf.save(`ga-schedule-${pn}-${fmt(new Date())}.pdf`)
     toast('📄 PDF exported');setSS('✓ Synced')
-  }catch(err){toast('❌ PDF export failed');setSS('⚠️ PDF error');console.error(err)}
-  finally{hideL()}
+  }catch(err){toast('❌ PDF export failed: '+err.message);setSS('⚠️ PDF error');console.error(err)}
+  finally{if(stage&&stage.parentNode)stage.parentNode.removeChild(stage);document.body.classList.remove('is-exporting');hideL()}
 }
 
 // === UI HELPERS ===

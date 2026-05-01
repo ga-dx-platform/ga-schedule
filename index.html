@@ -59,10 +59,10 @@
     <div class="tb-sep"></div>
     <button class="tb" onclick="openSettings()">Settings</button>
     <div class="tb-sep"></div>
-    <span style="font-size:10px;color:var(--txt3);font-family:var(--mono)" id="sync-status">—</span>
+    <span id="sync-status">—</span>
   </div>
   <div id="main">
-    <div id="view-gantt" style="display:flex;flex:1;width:100%;overflow:hidden">
+    <div id="view-gantt">
       <div id="left">
         <div id="col-hdr">
           <span style="text-align:center">#</span><span></span>
@@ -78,9 +78,9 @@
       <div id="panel-resizer"></div>
       <div id="right"><svg id="links-svg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;overflow:visible"></svg><div id="gantt-wrap"><div id="gantt-hdr"></div><div id="gantt-body"></div></div></div>
     </div>
-    <div id="view-kanban" style="display:none;flex:1;padding:16px"></div>
-    <div id="view-calendar" style="display:none;flex:1;padding:16px"></div>
-    <div id="view-dashboard" style="display:none;flex:1;padding:24px;flex-direction:column;gap:24px"></div>
+    <div id="view-kanban" style="display:none"></div>
+    <div id="view-calendar" style="display:none"></div>
+    <div id="view-dashboard" style="display:none"></div>
   </div>
   <div id="status-bar">
     <span class="sb-txt" id="sb-tasks">0 tasks</span>

@@ -345,8 +345,6 @@ body{font-family:var(--font);background:var(--bg-app);color:var(--txt);display:f
 #task-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),#818cf8);border-radius:var(--r-xl) var(--r-xl) 0 0;z-index:1}
 
 /* Modal form shared */
-.s-hold{background:var(--amber-s);color:var(--amber)}
-.s-delay{background:#FEE2E2;color:#EF4444}
 .btn{font-size:12px;padding:7px 16px;border-radius:var(--r-sm);cursor:pointer;font-family:var(--font);font-weight:500;border:none;transition:all var(--dur) var(--ease)}
 .m-hdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bdr)}
 .m-title{font-size:14px;font-weight:600;color:var(--txt)}
@@ -422,6 +420,25 @@ body{font-family:var(--font);background:var(--bg-app);color:var(--txt);display:f
 .proj-item-name{font-size:13px;font-weight:500;color:var(--txt)}
 .proj-item-sub{font-size:10px;color:var(--txt3);margin-top:1px}
 
+/* === EXPORT COMPATIBILITY ===
+   Applied via body.is-exporting before html2canvas capture.
+   Strips backdrop-filter (unsupported by html2canvas → addColorStop error)
+   and makes semi-transparent backgrounds fully opaque. */
+body.is-exporting #gantt-hdr {
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  background:#F9FAFB!important;
+}
+body.is-exporting #toolbar {
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  background:rgba(255,255,255,1)!important;
+}
+body.is-exporting .today-vline {
+  background:var(--today-col)!important;
+}
+body.is-exporting .orb { display:none!important; }
+
 /* === LOADING === */
 #loading{position:fixed;inset:0;background:rgba(249,250,251,.96);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
 .loader{width:36px;height:36px;border-radius:50%;border:3px solid rgba(79,70,229,.12);border-top-color:var(--primary);animation:spin .7s linear infinite}
@@ -438,9 +455,16 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 }
 
 /* ============================================================
+   VIEW CONTAINERS — layout managed by switchView() via inline display
+   ============================================================ */
+#view-gantt{display:flex;flex:1;width:100%;overflow:hidden}
+#view-kanban{flex:1;overflow-x:auto;overflow-y:hidden;min-height:0;padding:16px}
+#view-calendar{flex:1;overflow-y:auto;min-height:0;padding:16px}
+#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px;padding:24px}
+
+/* ============================================================
    KANBAN — Floating cards with premium shadows
    ============================================================ */
-#view-kanban{flex:1;overflow-x:auto;overflow-y:hidden;min-height:0}
 .kb-board{display:flex;gap:16px;height:100%;align-items:flex-start;min-width:max-content;padding-bottom:8px}
 .kb-col{width:272px;flex-shrink:0;border-radius:var(--r-lg);background:#F3F4F6;border:1px solid var(--bdr);display:flex;flex-direction:column;max-height:calc(100vh - 168px);min-height:80px}
 .kb-col-hdr{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:var(--r-lg) var(--r-lg) 0 0;border-bottom:1px solid var(--bdr);background:rgba(255,255,255,.5)}
@@ -470,7 +494,6 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 /* ============================================================
    CALENDAR
    ============================================================ */
-#view-calendar{flex:1;overflow-y:auto;min-height:0}
 .cal-wrap{max-width:1100px;margin:0 auto}
 .cal-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;padding-top:4px}
 .cal-nav-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--bdr);background:var(--bg-surface);cursor:pointer;color:var(--txt2);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-sm)}
@@ -492,7 +515,6 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 /* ============================================================
    DASHBOARD — KPI cards & charts
    ============================================================ */
-#view-dashboard{flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:0}
 .dash-wrap{max-width:1440px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:32px;padding-bottom:16px}
 .dash-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .dash-section-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);display:flex;align-items:center;gap:8px}
@@ -530,6 +552,9 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 .dash-tl-bar-wrap{background:#F3F4F6;border-radius:10px;height:6px;overflow:hidden}
 .dash-tl-bar{height:100%;border-radius:10px;transition:width .5s var(--ease)}
 .dash-tl-pct{font-size:11px;font-family:var(--mono);color:var(--txt3);text-align:right;font-weight:600}
+
+/* === SYNC STATUS (toolbar) === */
+#sync-status{font-size:10px;color:var(--txt3);font-family:var(--mono)}
 
 /* === REDUCED MOTION === */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
