@@ -644,5 +644,9 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 /* === SYNC STATUS (toolbar) === */
 #sync-status{font-size:10px;color:var(--txt3);font-family:var(--mono)}
 
+/* === QUICK ADD BUTTON === */
+.quick-add-btn{width:36px;height:36px;border-radius:50%;background:var(--primary-light,#F5F3FF);color:var(--primary,#7C3AED);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;cursor:pointer;margin:16px auto;box-shadow:var(--shadow-sm);border:1px dashed var(--primary);transition:all 0.2s ease}
+.quick-add-btn:hover{background:var(--primary);color:#FFFFFF;transform:scale(1.05);box-shadow:var(--shadow-md);border-style:solid}
+
 /* === REDUCED MOTION === */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}

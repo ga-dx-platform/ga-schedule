@@ -265,6 +265,12 @@ function renderTaskList(){
     frag.appendChild(row)
   })
   tl.appendChild(frag)
+  const qaBtn=document.createElement('div')
+  qaBtn.className='quick-add-btn'
+  qaBtn.setAttribute('data-html2canvas-ignore','true')
+  qaBtn.textContent='+'
+  qaBtn.onclick=()=>openTaskModal(null)
+  tl.appendChild(qaBtn)
   tl.onclick=e=>{
     const exp=e.target.closest('[data-id]');if(exp&&exp.classList.contains('r-exp')){state.collapsed[exp.dataset.id]=!state.collapsed[exp.dataset.id];render();return}
     const eb=e.target.closest('[data-edit]');if(eb){openEditModal(eb.dataset.edit);return}
