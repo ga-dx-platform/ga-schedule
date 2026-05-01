@@ -270,8 +270,6 @@ body{font-family:var(--font);background:#F1F5F9;color:var(--txt);display:flex;fl
 .act{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bdr);background:transparent;cursor:pointer;font-size:12px;color:var(--txt3);transition:all var(--dur) var(--ease);flex-shrink:0}
 .act:hover{background:var(--primary-light);color:var(--primary);border-color:rgba(124,58,237,.22)}
 .act.del:hover{background:var(--red-s);color:var(--red);border-color:rgba(220,38,38,.2)}
-.add-row{padding:8px 12px;font-size:12px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:6px;border-top:1px solid var(--bdr);transition:all var(--dur) var(--ease);font-weight:500}
-.add-row:hover{color:var(--primary);background:var(--primary-light)}
 
 /* COLUMN RESIZER */
 .resizer{position:absolute;right:0;top:0;bottom:0;width:4px;cursor:col-resize;z-index:2;border-radius:0 2px 2px 0}
