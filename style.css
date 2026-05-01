@@ -513,7 +513,8 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
   border:1px solid #E2E8F0 !important;
 }
 #view-kanban{
-  flex:1;overflow-x:auto;overflow-y:hidden;min-height:0;
+  flex:1;overflow-x:hidden;overflow-y:hidden;min-height:0;
+  display:flex !important;flex-direction:column !important;
   margin:20px 24px 24px !important;
   background:#FFFFFF !important;
   border-radius:24px !important;
@@ -523,6 +524,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 }
 #view-calendar{
   flex:1;overflow-y:auto;min-height:0;
+  display:flex !important;flex-direction:column !important;
   margin:20px 24px 24px !important;
   background:#FFFFFF !important;
   border-radius:24px !important;
@@ -543,8 +545,8 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 /* ============================================================
    KANBAN — Floating cards with premium shadows
    ============================================================ */
-.kb-board{display:flex;gap:20px;height:100%;align-items:flex-start;min-width:max-content;padding-bottom:16px}
-.kb-col{width:308px;flex-shrink:0;border-radius:20px !important;background:#F8FAFC !important;border:1px solid #E2E8F0 !important;display:flex;flex-direction:column;max-height:calc(100vh - 200px);min-height:80px}
+.kb-board{flex:1;display:flex;gap:16px;align-items:stretch;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;min-width:0}
+.kb-col{flex:1;min-width:260px;max-width:380px;flex-shrink:0;border-radius:20px !important;background:#F8FAFC !important;border:1px solid #E2E8F0 !important;display:flex;flex-direction:column;min-height:0}
 .kb-col-hdr{padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:22px 22px 0 0;background:transparent}
 .kb-col-title{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2)}
 .kb-col-count{font-size:10.5px;padding:2px 9px;border-radius:9999px;font-weight:700;font-family:var(--mono);background:var(--bg-surface);color:var(--txt3);border:1px solid var(--bdr)}
@@ -580,15 +582,15 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 /* ============================================================
    CALENDAR
    ============================================================ */
-.cal-wrap{max-width:1100px;margin:0 auto}
+.cal-wrap{width:100%;max-width:none;margin:0;display:flex;flex-direction:column;flex:1;min-height:0}
 .cal-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;padding-top:4px}
 .cal-nav-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--bdr);background:var(--bg-surface);cursor:pointer;color:var(--txt2);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all var(--dur) var(--ease);box-shadow:var(--shadow-sm)}
 .cal-nav-btn:hover{background:var(--primary-light);color:var(--primary);border-color:rgba(79,70,229,.3)}
 .cal-month-label{font-size:16px;font-weight:700;color:var(--txt);min-width:180px;text-align:center;letter-spacing:-.01em}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-radius:16px;overflow:hidden;border:1px solid var(--bdr);background:var(--bg-surface);box-shadow:var(--shadow-md)}
-.cal-dow{padding:8px 4px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);background:#F4F5F7;border-bottom:1px solid var(--bdr)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;flex:1;border-radius:16px;overflow:hidden;border:1px solid var(--bdr);background:var(--bg-surface);box-shadow:var(--shadow-md)}
+.cal-dow{padding:8px 4px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);background:#F8FAFC;border-bottom:1px solid var(--bdr)}
 .cal-dow.wknd{color:var(--weekend-text-color)}
-.cal-day{min-height:96px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);padding:6px;position:relative;transition:background var(--dur) var(--ease);overflow:hidden}
+.cal-day{min-height:80px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);padding:8px;position:relative;transition:background var(--dur) var(--ease);overflow:hidden}
 .cal-day:nth-child(7n){border-right:none}
 .cal-day.other-month{opacity:.4}
 .cal-day.is-today{background:rgba(124,58,237,.03)}
