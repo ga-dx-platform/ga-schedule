@@ -1452,7 +1452,10 @@ function enableTransitions(){requestAnimationFrame(()=>requestAnimationFrame(()=
 function autoFitAll(){
   disableTransitions()
   const colCount=11
-  if(!state.colWidths||state.colWidths.length!==colCount)state.colWidths=new Array(colCount).fill(80)
+  // Reset to defaults ก่อนวัด เพื่อป้องกัน Task Name (คอลัมน์ที่ขยายได้) จำค่าที่ถูกยืดค้างไว้
+  const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
+  state.colWidths=[...DEFAULT_COL_WIDTHS]
+
   for(let colIndex=0;colIndex<colCount;colIndex++){
     let maxWidth=0
     document.querySelectorAll(`#col-hdr > *:nth-child(${colIndex+1}), .trow > *:nth-child(${colIndex+1})`).forEach(cell=>{
@@ -1465,13 +1468,21 @@ function autoFitAll(){
     })
     state.colWidths[colIndex]=Math.min(Math.max(maxWidth+16,30),600)
   }
+
+  // ใช้ CSS variable ใหม่ก่อน
   applyColumnWidths()
-  const hdr=document.getElementById('col-hdr')
-  if(hdr){
-    const contentW=hdr.scrollWidth
-    const newW=Math.min(Math.max(contentW,320),window.innerWidth*0.8)
-    document.getElementById('left').style.width=newW+'px'
+
+  const leftPanel=document.getElementById('left')
+  const colHeader=document.getElementById('col-hdr')
+  if(leftPanel&&colHeader){
+    // 1. ปลดล็อกความกว้างที่ splitter บังคับไว้ → ให้ CSS Grid ขยาย/หดตามเนื้อหาจริง
+    leftPanel.style.width='max-content'
+    // 2. บังคับ sync reflow → วัดความกว้างที่แท้จริง (ไม่ใช่ scrollWidth ที่ถูก clamp โดย container)
+    const naturalWidth=colHeader.offsetWidth
+    // 3. ล็อกกลับเป็น px ให้ splitter ยังลากได้ปกติ
+    leftPanel.style.width=Math.min(Math.max(naturalWidth,320),window.innerWidth*0.8)+'px'
   }
+
   render()
   enableTransitions()
   toast('✅ จัดขนาดคอลัมน์อัตโนมัติสำเร็จ')
