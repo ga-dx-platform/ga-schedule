@@ -849,3 +849,30 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     flex-shrink: 0;
     margin-left: -2px;
 }
+
+/* =========================================
+   CRITICAL FIX: PREVENT LAYOUT THRASHING
+   Force instant snapping for all structural elements
+   ========================================= */
+#main,
+.view-container,
+.split,
+.split-horizontal,
+.gutter,
+.left-panel,
+.right-panel,
+.list-container,
+.gantt-view-container,
+#gantt-wrapper,
+.gantt-container,
+.frappe-gantt,
+.frappe-gantt svg {
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+}
+
+/* If the gutter needs a hover effect, only transition the color safely */
+.gutter {
+    transition: background-color 0.2s ease !important;
+}
