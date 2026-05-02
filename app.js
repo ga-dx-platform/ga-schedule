@@ -217,6 +217,45 @@ function handleSearch(query){
   _searchTimer=setTimeout(()=>render(),150)
 }
 
+function customPrompt(title,defaultValue=''){
+  return new Promise(resolve=>{
+    const overlay=document.getElementById('custom-prompt-overlay')
+    const titleEl=document.getElementById('custom-prompt-title')
+    const inputEl=document.getElementById('custom-prompt-input')
+    const btnConfirm=document.getElementById('custom-prompt-confirm')
+    const btnCancel=document.getElementById('custom-prompt-cancel')
+    if(!overlay||!titleEl||!inputEl||!btnConfirm||!btnCancel){resolve(null);return}
+
+    titleEl.textContent=title
+    inputEl.value=defaultValue
+    overlay.classList.remove('hidden')
+    overlay.classList.add('show')
+    inputEl.focus()
+    inputEl.select()
+
+    const cleanup=()=>{
+      overlay.classList.remove('show')
+      overlay.classList.add('hidden')
+      btnConfirm.removeEventListener('click',onConfirm)
+      btnCancel.removeEventListener('click',onCancel)
+      overlay.removeEventListener('click',onOverlayClick)
+      inputEl.removeEventListener('keydown',onKeydown)
+    }
+    const onConfirm=()=>{cleanup();resolve(inputEl.value.trim())}
+    const onCancel=()=>{cleanup();resolve(null)}
+    const onOverlayClick=e=>{if(e.target===overlay)onCancel()}
+    const onKeydown=e=>{
+      if(e.key==='Enter')onConfirm()
+      if(e.key==='Escape')onCancel()
+    }
+
+    btnConfirm.addEventListener('click',onConfirm)
+    btnCancel.addEventListener('click',onCancel)
+    overlay.addEventListener('click',onOverlayClick)
+    inputEl.addEventListener('keydown',onKeydown)
+  })
+}
+
 // === API / DATABASE ===
 async function loadProjects(){
   const{data,error}=await db.from('projects').select('*').order('created_at')
@@ -1106,7 +1145,7 @@ async function selectProject(id){
   closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render();triggerAutoFitOnNextPaint();renderSidebarProjects()
 }
 async function renameProject(id,oldName){
-  const newName=prompt('ชื่อโปรเจกต์ใหม่:',oldName)?.trim()
+  const newName=await customPrompt('ชื่อโปรเจกต์ใหม่:',oldName)
   if(!newName||newName===oldName)return
   const{error}=await db.from('projects').update({name:newName}).eq('id',id)
   if(error){toast('❌ เปลี่ยนชื่อไม่สำเร็จ: '+error.message);return}
@@ -1123,14 +1162,14 @@ async function createProject(){
 
 async function saveBaseline(){
   if(!state.currentProjectId){openProjModal();return}if(!state.tasks.length){toast('⚠️ No tasks to save as Baseline');return}
-  const name=prompt('Baseline name',`Baseline ${fmt(new Date())}`);if(name===null)return;const tr=name.trim();if(!tr){toast('⚠️ Please enter a Baseline name');return}
+  const name=await customPrompt('Baseline name',`Baseline ${fmt(new Date())}`);if(name===null)return;const tr=name.trim();if(!tr){toast('⚠️ Please enter a Baseline name');return}
   const{error}=await db.from('baselines').insert({project_id:state.currentProjectId,name:tr,snapshot_json:JSON.stringify(state.tasks)})
   if(error){toast('❌ Failed to save Baseline: '+error.message);return}await loadBaselines();toast('✅ Baseline saved')
 }
-function compareBaseline(){
+async function compareBaseline(){
   if(!state.currentProjectId){openProjModal();return}if(!state.baselines.length){toast('⚠️ No Baselines saved yet');return}
   const opts=state.baselines.map((b,i)=>`${i+1}. ${b.name}`).join('\n')
-  const pick=prompt(`Select Baseline\n0. None\n${opts}`,'1');if(pick===null)return
+  const pick=await customPrompt(`Select Baseline\n0. None\n${opts}`,'1');if(pick===null)return
   const idx=Number(pick);if(idx===0){state.comparedBaseline=null;render();toast('ℹ️ Comparison off');return}
   if(!Number.isInteger(idx)||idx<1||idx>state.baselines.length){toast('⚠️ Invalid selection');return}
   const sel=state.baselines[idx-1]

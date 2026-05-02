@@ -389,6 +389,18 @@
   </div>
 </div>
 
+<!-- Custom Prompt Modal -->
+<div id="custom-prompt-overlay" class="modal-overlay hidden" style="z-index: 9999;">
+  <div class="modal-content" style="max-width: 400px;">
+    <h3 id="custom-prompt-title" style="margin-top: 0; color: #0D1B40; font-weight: 600;"></h3>
+    <input type="text" id="custom-prompt-input" style="width: 100%; padding: 8px 12px; margin: 16px 0; border: 1px solid #E2E8F0; border-radius: 8px; font-family: inherit; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#7C3AED'" onblur="this.style.borderColor='#E2E8F0'" />
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
+      <button id="custom-prompt-cancel" class="btn-cancel" style="padding: 6px 16px; border: none; background: transparent; color: #64748B; cursor: pointer; border-radius: 8px;">Cancel</button>
+      <button id="custom-prompt-confirm" class="btn-primary" style="padding: 6px 16px; border: none; background: #7C3AED; color: white; cursor: pointer; border-radius: 8px;">Save</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js" defer></script>
 </body>
 </html>

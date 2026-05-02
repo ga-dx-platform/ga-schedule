@@ -403,6 +403,11 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
    ============================================================ */
 .modal-bd{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:9999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .modal-bd.show{display:flex}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-content{width:min(400px,calc(100vw - 40px));border-radius:var(--r-xl);background:#fff;border:1px solid var(--bdr);box-shadow:var(--shadow-xl);padding:22px;position:relative}
+.modal-content::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--primary);border-radius:var(--r-xl) var(--r-xl) 0 0}
+#custom-prompt-title{white-space:pre-line;font-size:15px;line-height:1.45}
 
 #task-modal{
   max-width:820px;width:95vw;max-height:90vh;overflow-y:auto;
