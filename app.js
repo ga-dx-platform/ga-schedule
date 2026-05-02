@@ -584,6 +584,7 @@ function switchView(name){
 
 // === KANBAN ===
 function renderKanban(){
+  renderCache=buildRenderCache()
   const container=document.getElementById('view-kanban')
   if(!container)return
   const COLS=[
