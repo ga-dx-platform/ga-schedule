@@ -1445,7 +1445,12 @@ function setZoom(level){
   ;['day','week','month'].forEach(m=>document.getElementById('tab-'+m).classList.toggle('active',m===level))
   render()
 }
+// Suppress all CSS transitions during JS-driven layout mutations so nothing slides.
+function disableTransitions(){document.documentElement.classList.add('no-transitions')}
+function enableTransitions(){requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('no-transitions')))}
+
 function autoFitAll(){
+  disableTransitions()
   const colCount=11
   if(!state.colWidths||state.colWidths.length!==colCount)state.colWidths=new Array(colCount).fill(80)
   for(let colIndex=0;colIndex<colCount;colIndex++){
@@ -1468,6 +1473,7 @@ function autoFitAll(){
     document.getElementById('left').style.width=newW+'px'
   }
   render()
+  enableTransitions()
   toast('✅ จัดขนาดคอลัมน์อัตโนมัติสำเร็จ')
 }
 function triggerAutoFitOnNextPaint(delay=50){
@@ -1740,6 +1746,7 @@ panelResizer.addEventListener('mousedown',e=>{
   panelResizer.classList.add('is-dragging')
   document.body.style.cursor='col-resize'
   document.body.style.userSelect='none'
+  disableTransitions()
 })
 document.addEventListener('mousemove',e=>{
   if(!isResizingPanel)return
@@ -1752,6 +1759,7 @@ document.addEventListener('mouseup',()=>{
   panelResizer.classList.remove('is-dragging')
   document.body.style.cursor=''
   document.body.style.userSelect=''
+  enableTransitions()
 })
 
 document.getElementById('right').addEventListener('mousedown',e=>{

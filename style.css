@@ -852,27 +852,40 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 
 /* =========================================
    CRITICAL FIX: PREVENT LAYOUT THRASHING
-   Force instant snapping for all structural elements
+   Exact IDs/classes that receive direct JS style writes:
+     autoFitAll  → #left.style.width, #col-hdr.style.gridTemplateColumns
+     applyColumnWidths → .trow.style.gridTemplateColumns
+     panelResizer drag → #left.style.width
+     render() → #gantt-hdr, #gantt-body, #gantt-wrap .style.width/cssText
    ========================================= */
+#left, #right,
+#col-hdr,
+#gantt-wrap, #gantt-hdr, #gantt-body,
 #main,
+.trow, .g-row, .g-month, .g-day,
 .view-container,
-.split,
-.split-horizontal,
+.split, .split-horizontal,
 .gutter,
-.left-panel,
-.right-panel,
-.list-container,
-.gantt-view-container,
-#gantt-wrapper,
-.gantt-container,
-.frappe-gantt,
-.frappe-gantt svg {
+.left-panel, .right-panel,
+.list-container, .gantt-view-container,
+#gantt-wrapper, .gantt-container,
+.frappe-gantt, .frappe-gantt svg {
     transition: none !important;
     transition-property: none !important;
     animation: none !important;
 }
 
-/* If the gutter needs a hover effect, only transition the color safely */
+/* Gutter hover highlight — only background color, never dimensions */
 .gutter {
     transition: background-color 0.2s ease !important;
+}
+
+/* JS-controlled transition kill-switch: applied by disableTransitions() during
+   autoFitAll and panel-splitter drag, removed on next animation frame */
+html.no-transitions *,
+html.no-transitions *::before,
+html.no-transitions *::after {
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
 }
