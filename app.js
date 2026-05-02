@@ -1711,11 +1711,13 @@ async function exportPDF(){
 function setSS(t){
   document.getElementById('sync-status').textContent=t
 }
+let _toastTimer=null
 function toast(msg,dur=2500){
   const el=document.getElementById('toast')
+  clearTimeout(_toastTimer)
   el.textContent=msg
   el.classList.add('show')
-  setTimeout(()=>el.classList.remove('show'),dur)
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),dur)
 }
 function showL(){document.getElementById('loading').style.display='flex'}
 function hideL(){document.getElementById('loading').style.display='none'}
