@@ -648,3 +648,113 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 
 /* === REDUCED MOTION === */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* ============================================================
+   HOVER-TO-EXPAND FLOATING PILL SIDEBAR
+   ============================================================ */
+
+/* Main Layout Adjustment — push app content right of the sidebar */
+body {
+    padding-left: 92px !important; /* 68px sidebar + 24px gap */
+}
+#toolbar {
+    margin-left: 0 !important;
+}
+.view-container {
+    margin-left: 0 !important;
+}
+
+/* Sidebar Container */
+#app-sidebar {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    bottom: 24px;
+    width: 68px;
+    background: #FFFFFF;
+    border-radius: 24px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    border: 1px solid #E2E8F0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 0;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    z-index: 1000;
+}
+
+#app-sidebar:hover {
+    width: 220px;
+}
+
+/* Sidebar Items */
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    position: relative;
+}
+
+.sidebar-item:hover {
+    color: var(--primary, #7C3AED);
+    background: #F8FAFC;
+}
+
+.sidebar-item.active {
+    color: var(--primary, #7C3AED);
+}
+
+.sidebar-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    height: 80%;
+    width: 4px;
+    background: var(--primary, #7C3AED);
+    border-radius: 0 4px 4px 0;
+}
+
+/* Icons & Text */
+.sidebar-icon {
+    font-size: 18px;
+    min-width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.sidebar-text {
+    margin-left: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#app-sidebar:hover .sidebar-text {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.1s;
+}
+
+/* Profile Avatar */
+.profile-avatar {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--primary, #7C3AED), #4C1D95);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-left: -2px;
+}

@@ -10,8 +10,40 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <link rel="stylesheet" href="style.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
+<nav id="app-sidebar" class="sidebar collapsed">
+    <div class="sidebar-top">
+        <div class="sidebar-item active">
+            <i class="fas fa-home sidebar-icon"></i>
+            <span class="sidebar-text">Home</span>
+        </div>
+        <div class="sidebar-item" id="btn-switch-project" onclick="openProjModal()">
+            <i class="fas fa-folder-open sidebar-icon"></i>
+            <span class="sidebar-text">Projects</span>
+        </div>
+        <div class="sidebar-item">
+            <i class="fas fa-check-square sidebar-icon"></i>
+            <span class="sidebar-text">My Tasks</span>
+        </div>
+        <div class="sidebar-item" onclick="switchView('calendar')">
+            <i class="fas fa-calendar-alt sidebar-icon"></i>
+            <span class="sidebar-text">Calendar</span>
+        </div>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="sidebar-item" onclick="openSettings()">
+            <i class="fas fa-cog sidebar-icon"></i>
+            <span class="sidebar-text">Settings</span>
+        </div>
+        <div class="sidebar-item profile-item">
+            <div class="profile-avatar">S</div>
+            <span class="sidebar-text">Sekson N.</span>
+        </div>
+    </div>
+</nav>
 <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
 <div id="loading"><div class="loader"></div><p>Loading GA Schedule...</p></div>
 <div id="toast"></div>
@@ -56,8 +88,6 @@
     <div class="tb-sep"></div>
     <button class="tb" onclick="saveBaseline()">Baseline</button>
     <button class="tb" onclick="compareBaseline()">Compare</button>
-    <div class="tb-sep"></div>
-    <button class="tb" onclick="openSettings()">Settings</button>
     <div class="tb-sep"></div>
     <span id="sync-status">—</span>
   </div>
