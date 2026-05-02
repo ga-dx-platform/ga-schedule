@@ -2003,6 +2003,29 @@ document.addEventListener('mouseup',async e=>{
 })
 
 // === EVENT LISTENERS ===
+window.addEventListener('blur',()=>{
+  if(isResizingPanel){
+    isResizingPanel=false
+    if(panelRafId){cancelAnimationFrame(panelRafId);panelRafId=null}
+    const ghost=document.getElementById('ghost-splitter')
+    if(ghost)ghost.classList.remove('active')
+    document.getElementById('panel-resizer')?.classList.remove('is-dragging')
+    document.body.style.cursor='';document.body.style.userSelect=''
+    enableTransitions()
+  }
+  if(isDraggingBar){
+    isDraggingBar=false
+    dragBarEl?.classList.remove('is-dragging')
+    dragBarEl=null;dragBarTaskId=null;dragBarOrigStart=null
+    document.body.style.cursor='';document.body.style.userSelect=''
+  }
+  if(colResize.active){
+    colResize.active=false
+    document.querySelectorAll('.resizer.is-resizing').forEach(el=>el.classList.remove('is-resizing'))
+    document.body.style.cursor='';document.body.style.userSelect=''
+  }
+})
+
 document.getElementById('task-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeTaskModal()}
 document.getElementById('proj-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeProjModal()}
 document.getElementById('confirm-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeConfirmModal()}
@@ -2053,9 +2076,19 @@ document.getElementById('app-sidebar').addEventListener('mouseleave', () => {
 
 // === INIT ===
 async function init(){
-  loadSettings();showL();await ensureAuth();await Promise.all([loadProjects(),loadHolidays()]);hideL();initSS();applyGanttSettings();render()
-  triggerAutoFitOnNextPaint()
-  if(state.projects.length===1)selectProject(state.projects[0].id)
-  else if(state.projects.length>1)openProjModal()
+  loadSettings();showL()
+  try{
+    await ensureAuth()
+    await Promise.all([loadProjects(),loadHolidays()])
+    initSS();applyGanttSettings();render()
+    triggerAutoFitOnNextPaint()
+    if(state.projects.length===1)selectProject(state.projects[0].id)
+    else if(state.projects.length>1)openProjModal()
+  }catch(err){
+    console.error('Init failed:',err)
+    toast('❌ Initialization Failed. Please refresh or check connection.')
+  }finally{
+    hideL()
+  }
 }
 init()
