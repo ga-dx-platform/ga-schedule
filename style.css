@@ -82,7 +82,7 @@
 html,body{height:100%;overflow:hidden}
 /* Safety: JS-hidden elements must always stay hidden regardless of other rules */
 .hidden,[hidden]{display:none!important}
-body{font-family:var(--font);background:#F1F5F9;color:var(--txt);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);display:flex;flex-direction:row;height:100vh;width:100vw;padding:20px;gap:20px;box-sizing:border-box;overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
 /* === CUSTOM SCROLLBARS (global, thin & sleek) === */
 *{scrollbar-width:thin;scrollbar-color:#D1D5DB transparent}
@@ -98,7 +98,7 @@ body{font-family:var(--font);background:#F1F5F9;color:var(--txt);display:flex;fl
 .o3{width:400px;height:400px;background:rgba(124,58,237,.03);top:40%;left:45%}
 
 /* === APP SHELL === */
-#app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#app-canvas-wrapper{flex:1;min-width:0;height:100%;background:#F8FAFC;border-radius:32px;box-shadow:0 10px 30px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
 
 /* ============================================================
    NAVBAR — Light SaaS header
@@ -106,9 +106,9 @@ body{font-family:var(--font);background:#F1F5F9;color:var(--txt);display:flex;fl
 #navbar{
   height:var(--nav-h);padding:0 20px;
   display:flex;align-items:center;gap:12px;
-  background:#FFFFFF;flex-shrink:0;position:relative;overflow:hidden;
-  border-bottom:1px solid #E5E7EB;
-  box-shadow:var(--shadow-sm);
+  background:transparent;flex-shrink:0;position:relative;overflow:hidden;
+  border-bottom:1px solid rgba(0,0,0,.06);
+  box-shadow:none;
 }
 #navbar::after{display:none}
 .nav-icon{width:32px;height:32px;border-radius:8px;flex-shrink:0;background:var(--primary-light);border:1px solid rgba(124,58,237,.18);display:flex;align-items:center;justify-content:center}
@@ -137,11 +137,12 @@ body{font-family:var(--font);background:#F1F5F9;color:var(--txt);display:flex;fl
    TOOLBAR — Floating island pill
    ============================================================ */
 #toolbar{
-  margin:16px 24px 0 24px !important;
-  border-radius:16px !important;
-  background:#FFFFFF !important;
+  margin:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
   border:none !important;
-  box-shadow:0 4px 6px -1px rgba(0,0,0,.05),0 2px 4px -2px rgba(0,0,0,.03) !important;
+  border-bottom:1px solid rgba(0,0,0,.05) !important;
+  box-shadow:none !important;
   padding:0 20px;
   height:var(--tb-h);
   display:flex;align-items:center;gap:6px;flex-shrink:0;
@@ -348,7 +349,7 @@ body{font-family:var(--font);background:#F1F5F9;color:var(--txt);display:flex;fl
 /* ============================================================
    MODALS — Premium SaaS dialogs
    ============================================================ */
-.modal-bd{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:50;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal-bd{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:9999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .modal-bd.show{display:flex}
 
 #task-modal{
@@ -487,13 +488,13 @@ body.is-exporting #toolbar {
 body.is-exporting .orb { display:none!important; }
 
 /* === LOADING === */
-#loading{position:fixed;inset:0;background:rgba(244,245,247,.96);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#loading{position:fixed;inset:0;background:rgba(244,245,247,.96);z-index:10001;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
 .loader{width:36px;height:36px;border-radius:50%;border:3px solid rgba(124,58,237,.12);border-top-color:var(--primary);animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loading p{font-size:12px;color:var(--txt3);font-weight:500}
 
 /* === TOAST === */
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:200;background:var(--txt);color:#fff;font-size:12px;padding:10px 20px;border-radius:20px;transition:transform .3s var(--ease);pointer-events:none;font-family:var(--font);font-weight:500;box-shadow:var(--shadow-lg)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:10000;background:var(--txt);color:#fff;font-size:12px;padding:10px 20px;border-radius:20px;transition:transform .3s var(--ease);pointer-events:none;font-family:var(--font);font-weight:500;box-shadow:var(--shadow-lg)}
 #toast.show{transform:translateX(-50%) translateY(0)}
 
 /* === FOCUS STATES === */
@@ -506,7 +507,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
    ============================================================ */
 #view-gantt{
   display:flex;flex:1;overflow:hidden;
-  margin:20px 24px 24px !important;
+  margin:16px !important;
   background:#FFFFFF !important;
   border-radius:24px !important;
   box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
@@ -514,7 +515,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 }
 #view-kanban{
   flex:1;overflow-x:hidden;overflow-y:hidden;min-height:0;height:100%;
-  margin:20px 24px 24px !important;
+  margin:16px !important;
   background:#FFFFFF !important;
   border-radius:24px !important;
   box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
@@ -523,7 +524,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 }
 #view-calendar{
   flex:1;overflow-y:auto;min-height:0;height:100%;
-  margin:20px 24px 24px !important;
+  margin:16px !important;
   background:#FFFFFF !important;
   border-radius:24px !important;
   box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
@@ -532,7 +533,7 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 }
 #view-dashboard{
   flex:1;overflow-y:auto;min-height:0;flex-direction:column;gap:24px;
-  margin:20px 24px 24px !important;
+  margin:16px !important;
   background:#FFFFFF !important;
   border-radius:24px !important;
   box-shadow:0 10px 25px -5px rgba(0,0,0,.06),0 4px 6px -2px rgba(0,0,0,.04) !important;
@@ -653,39 +654,31 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
    HOVER-TO-EXPAND FLOATING PILL SIDEBAR
    ============================================================ */
 
-/* Main Layout Adjustment — push app content right of the sidebar */
-body {
-    padding-left: 92px !important; /* 68px sidebar + 24px gap */
-}
-#toolbar {
-    margin-left: 0 !important;
-}
-.view-container {
-    margin-left: 0 !important;
-}
-
-/* Sidebar Container */
+/* Sidebar Container — in-flow flex child of body */
 #app-sidebar {
-    position: fixed;
-    top: 24px;
-    left: 24px;
-    bottom: 24px;
-    width: 68px;
-    background: #FFFFFF;
-    border-radius: 24px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-    border: 1px solid #E2E8F0;
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: auto !important;
+    flex-shrink: 0;
+    height: 100% !important;
+    width: 80px;
+    background: #FFFFFF !important;
+    border-radius: 32px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding: 24px 0;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    z-index: 1000;
+    z-index: 100;
 }
 
 #app-sidebar:hover {
-    width: 220px;
+    width: 240px !important;
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Sidebar Items */

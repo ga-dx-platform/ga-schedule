@@ -47,12 +47,11 @@
 <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
 <div id="loading"><div class="loader"></div><p>Loading GA Schedule...</p></div>
 <div id="toast"></div>
-<div id="app">
+<main id="app-canvas-wrapper">
   <div id="navbar">
     <div class="nav-icon"><svg viewBox="0 0 14 12"><rect x="0" y="0" width="14" height="2.2" rx="1"/><rect x="0" y="5" width="10" height="2.2" rx="1"/><rect x="0" y="10" width="12" height="2.2" rx="1"/></svg></div>
     <div><div id="proj-name" onclick="openProjModal()">— Select Project —</div><div class="nav-sub">GA Schedule · Ajinomoto Thailand</div></div>
     <div class="nav-sep"></div><div id="nav-legend"></div><div class="nav-spacer"></div>
-    <button class="nav-btn" onclick="openProjModal()">Projects</button>
     <button class="nav-btn primary" onclick="openAddModal()">+ Add Task</button>
   </div>
   <div id="toolbar">
@@ -118,7 +117,7 @@
     <div style="flex:1"></div>
     <span class="sb-txt" id="sb-range">—</span>
   </div>
-</div>
+</main>
 
 <!-- TASK MODAL -->
 <div class="modal-bd" id="task-modal-bd">
