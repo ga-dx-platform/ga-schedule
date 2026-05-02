@@ -8,10 +8,12 @@ async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(
 
 // === STATE ===
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[]}
-let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[28,20,200,58,58,62,36,44,86,68,60],searchQuery:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
+const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],searchQuery:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
+let colRafId=null
 let lastFocusEl=null,lastSavedAt=null,confirmCallback=null
 // PERF-02: holiday/weekend cache (invalidated whenever settings or holidays change)
 let _holidaySet=null,_weekendDays=null
@@ -208,9 +210,11 @@ function getFilteredVisible(){
   matchIds.forEach(id=>addAncestors(id))
   return getVisible().filter(({task})=>visIds.has(task.id))
 }
+let _searchTimer=null
 function handleSearch(query){
   state.searchQuery=query.toLowerCase()
-  render()
+  clearTimeout(_searchTimer)
+  _searchTimer=setTimeout(()=>render(),150)
 }
 
 // === API / DATABASE ===
@@ -1511,7 +1515,6 @@ function autoFitAll(){
   disableTransitions()
   const colCount=11
   // Reset to defaults ก่อนวัด เพื่อป้องกัน Task Name (คอลัมน์ที่ขยายได้) จำค่าที่ถูกยืดค้างไว้
-  const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
   state.colWidths=[...DEFAULT_COL_WIDTHS]
 
   for(let colIndex=0;colIndex<colCount;colIndex++){
@@ -1635,33 +1638,48 @@ function exportCSV(){
   a.click();
   toast('📊 CSV exported');
 }
+async function buildExportCanvas(){
+  const left=document.getElementById('left')
+  const right=document.getElementById('right')
+  const stage=document.createElement('div')
+  stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
+
+  const lc=left.cloneNode(true),rc=right.cloneNode(true)
+  lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
+  rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
+
+  if(typeof stripGradientsFromClone==='function'){
+    stripGradientsFromClone(lc)
+    stripGradientsFromClone(rc)
+  }
+
+  const ganttHdrClone=rc.querySelector('#gantt-hdr')
+  if(ganttHdrClone){
+    ganttHdrClone.style.backdropFilter='none'
+    ganttHdrClone.style.webkitBackdropFilter='none'
+    ganttHdrClone.style.background='#F9FAFB'
+    ganttHdrClone.style.backgroundImage='none'
+  }
+
+  stage.appendChild(lc)
+  stage.appendChild(rc)
+  document.body.appendChild(stage)
+
+  const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true,logging:false})
+  return{canvas,stage}
+}
+
 async function exportPNG(){
   if(!window.html2canvas){toast('❌ html2canvas not found');return}
   if(!state.currentProjectId){openProjModal();return}
-  const left=document.getElementById('left'),right=document.getElementById('right')
   const pn=(state.projects.find(p=>p.id===state.currentProjectId)?.name||'project').replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
   showL();setSS('⟳ Generating PNG...')
   let stage=null
   try{
     document.body.classList.add('is-exporting')
-    stage=document.createElement('div')
-    stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
-    const lc=left.cloneNode(true),rc=right.cloneNode(true)
-    lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
-    rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
-    // JS-level gradient surgery (CSS !important cannot override inline styles)
-    stripGradientsFromClone(lc)
-    stripGradientsFromClone(rc)
-    // Also explicitly fix gantt-hdr backdrop-filter (belt-and-suspenders)
-    const ganttHdrClone=rc.querySelector('#gantt-hdr')
-    if(ganttHdrClone){
-      ganttHdrClone.style.backdropFilter='none'
-      ganttHdrClone.style.webkitBackdropFilter='none'
-      ganttHdrClone.style.background='#F9FAFB'
-      ganttHdrClone.style.backgroundImage='none'
-    }
-    stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
-    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true,logging:false})
+    const built=await buildExportCanvas()
+    const canvas=built.canvas
+    stage=built.stage
     const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=`ga-schedule-${pn}-${fmt(new Date())}.png`;a.click()
     toast('🖼 PNG exported');setSS('✓ Synced')
   }catch(err){toast('❌ PNG export failed: '+err.message);setSS('⚠️ PNG error');console.error(err)}
@@ -1670,31 +1688,15 @@ async function exportPNG(){
 async function exportPDF(){
   if(!window.html2canvas||!window.jspdf?.jsPDF){toast('❌ Library not found');return}
   if(!state.currentProjectId){openProjModal();return}
-  const left=document.getElementById('left'),right=document.getElementById('right')
   const pnr=state.projects.find(p=>p.id===state.currentProjectId)?.name||'project'
   const pn=pnr.replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
   showL();setSS('⟳ Generating PDF...')
   let stage=null
   try{
     document.body.classList.add('is-exporting')
-    stage=document.createElement('div')
-    stage.style.cssText='position:fixed;left:-99999px;top:0;background:#f5f7fc;display:flex;align-items:flex-start;z-index:-1'
-    const lc=left.cloneNode(true),rc=right.cloneNode(true)
-    lc.style.cssText=`width:${left.offsetWidth}px;height:auto;overflow:visible`
-    rc.style.cssText=`width:${Math.max(right.clientWidth,right.scrollWidth)}px;height:auto;overflow:visible`
-    // JS-level gradient surgery (CSS !important cannot override inline styles)
-    stripGradientsFromClone(lc)
-    stripGradientsFromClone(rc)
-    // Also explicitly fix gantt-hdr backdrop-filter (belt-and-suspenders)
-    const ganttHdrClone=rc.querySelector('#gantt-hdr')
-    if(ganttHdrClone){
-      ganttHdrClone.style.backdropFilter='none'
-      ganttHdrClone.style.webkitBackdropFilter='none'
-      ganttHdrClone.style.background='#F9FAFB'
-      ganttHdrClone.style.backgroundImage='none'
-    }
-    stage.appendChild(lc);stage.appendChild(rc);document.body.appendChild(stage)
-    const canvas=await window.html2canvas(stage,{backgroundColor:'#f5f7fc',scale:2,useCORS:true,logging:false})
+    const built=await buildExportCanvas()
+    const canvas=built.canvas
+    stage=built.stage
     const{jsPDF}=window.jspdf,pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'})
     const pw=pdf.internal.pageSize.getWidth(),m=8,imgW=pw-m*2
     const imgH=Math.min((canvas.height*imgW)/canvas.width,pdf.internal.pageSize.getHeight()-m*2-8)
@@ -1774,13 +1776,6 @@ function onColResizerDown(e){
   document.body.style.userSelect='none'
 }
 
-document.addEventListener('mousemove',e=>{
-  if(!colResize.active)return
-  const delta=e.clientX-colResize.startX
-  state.colWidths[colResize.colIdx]=Math.max(20,colResize.startW+delta)
-  applyColumnWidths()
-})
-
 document.addEventListener('mouseup',()=>{
   if(!colResize.active)return
   colResize.active=false
@@ -1820,6 +1815,32 @@ document.body.appendChild(ghostSplitter)
 let isResizingPanel=false,startPanelX=0,startLeftWidth=0
 let panelCurrentX=0,panelRafId=null
 
+document.addEventListener('mousemove',e=>{
+  if(colResize.active){
+    const delta=e.clientX-colResize.startX
+    state.colWidths[colResize.colIdx]=Math.max(20,colResize.startW+delta)
+    if(!colRafId){
+      colRafId=requestAnimationFrame(()=>{
+        applyColumnWidths()
+        colRafId=null
+      })
+    }
+  }
+
+  if(isResizingPanel){
+    panelCurrentX=e.clientX
+    if(!panelRafId){
+      panelRafId=requestAnimationFrame(()=>{
+        const ghost=document.getElementById('ghost-splitter')
+        if(ghost)ghost.style.left=panelCurrentX+'px'
+        panelRafId=null
+      })
+    }
+  }
+
+  if(isDraggingBar&&dragBarEl)handleBarDrag(e)
+})
+
 panelResizer.addEventListener('dblclick',()=>{
   if(typeof autoFitAll==='function')autoFitAll()
 })
@@ -1836,18 +1857,6 @@ panelResizer.addEventListener('mousedown',e=>{
   document.body.style.cursor='col-resize'
   document.body.style.userSelect='none'
   disableTransitions()
-})
-
-document.addEventListener('mousemove',e=>{
-  if(!isResizingPanel)return
-  panelCurrentX=e.clientX
-  // rAF throttle: only move the ghost line — zero layout work
-  if(!panelRafId){
-    panelRafId=requestAnimationFrame(()=>{
-      ghostSplitter.style.left=panelCurrentX+'px'
-      panelRafId=null
-    })
-  }
 })
 
 document.addEventListener('mouseup',()=>{
@@ -1895,8 +1904,7 @@ document.getElementById('right').addEventListener('mousedown',e=>{
   e.preventDefault()
 })
 
-document.addEventListener('mousemove',e=>{
-  if(!isDraggingBar||!dragBarEl)return
+function handleBarDrag(e){
   const deltaX=e.clientX-dragBarStartX
   const DP=getPxPerDay()
   switch(dragMode){
@@ -1916,7 +1924,7 @@ document.addEventListener('mousemove',e=>{
       break
     }
   }
-})
+}
 
 document.addEventListener('mouseup',async e=>{
   if(!isDraggingBar)return
