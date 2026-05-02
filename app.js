@@ -167,6 +167,7 @@ async function loadProjects(){
   const{data,error}=await db.from('projects').select('*').order('created_at')
   if(error){toast('❌ Failed to load projects');return}
   state.projects=data||[]
+  renderSidebarProjects()
 }
 async function loadTasks(){
   if(!state.currentProjectId)return
@@ -1001,11 +1002,50 @@ function renderProjList(){
   })
   pl.appendChild(frag)
 }
+
+// === SIDEBAR ACCORDION ===
+function toggleSubmenu(submenuId, element) {
+  const submenu = document.getElementById(submenuId);
+  if (!submenu) return;
+  submenu.classList.toggle('expanded');
+  element.classList.toggle('open');
+}
+
+function renderSidebarProjects() {
+  const submenu = document.getElementById('projects-submenu');
+  if (!submenu) return;
+  submenu.innerHTML = '';
+  if (!state.projects.length) {
+    const empty = document.createElement('div');
+    empty.className = 'submenu-item';
+    empty.style.cssText = 'font-style:italic;font-size:12px;opacity:0.6';
+    empty.textContent = 'No projects yet';
+    submenu.appendChild(empty);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  state.projects.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'submenu-item' + (p.id === state.currentProjectId ? ' active' : '');
+    item.onclick = () => selectProject(p.id);
+    const dot = document.createElement('span');
+    dot.className = 'status-dot';
+    dot.style.background = p.color || '#7C3AED';
+    const text = document.createElement('span');
+    text.className = 'submenu-text';
+    text.textContent = p.name || 'Untitled';
+    item.appendChild(dot);
+    item.appendChild(text);
+    frag.appendChild(item);
+  });
+  submenu.appendChild(frag);
+}
+
 async function selectProject(id){
   state.currentProjectId=id;state.comparedBaseline=null
   const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
   document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
-  closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render();triggerAutoFitOnNextPaint()
+  closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render();triggerAutoFitOnNextPaint();renderSidebarProjects()
 }
 async function renameProject(id,oldName){
   const newName=prompt('ชื่อโปรเจกต์ใหม่:',oldName)?.trim()
@@ -1014,7 +1054,7 @@ async function renameProject(id,oldName){
   if(error){toast('❌ เปลี่ยนชื่อไม่สำเร็จ: '+error.message);return}
   const p=state.projects.find(x=>x.id===id);if(p)p.name=newName
   if(state.currentProjectId===id)document.getElementById('proj-name').textContent=newName
-  renderProjList()
+  renderProjList();renderSidebarProjects()
   toast('✅ เปลี่ยนชื่อโปรเจกต์สำเร็จ')
 }
 async function createProject(){
@@ -1889,6 +1929,16 @@ document.getElementById('t-type').addEventListener('change',()=>applyTaskModalGu
 
 let rt
 window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>render(),200)})
+
+// Collapse sidebar submenu whenever the sidebar itself collapses
+document.getElementById('app-sidebar').addEventListener('mouseleave', () => {
+  const submenu = document.getElementById('projects-submenu');
+  const header = document.querySelector('.sidebar-item.has-submenu');
+  if (submenu && submenu.classList.contains('expanded')) {
+    submenu.classList.remove('expanded');
+    if (header) header.classList.remove('open');
+  }
+});
 
 // === INIT ===
 async function init(){

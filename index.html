@@ -19,9 +19,18 @@
             <i class="fas fa-home sidebar-icon"></i>
             <span class="sidebar-text">Home</span>
         </div>
-        <div class="sidebar-item" id="btn-switch-project" onclick="openProjModal()">
-            <i class="fas fa-folder-open sidebar-icon"></i>
-            <span class="sidebar-text">Projects</span>
+        <div class="sidebar-section">
+            <div class="sidebar-item has-submenu" onclick="toggleSubmenu('projects-submenu', this)">
+                <div class="sidebar-item-main">
+                    <i class="fas fa-folder-open sidebar-icon"></i>
+                    <span class="sidebar-text">Projects</span>
+                </div>
+                <div class="sidebar-actions">
+                    <i class="fas fa-plus action-icon add-project-btn" onclick="event.stopPropagation(); openProjModal();" title="Add New Project"></i>
+                    <i class="fas fa-chevron-down action-icon chevron-icon"></i>
+                </div>
+            </div>
+            <div id="projects-submenu" class="sidebar-submenu"></div>
         </div>
         <div class="sidebar-item">
             <i class="fas fa-check-square sidebar-icon"></i>

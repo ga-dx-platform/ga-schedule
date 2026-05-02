@@ -736,6 +736,88 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     transition-delay: 0.1s;
 }
 
+/* === SIDEBAR ACCORDION — Projects submenu === */
+
+/* Section wrapper (needed so submenu overflow clips to sidebar border-radius) */
+.sidebar-section { overflow: hidden; }
+
+/* Has-submenu header: space items apart so actions sit on the right */
+.sidebar-item.has-submenu { justify-content: space-between; }
+
+/* Inner left group: icon + text */
+.sidebar-item-main {
+    display: flex;
+    align-items: center;
+}
+
+/* Right-side actions: + and chevron */
+.sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+}
+#app-sidebar:hover .sidebar-item.has-submenu:hover .sidebar-actions {
+    opacity: 1;
+}
+
+/* Individual action icons */
+.action-icon {
+    font-size: 11px;
+    color: #9CA3AF;
+    padding: 4px 5px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+.action-icon:hover {
+    background: #E2E8F0;
+    color: var(--primary, #7C3AED);
+}
+
+/* Chevron rotates when open */
+.chevron-icon { transition: transform 0.3s ease; }
+.sidebar-item.open .chevron-icon { transform: rotate(180deg); }
+
+/* Submenu container — max-height animation */
+.sidebar-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+.sidebar-submenu.expanded { max-height: 300px; }
+
+/* Individual project rows */
+.submenu-item {
+    padding: 9px 24px 9px 52px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: #6B7280;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease;
+}
+#app-sidebar:hover .submenu-item { opacity: 1; }
+.submenu-item:hover { color: var(--primary, #7C3AED); background: #F5F3FF; }
+.submenu-item.active { color: #111827; font-weight: 700; }
+
+.submenu-text { overflow: hidden; text-overflow: ellipsis; }
+
+/* Colored dot beside project name */
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
 /* Profile Avatar */
 .profile-avatar {
     width: 24px;
