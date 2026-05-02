@@ -1670,10 +1670,13 @@ document.getElementById('sw-gtxt').addEventListener('change',function(){
 
 // === COLUMN RESIZE ===
 function applyColumnWidths(){
+  // Single CSS-variable write propagates to every .trow and #col-hdr simultaneously
+  // via var(--col-grid) — no per-row DOM loop needed.
   const tpl=state.colWidths.map(w=>w+'px').join(' ')
+  document.documentElement.style.setProperty('--col-grid',tpl)
+  // Clear any stale inline override on the header (inline beats CSS vars)
   const hdr=document.getElementById('col-hdr')
-  if(hdr)hdr.style.gridTemplateColumns=tpl
-  document.querySelectorAll('.trow').forEach(r=>r.style.gridTemplateColumns=tpl)
+  if(hdr)hdr.style.gridTemplateColumns=''
 }
 
 function renderColHdr(){
@@ -1732,33 +1735,62 @@ document.getElementById('col-hdr').addEventListener('dblclick',e=>{
   applyColumnWidths()
 })
 
-let isResizingPanel=false,startPanelX=0,startLeftWidth=0
+// === PANEL SPLITTER — ghost + rAF throttle ===
+// MouseMove only repositions a lightweight ghost line (no layout work).
+// The real #left resize + applyColumnWidths run once on mouseup.
 const panelResizer=document.getElementById('panel-resizer')
 const leftPanel=document.getElementById('left')
+
+// Ghost splitter: a fixed vertical line that follows the cursor during drag
+const ghostSplitter=document.createElement('div')
+ghostSplitter.id='ghost-splitter'
+document.body.appendChild(ghostSplitter)
+
+let isResizingPanel=false,startPanelX=0,startLeftWidth=0
+let panelCurrentX=0,panelRafId=null
+
 panelResizer.addEventListener('dblclick',()=>{
   if(typeof autoFitAll==='function')autoFitAll()
 })
+
 panelResizer.addEventListener('mousedown',e=>{
   e.preventDefault()
   isResizingPanel=true
   startPanelX=e.clientX
+  panelCurrentX=e.clientX
   startLeftWidth=leftPanel.getBoundingClientRect().width
   panelResizer.classList.add('is-dragging')
+  ghostSplitter.style.left=e.clientX+'px'
+  ghostSplitter.classList.add('active')
   document.body.style.cursor='col-resize'
   document.body.style.userSelect='none'
   disableTransitions()
 })
+
 document.addEventListener('mousemove',e=>{
   if(!isResizingPanel)return
-  const newW=Math.min(Math.max(startLeftWidth+(e.clientX-startPanelX),320),window.innerWidth*0.8)
-  leftPanel.style.width=newW+'px'
+  panelCurrentX=e.clientX
+  // rAF throttle: only move the ghost line — zero layout work
+  if(!panelRafId){
+    panelRafId=requestAnimationFrame(()=>{
+      ghostSplitter.style.left=panelCurrentX+'px'
+      panelRafId=null
+    })
+  }
 })
+
 document.addEventListener('mouseup',()=>{
   if(!isResizingPanel)return
   isResizingPanel=false
+  if(panelRafId){cancelAnimationFrame(panelRafId);panelRafId=null}
+  ghostSplitter.classList.remove('active')
   panelResizer.classList.remove('is-dragging')
   document.body.style.cursor=''
   document.body.style.userSelect=''
+  // Commit the resize once: set width + sync column grid
+  const newW=Math.min(Math.max(startLeftWidth+(panelCurrentX-startPanelX),320),window.innerWidth*0.8)
+  leftPanel.style.width=newW+'px'
+  applyColumnWidths()
   enableTransitions()
 })
 

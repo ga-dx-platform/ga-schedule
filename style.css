@@ -647,6 +647,15 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 .quick-add-btn{width:max-content;margin:16px 16px;padding:8px 16px;background:#F5F3FF;color:var(--primary,#7C3AED);border:1px solid #DDD6FE;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 4px rgba(124,58,237,.08);transition:background-color 0.2s ease,color 0.2s ease,border-color 0.2s ease,transform 0.2s ease,box-shadow 0.2s ease}
 .quick-add-btn:hover{background:var(--primary,#7C3AED);color:#FFFFFF;box-shadow:0 4px 8px rgba(124,58,237,.2);transform:translateY(-2px);border-color:var(--primary,#7C3AED)}
 
+/* === PANEL GHOST SPLITTER === */
+#ghost-splitter{
+  display:none;position:fixed;top:0;bottom:0;width:2px;
+  background:var(--primary,#7C3AED);opacity:0.5;
+  z-index:9998;pointer-events:none;
+  /* Deliberately no transition — this element must track the cursor at 1:1 */
+}
+#ghost-splitter.active{display:block}
+
 /* === REDUCED MOTION === */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 
