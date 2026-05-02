@@ -550,7 +550,7 @@ function renderGantt(RH){
   gb.appendChild(bfrag);gb.appendChild(rowCont)
   document.getElementById('gantt-wrap').style.cssText=`width:${W}px;min-width:${W}px`
 
-  renderLinks()
+  requestAnimationFrame(()=>renderLinks())
 }
 
 function renderLinks(){
@@ -604,14 +604,18 @@ function renderLinks(){
 function renderSB(){
   const total=state.tasks.length,done=state.tasks.filter(t=>t.status==='Completed').length
   const today=new Date()
-  const delayed=state.tasks.filter(t=>{const e=taskEnd(t);return e<today&&t.status!=='Completed'&&t.status!=='Cancelled'})
-  const avgPct=total?Math.round(state.tasks.filter(t=>t.status!=='Cancelled').reduce((s,t)=>s+t.progress_pct,0)/Math.max(1,state.tasks.filter(t=>t.status!=='Cancelled').length)):0
+  const validTasks=state.tasks.filter(t=>t.start_date)
+  const delayed=validTasks.filter(t=>{const e=taskEnd(t);return e<today&&t.status!=='Completed'&&t.status!=='Cancelled'})
+  const activeTasks=state.tasks.filter(t=>t.status!=='Cancelled')
+  const avgPct=total?Math.round(activeTasks.reduce((s,t)=>s+t.progress_pct,0)/Math.max(1,activeTasks.length)):0
   document.getElementById('sb-tasks').textContent=`${total} tasks · ${done} done`
   document.getElementById('sb-prog').textContent=`${avgPct}% overall`
   document.getElementById('sb-badge').innerHTML=delayed.length?`<span class="sb-badge sb-warn">${delayed.length} overdue</span>`:(total?`<span class="sb-badge sb-ok">On Track</span>`:'')
-  if(state.tasks.length){const dates=state.tasks.map(t=>pd(t.start_date));const minD=new Date(Math.min(...dates));document.getElementById('sb-range').textContent=`${fmtS(minD)} – ${fmtS(taskEnd(state.tasks.reduce((a,b)=>taskEnd(b)>taskEnd(a)?b:a,state.tasks[0])))}`}
+  if(!validTasks.length)return
+  const dates=validTasks.map(t=>pd(t.start_date))
+  const minD=new Date(Math.min(...dates))
+  document.getElementById('sb-range').textContent=`${fmtS(minD)} – ${fmtS(taskEnd(validTasks.reduce((a,b)=>taskEnd(b)>taskEnd(a)?b:a,validTasks[0])))}`
 }
-
 // === VIEW SWITCHING ===
 const VIEW_DISPLAY={gantt:'flex',kanban:'block',calendar:'block',dashboard:'flex'}
 function switchView(name){
@@ -778,7 +782,7 @@ function renderCalendar(){
     let bars=''
     tasks.slice(0,MAX).forEach(t=>{
       const c=CAT_COLORS[t.category]||'#888'
-      bars+=`<div class="cal-task-bar" style="background:${c}" onclick="openTaskModal('${t.id}')" title="${esc(t.name)}">${esc(t.name)}</div>`
+      bars+=`<div class="cal-task-bar" data-task-id="${esc(t.id)}" style="background:${c}" title="${esc(t.name)}">${esc(t.name)}</div>`
     })
     if(tasks.length>MAX)bars+=`<div class="cal-more">+${tasks.length-MAX} more</div>`
     html+=`<div class="${cls}"><div class="cal-day-num">${dayNum}</div>${bars}</div>`
@@ -788,6 +792,9 @@ function renderCalendar(){
   for(let i=1;i<=rem;i++){html+=`<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`}
   html+='</div></div>'
   container.innerHTML=html
+  container.querySelectorAll('.cal-task-bar').forEach(el=>{
+    el.addEventListener('click',()=>openTaskModal(el.dataset.taskId))
+  })
 }
 function calNav(dir){
   state.calendarMonth+=dir

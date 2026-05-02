@@ -883,7 +883,6 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
-    transition: background 0.15s ease, color 0.15s ease;
     opacity: 0;
     transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease;
 }
