@@ -13,6 +13,10 @@ let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
 let lastFocusEl=null,lastSavedAt=null,confirmCallback=null
+// PERF-02: holiday/weekend cache (invalidated whenever settings or holidays change)
+let _holidaySet=null,_weekendDays=null
+// PERF-01/04: per-render cache (rebuilt at the top of every render() call)
+let renderCache=null
 
 // === DISPLAY MAPS ===
 const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
@@ -43,13 +47,17 @@ function taskEnd(t){
   return addWD(start,dur)
 }
 
+function getHolidaySet(){
+  if(!_holidaySet){
+    _holidaySet=new Set([...(state.holidays||[]).map(h=>h.date),...((state.settings.holidays||[]).map(h=>h.date))])
+    _weekendDays=new Set(state.settings.weekendDays||[0,6])
+  }
+  return{holidaySet:_holidaySet,weekendDays:_weekendDays}
+}
+function invalidateCalendarCache(){_holidaySet=null;_weekendDays=null}
 function isNonWorkingDay(date){
-  const wd=state.settings.weekendDays||[0,6]
-  const day=date.getDay()
-  if(wd.includes(day))return true
-  const ds=fmtISO(date)
-  const holidaySet=new Set([...(state.holidays||[]).map(h=>h.date),...((state.settings.holidays||[]).map(h=>h.date))])
-  return holidaySet.has(ds)
+  const{holidaySet,weekendDays}=getHolidaySet()
+  return weekendDays.has(date.getDay())||holidaySet.has(fmtISO(date))
 }
 function nextWorkingDayAfter(date){
   if(!state.skipWeekends){
@@ -101,6 +109,7 @@ async function persistCascadedTasks(changedMap){
 }
 
 function getParentDates(taskId){
+  if(renderCache&&renderCache.parentDatesCache.has(taskId))return renderCache.parentDatesCache.get(taskId)
   const children=state.tasks.filter(c=>c.parent_id===taskId)
   if(!children.length){const t=state.tasks.find(t=>t.id===taskId);return t?{s:pd(t.start_date),e:taskEnd(t)}:null}
   let minS=null,maxE=null
@@ -126,9 +135,51 @@ function getMinMax(){
 function dBetween(a,b){return Math.round((b-a)/86400000)}
 
 function rollupPct(id){
+  if(renderCache&&renderCache.pctCache.has(id))return renderCache.pctCache.get(id)
   const ch=state.tasks.filter(t=>t.parent_id===id)
   if(!ch.length)return state.tasks.find(t=>t.id===id)?.progress_pct||0
   return Math.round(ch.reduce((s,c)=>s+rollupPct(c.id),0)/ch.length)
+}
+function buildRenderCache(){
+  // Build parent→children map in one O(n) pass
+  const childMap=new Map()
+  state.tasks.forEach(t=>{
+    const pid=t.parent_id||null
+    if(!childMap.has(pid))childMap.set(pid,[])
+    childMap.get(pid).push(t)
+  })
+  // Pre-compute rollup % for every task with memoization (O(n) total)
+  const pctCache=new Map()
+  function computePct(id){
+    if(pctCache.has(id))return pctCache.get(id)
+    const ch=childMap.get(id)||[]
+    const pct=ch.length
+      ?Math.round(ch.reduce((s,c)=>s+computePct(c.id),0)/ch.length)
+      :(state.tasks.find(t=>t.id===id)?.progress_pct||0)
+    pctCache.set(id,pct)
+    return pct
+  }
+  state.tasks.forEach(t=>computePct(t.id))
+  // Pre-compute parent date spans (min start / max end) for every parent task
+  const parentDatesCache=new Map()
+  function computeParentDates(taskId){
+    if(parentDatesCache.has(taskId))return parentDatesCache.get(taskId)
+    const children=childMap.get(taskId)||[]
+    let result
+    if(!children.length){
+      const t=state.tasks.find(x=>x.id===taskId)
+      result=t?{s:pd(t.start_date),e:taskEnd(t)}:null
+    }else{
+      let minS=null,maxE=null
+      children.forEach(c=>{const d=computeParentDates(c.id);if(!d)return;if(!minS||d.s<minS)minS=d.s;if(!maxE||d.e>maxE)maxE=d.e})
+      result={s:minS,e:maxE}
+    }
+    parentDatesCache.set(taskId,result)
+    return result
+  }
+  // Only pre-warm tasks that actually have children (leaf tasks fall back cheaply)
+  state.tasks.filter(t=>childMap.has(t.id)).forEach(t=>computeParentDates(t.id))
+  return{childMap,pctCache,parentDatesCache}
 }
 function getDerivedStatus(task,actualPct){
   const overrideStatuses=['Cancelled','On Hold','Delayed']
@@ -181,6 +232,7 @@ async function loadHolidays(){
   const{data,error}=await db.from('thai_holidays').select('date').eq('year',new Date().getFullYear())
   if(error){console.warn('Failed to load holidays:',error.message);return}
   state.holidays=data||[]
+  invalidateCalendarCache()
 }
 async function loadDeps(){
   if(!state.currentProjectId)return
@@ -197,6 +249,7 @@ async function loadBaselines(){
 
 // === UI RENDERING ===
 function render(){
+  renderCache=buildRenderCache()
   const RH=getROW_H()
   document.documentElement.style.setProperty('--row-h',RH+'px')
   renderLegend()
@@ -1209,6 +1262,7 @@ function resetDefaults(){
   state.settings=Object.assign({},DEFAULT_SETTINGS,{holidays:[...DEFAULT_SETTINGS.holidays],statusOverrides:JSON.parse(JSON.stringify(DEFAULT_SETTINGS.statusOverrides))})
   state.skipWeekends=false
   localStorage.setItem('gaScheduleSkipWeekends',JSON.stringify(state.skipWeekends))
+  invalidateCalendarCache()
   openSettings()
   toast('↺ Reset to defaults')
 }
@@ -1221,6 +1275,7 @@ function addHoliday(){
   state.settings.holidays.push({date,name})
   state.settings.holidays.sort((a,b)=>a.date.localeCompare(b.date))
   dateEl.value='';nameEl.value=''
+  invalidateCalendarCache()
   renderHolidayList()
 }
 function renderHolidayList(){
@@ -1235,6 +1290,7 @@ function renderHolidayList(){
 }
 function removeHoliday(i){
   state.settings.holidays.splice(i,1)
+  invalidateCalendarCache()
   renderHolidayList()
 }
 function closeSettings(){
@@ -1331,6 +1387,7 @@ function applySettings(){
   s.holCol=document.getElementById('set-hol-col').value
   r.style.setProperty('--holiday-color',s.holCol)
   localStorage.setItem('gaScheduleSettings',JSON.stringify(s))
+  invalidateCalendarCache()
   closeSettings();render();toast('✅ Settings applied')
 }
 function loadSettings(){
