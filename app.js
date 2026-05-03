@@ -22,6 +22,8 @@ let renderCache=null
 // === UNDO/REDO STATE ===
 const _history=[],_redoStack=[]
 const HISTORY_LIMIT=50
+// === BULK SELECTION STATE ===
+const selectedTaskIds=new Set()
 
 // === DISPLAY MAPS ===
 const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
@@ -358,6 +360,7 @@ function render(){
   document.documentElement.style.setProperty('--row-h',RH+'px')
   renderLegend()
   populateAssigneeFilter()
+  renderBulkBar()
 
   const isEmpty=state.tasks.length===0||(state.currentView==='gantt'&&getFilteredVisible().length===0)
   const emptyEl=document.getElementById('empty-state-container')
@@ -408,10 +411,10 @@ function renderTaskList(){
     const preds=(depsByToTaskId?depsByToTaskId.get(t.id)||[]:state.deps.filter(d=>d.to_task_id===t.id)).map(d=>visIdxMap.get(d.from_task_id)).filter(Boolean)
     const isCan=t.status==='Cancelled'
     const row=document.createElement('div')
-    row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}`
+    row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}${selectedTaskIds.has(t.id)?' is-bulk-selected':''}`
     row.dataset.id=t.id;row.dataset.taskId=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Edit task ${esc(t.name)}`)
     row.innerHTML=`
-      <span class="r-num">${ri[t.id]||''}<span class="drag-handle">⠿</span></span>
+      <span class="r-num"><span class="rn-num">${ri[t.id]||''}</span><input type="checkbox" class="row-chk" data-checkid="${t.id}"${selectedTaskIds.has(t.id)?' checked':''}><span class="drag-handle">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
       <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
@@ -449,7 +452,10 @@ function renderTaskList(){
     const exp=e.target.closest('[data-id]');if(exp&&exp.classList.contains('r-exp')){state.collapsed[exp.dataset.id]=!state.collapsed[exp.dataset.id];render();return}
     const eb=e.target.closest('[data-edit]');if(eb){openEditModal(eb.dataset.edit);return}
     const db2=e.target.closest('[data-del]');if(db2){confirmDelete(db2.dataset.del);return}
-    const rw=e.target.closest('.trow');if(rw)openEditModal(rw.dataset.id)
+    if(e.target.classList.contains('row-chk')){toggleTaskSelection(e.target.dataset.checkid);return}
+    if(e.target.classList.contains('hdr-chk')){e.target.checked?selectAll():deselectAll();return}
+    const rw=e.target.closest('.trow')
+    if(rw){if(selectedTaskIds.size>0){toggleTaskSelection(rw.dataset.id);return}openEditModal(rw.dataset.id)}
   }
   tl.querySelectorAll('.trow').forEach(row=>{
     row.onkeydown=e=>{
@@ -1223,6 +1229,7 @@ function renderSidebarProjects() {
 
 async function selectProject(id){
   state.currentProjectId=id;state.comparedBaseline=null
+  selectedTaskIds.clear()
   const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
   document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
   closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render();triggerAutoFitOnNextPaint();renderSidebarProjects()
@@ -1711,6 +1718,74 @@ function updateUndoRedoBtns(){
   if(r)r.disabled=!_redoStack.length
 }
 
+// === BULK OPERATIONS ===
+function toggleTaskSelection(id){
+  if(!id)return
+  if(selectedTaskIds.has(id))selectedTaskIds.delete(id)
+  else selectedTaskIds.add(id)
+  const row=document.querySelector(`.trow[data-id="${id}"]`)
+  if(row){
+    row.classList.toggle('is-bulk-selected',selectedTaskIds.has(id))
+    const chk=row.querySelector('.row-chk');if(chk)chk.checked=selectedTaskIds.has(id)
+  }
+  renderBulkBar()
+}
+function selectAll(){
+  getFilteredVisible().forEach(({task})=>selectedTaskIds.add(task.id))
+  renderBulkBar()
+  render()
+}
+function deselectAll(){
+  selectedTaskIds.clear()
+  document.querySelectorAll('.trow.is-bulk-selected').forEach(r=>{
+    r.classList.remove('is-bulk-selected')
+    const chk=r.querySelector('.row-chk');if(chk)chk.checked=false
+  })
+  renderBulkBar()
+}
+function renderBulkBar(){
+  const bar=document.getElementById('bulk-bar'),cnt=document.getElementById('bulk-count')
+  if(!bar)return
+  const n=selectedTaskIds.size
+  bar.classList.toggle('hidden',n===0)
+  if(cnt)cnt.textContent=`${n} task${n===1?'':'s'} selected`
+  const hdrChk=document.getElementById('hdr-select-all')
+  if(hdrChk){
+    const visible=getFilteredVisible()
+    hdrChk.checked=visible.length>0&&visible.every(({task})=>selectedTaskIds.has(task.id))
+    hdrChk.indeterminate=n>0&&!hdrChk.checked
+  }
+}
+async function bulkDelete(){
+  if(!selectedTaskIds.size)return
+  const n=selectedTaskIds.size
+  showConfirm(`Delete ${n} selected task${n>1?'s':''}? Subtasks will also be removed.`,async()=>{
+    pushHistory()
+    const ids=[...selectedTaskIds]
+    const allIds=[...new Set([...ids,...ids.flatMap(id=>getDesc(id))])]
+    setSS('⟳ Deleting...')
+    const{error}=await db.from('tasks').delete().in('id',allIds)
+    if(error){toast('❌ Delete failed: '+error.message);setSS('✗ Error');return}
+    selectedTaskIds.clear()
+    await loadTasks();await loadDeps();setSS('✓ Synced');toast(`🗑 ${n} task${n>1?'s':''} deleted`)
+    renderBulkBar()
+  })
+}
+async function bulkChangeStatus(newStatus){
+  if(!selectedTaskIds.size||!newStatus)return
+  const ids=[...selectedTaskIds]
+  const fields={status:newStatus}
+  if(newStatus==='Completed')fields.progress_pct=100
+  else if(newStatus==='Not Started')fields.progress_pct=0
+  pushHistory()
+  setSS('⟳ Updating...')
+  const{error}=await db.from('tasks').update(fields).in('id',ids)
+  if(error){toast('❌ Update failed: '+error.message);setSS('✗ Error');return}
+  ids.forEach(id=>{const t=state.tasks.find(x=>x.id===id);if(t)Object.assign(t,fields)})
+  setSS('✓ Synced');toast(`✅ ${ids.length} task${ids.length>1?'s':''} updated`)
+  render()
+}
+
 // === TOOLBAR ACTIONS ===
 function setZoom(level){
   state.zoomLevel=level
@@ -2028,13 +2103,18 @@ function applyColumnWidths(){
 function renderColHdr(){
   const hdr=document.getElementById('col-hdr')
   if(!hdr)return
+  const visible=getFilteredVisible()
+  const allSel=visible.length>0&&visible.every(({task})=>selectedTaskIds.has(task.id))
+  const someSel=selectedTaskIds.size>0&&!allSel
   const cols=[
-    {lbl:'#',align:'center'},{lbl:'',align:'center'},{lbl:'Task Name',align:'left'},
+    {lbl:`<span class="hdr-hash">#</span><input type="checkbox" id="hdr-select-all" class="hdr-chk"${allSel?' checked':''} title="Select all">`,align:'center',raw:true},
+    {lbl:'',align:'center'},{lbl:'Task Name',align:'left'},
     {lbl:'Start',align:'center'},{lbl:'End',align:'center'},{lbl:'Assignee',align:'center'},
     {lbl:'Days',align:'center'},{lbl:'%',align:'center'},{lbl:'Status',align:'center'},
     {lbl:'Category',align:'center'},{lbl:'Actions',align:'center'}
   ]
   hdr.innerHTML=cols.map((c,i)=>`<div style="position:relative;text-align:${c.align};${c.align==='left'?'padding-left:4px':''}">${c.lbl}<div class="resizer" data-col="${i}"></div></div>`).join('')
+  const selAll=hdr.querySelector('#hdr-select-all');if(selAll)selAll.indeterminate=someSel
   hdr.querySelectorAll('.resizer').forEach(el=>el.addEventListener('mousedown',onColResizerDown))
 }
 
