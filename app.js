@@ -251,6 +251,7 @@ function customPrompt(title,defaultValue=''){
 
     titleEl.textContent=title
     inputEl.value=defaultValue
+    rememberFocus()
     overlay.classList.remove('hidden')
     overlay.classList.add('show')
     overlay.setAttribute('aria-hidden','false')
@@ -261,6 +262,7 @@ function customPrompt(title,defaultValue=''){
       overlay.classList.remove('show')
       overlay.classList.add('hidden')
       overlay.setAttribute('aria-hidden','true')
+      restoreFocus()
       btnConfirm.removeEventListener('click',onConfirm)
       btnCancel.removeEventListener('click',onCancel)
       overlay.removeEventListener('click',onOverlayClick)
