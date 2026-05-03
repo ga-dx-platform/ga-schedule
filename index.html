@@ -159,17 +159,7 @@
     <div id="view-kanban" style="display:none"></div>
     <div id="view-calendar" style="display:none"></div>
     <div id="view-dashboard" style="display:none"></div>
-    <div id="empty-state-container" class="hidden" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:60px 20px;text-align:center;color:#64748B;">
-      <div style="width:100px;height:100px;background:#F8FAFC;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px;border:1px dashed #CBD5E1;">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-      </div>
-      <h3 style="color:#0D1B40;font-size:18px;font-weight:600;margin-bottom:8px;">No tasks in this project yet</h3>
-      <p style="font-size:14px;max-width:320px;margin-bottom:24px;line-height:1.5;">Get started by creating your first task to keep your project timeline on track.</p>
-      <button onclick="openAddModal()" class="btn-primary" style="padding:8px 24px;border-radius:8px;border:none;background:#7C3AED;color:white;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:transform 0.1s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        Add First Task
-      </button>
-    </div>
+    <div id="empty-state-container" class="empty-state hidden" style="display:none;"></div>
   </div>
   <div id="status-bar">
     <span class="sb-txt" id="sb-tasks">0 tasks</span>
@@ -179,6 +169,55 @@
     <span class="sb-txt" id="sb-range">—</span>
   </div>
 </main>
+
+<!-- CALENDAR TOOLTIP & DAY POPUP -->
+<div id="cal-tooltip" class="cal-tooltip hidden" aria-hidden="true"></div>
+<div id="cal-day-popup" class="cal-day-popup hidden" aria-hidden="true"></div>
+
+<!-- TASK DETAIL PANEL -->
+<div id="detail-panel" class="detail-panel" aria-hidden="true" role="complementary" aria-label="Task details">
+  <div class="dp-header">
+    <div class="dp-title-wrap">
+      <span id="dp-type-badge" class="dp-type-badge">task</span>
+      <h2 id="dp-name" class="dp-name"></h2>
+    </div>
+    <div class="dp-header-btns">
+      <button type="button" class="dp-edit-btn" onclick="openEditFromPanel()">✎ Edit</button>
+      <button type="button" class="dp-close-btn" onclick="closeDetailPanel()" aria-label="Close detail panel">✕</button>
+    </div>
+  </div>
+  <div class="dp-body">
+    <div class="dp-section">
+      <div class="dp-row"><span class="dp-lbl">Status</span><span id="dp-status"></span></div>
+      <div class="dp-row dp-progress-row">
+        <span class="dp-lbl">Progress</span>
+        <div class="dp-pbar-wrap">
+          <div class="dp-pbar"><div id="dp-pbar-fill" class="dp-pbar-fill"></div></div>
+          <span id="dp-pct" class="dp-pct-txt"></span>
+        </div>
+      </div>
+    </div>
+    <div class="dp-divider"></div>
+    <div class="dp-section">
+      <div class="dp-row"><span class="dp-lbl">Start</span><span id="dp-start" class="dp-val"></span></div>
+      <div class="dp-row"><span class="dp-lbl">End</span><span id="dp-end" class="dp-val"></span></div>
+      <div class="dp-row"><span class="dp-lbl">Duration</span><span id="dp-dur" class="dp-val"></span></div>
+    </div>
+    <div class="dp-divider"></div>
+    <div class="dp-section">
+      <div class="dp-row"><span class="dp-lbl">Assignee</span><span id="dp-assignee" class="dp-val"></span></div>
+      <div class="dp-row"><span class="dp-lbl">Category</span><span id="dp-category" class="dp-val"></span></div>
+    </div>
+    <div class="dp-divider"></div>
+    <div class="dp-section" id="dp-parent-row">
+      <div class="dp-row"><span class="dp-lbl">Parent</span><span id="dp-parent" class="dp-val"></span></div>
+    </div>
+    <div class="dp-section" id="dp-deps-section">
+      <div class="dp-section-title">Dependencies</div>
+      <div id="dp-deps"></div>
+    </div>
+  </div>
+</div>
 
 <!-- Custom Context Menu -->
 <div id="task-context-menu" class="hidden" role="menu" aria-hidden="true" aria-label="Task actions" style="position:absolute;z-index:10000;background:white;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);width:160px;padding:4px;display:flex;flex-direction:column;">

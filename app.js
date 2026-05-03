@@ -354,6 +354,29 @@ async function loadBaselines(){
 }
 
 // === UI RENDERING ===
+function _setEmptyState(el,noProject,noResults,hasFilter){
+  if(noProject){
+    el.innerHTML=`
+      <div class="es-icon" style="background:#F1F5F9"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l5-5h10l5 5v13H2V7z"/><polyline points="2,7 12,13 22,7"/></svg></div>
+      <h3 class="es-title">Select a project to get started</h3>
+      <p class="es-desc">Choose an existing project from the top menu, or create a new one to begin planning.</p>
+      <button onclick="openProjModal()" class="es-btn">Open Projects</button>`
+    return
+  }
+  if(noResults&&hasFilter){
+    el.innerHTML=`
+      <div class="es-icon" style="background:#FFF7ED"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+      <h3 class="es-title">No tasks match your filters</h3>
+      <p class="es-desc">Try adjusting the search or filter criteria, or clear all filters to see every task.</p>
+      <button onclick="clearFilters();document.getElementById('search-box').value='';handleSearch('')" class="es-btn">Clear Filters</button>`
+    return
+  }
+  el.innerHTML=`
+    <div class="es-icon" style="background:#F8FAFC"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <h3 class="es-title">No tasks in this project yet</h3>
+    <p class="es-desc">Get started by creating your first task to keep your project timeline on track.</p>
+    <button onclick="openAddModal()" class="es-btn">Add First Task</button>`
+}
 function render(){
   renderCache=buildRenderCache()
   const RH=getROW_H()
@@ -362,11 +385,18 @@ function render(){
   populateAssigneeFilter()
   renderBulkBar()
 
-  const isEmpty=state.tasks.length===0||(state.currentView==='gantt'&&getFilteredVisible().length===0)
+  const hasFilter=!!(state.searchQuery||state.filterStatus||state.filterCategory||state.filterAssignee)
+  const noProject=!state.currentProjectId
+  const noTasks=state.tasks.length===0
+  const noResults=!noTasks&&state.currentView==='gantt'&&getFilteredVisible().length===0
+  const isEmpty=noProject||noTasks||noResults
   const emptyEl=document.getElementById('empty-state-container')
   const activeView=document.getElementById('view-'+state.currentView)
   if(isEmpty){
-    if(emptyEl){emptyEl.classList.remove('hidden');emptyEl.style.display='flex'}
+    if(emptyEl){
+      emptyEl.classList.remove('hidden');emptyEl.style.display='flex'
+      _setEmptyState(emptyEl,noProject,noResults,hasFilter)
+    }
     if(activeView)activeView.style.display='none'
     renderSB()
     return
@@ -419,7 +449,7 @@ function renderTaskList(){
       <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         <span class="drag-handle" title="Drag to reorder">⠿</span>
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
-        <span class="lbl" title="${esc(t.name)}">${esc(t.name)}</span>
+        <span class="lbl" title="${esc(t.name)}" onclick="event.stopPropagation();openDetailPanel('${t.id}')">${esc(t.name)}</span>
         ${t.locked?'<span class="lock-ind" title="Locked task" aria-label="Locked task">🔒</span>':''}
         ${preds.length?`<span class="dep-count" title="Predecessors: rows ${preds.join(', ')}">${preds.join(',')}</span>`:''}
       </span>
@@ -874,7 +904,7 @@ function renderCalendar(){
       const c=CAT_COLORS[t.category]||'#888'
       bars+=`<div class="cal-task-bar" data-task-id="${esc(t.id)}" style="background:${c}" title="${esc(t.name)}">${esc(t.name)}</div>`
     })
-    if(tasks.length>MAX)bars+=`<div class="cal-more">+${tasks.length-MAX} more</div>`
+    if(tasks.length>MAX)bars+=`<div class="cal-more" data-task-ids="${tasks.map(t=>t.id).join(',')}" onclick="event.stopPropagation();showCalMorePopup(this)">+${tasks.length-MAX} more</div>`
     html+=`<div class="${cls}"><div class="cal-day-num">${dayNum}</div>${bars}</div>`
   }
   const totalCells=startDow+daysInMonth
@@ -883,9 +913,63 @@ function renderCalendar(){
   html+='</div></div>'
   container.innerHTML=html
   container.querySelectorAll('.cal-task-bar').forEach(el=>{
-    el.addEventListener('click',()=>openTaskModal(el.dataset.taskId))
+    el.addEventListener('click',()=>openDetailPanel(el.dataset.taskId))
+    el.addEventListener('mouseover',e=>_showCalTooltip(e,state.tasks.find(t=>t.id===el.dataset.taskId)))
+    el.addEventListener('mousemove',_posCalTooltip)
+    el.addEventListener('mouseout',_hideCalTooltip)
   })
 }
+function _showCalTooltip(e,t){
+  if(!t)return
+  const tip=document.getElementById('cal-tooltip');if(!tip)return
+  const pct=t.progress_pct||0
+  const ds=getDerivedStatus(t,pct),sc=STATUS_CLASS[ds]||'s-none'
+  const ov=(state.settings.statusOverrides||{})[ds]
+  const bs=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
+  tip.innerHTML=`<div style="font-weight:700;color:var(--txt);margin-bottom:6px;line-height:1.3;font-size:12px">${esc(t.name)}</div>
+    <span class="sbadge ${sc}" style="${bs};font-size:10px">${esc(STATUS_LABELS[ds]||ds)}</span>
+    <div style="color:var(--txt3);font-size:10px;margin-top:5px;font-family:var(--mono)">${fmtS(pd(t.start_date))} → ${fmtS(taskEnd(t))}</div>
+    <div style="margin-top:6px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-bottom:3px"><span>Progress</span><span>${pct}%</span></div>
+      <div style="height:4px;background:#E5E7EB;border-radius:4px"><div style="height:100%;width:${pct}%;background:var(--nt-grad90);border-radius:4px"></div></div>
+    </div>`
+  tip.classList.remove('hidden')
+  _posCalTooltip(e)
+}
+function _posCalTooltip(e){
+  const tip=document.getElementById('cal-tooltip');if(!tip||tip.classList.contains('hidden'))return
+  const x=e.clientX+14,y=e.clientY+14
+  const tw=tip.offsetWidth||220,th=tip.offsetHeight||90
+  tip.style.left=(x+tw>window.innerWidth-10?e.clientX-tw-10:x)+'px'
+  tip.style.top=(y+th>window.innerHeight-10?e.clientY-th-10:y)+'px'
+}
+function _hideCalTooltip(){document.getElementById('cal-tooltip')?.classList.add('hidden')}
+function showCalMorePopup(el){
+  _hideCalTooltip()
+  const popup=document.getElementById('cal-day-popup');if(!popup)return
+  const ids=(el.dataset.taskIds||'').split(',').filter(Boolean)
+  const tasks=ids.map(id=>state.tasks.find(t=>t.id===id)).filter(Boolean)
+  if(!tasks.length)return
+  popup.innerHTML=`<div class="cdp-header"><span>${tasks.length} tasks this day</span><button type="button" class="cdp-close" onclick="document.getElementById('cal-day-popup').classList.add('hidden')">✕</button></div>
+    <div class="cdp-list">${tasks.map(t=>{
+      const pct=t.progress_pct||0,ds=getDerivedStatus(t,pct),sc=STATUS_CLASS[ds]||'s-none'
+      const ov=(state.settings.statusOverrides||{})[ds]
+      const bs=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
+      return`<div class="cdp-item" style="border-left:3px solid ${CAT_COLORS[t.category]||'#888'}" onclick="openDetailPanel('${t.id}');document.getElementById('cal-day-popup').classList.add('hidden')">
+        <div class="cdp-name">${esc(t.name)}</div>
+        <span class="sbadge ${sc}" style="${bs};font-size:9px;padding:1px 5px">${esc(STATUS_LABELS[ds]||ds)}</span>
+      </div>`}).join('')}</div>`
+  popup.classList.remove('hidden')
+  popup.setAttribute('aria-hidden','false')
+  const rect=el.getBoundingClientRect()
+  const pw=220,ph=popup.offsetHeight||200
+  popup.style.left=Math.min(rect.left,window.innerWidth-pw-10)+'px'
+  popup.style.top=(rect.bottom+4+ph>window.innerHeight-10?rect.top-ph-4:rect.bottom+4)+'px'
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#cal-day-popup')&&!e.target.closest('.cal-more'))
+    document.getElementById('cal-day-popup')?.classList.add('hidden')
+})
 function calNav(dir){
   state.calendarMonth+=dir
   if(state.calendarMonth>11){state.calendarMonth=0;state.calendarYear++}
@@ -1228,7 +1312,7 @@ function renderSidebarProjects() {
 
 async function selectProject(id){
   state.currentProjectId=id;state.comparedBaseline=null
-  selectedTaskIds.clear()
+  selectedTaskIds.clear();closeDetailPanel()
   const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
   document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
   closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render();triggerAutoFitOnNextPaint();renderSidebarProjects()
@@ -1673,6 +1757,60 @@ function inlineEditStatus(el,id){
   sel.onchange=commit
   sel.onblur=commit
   sel.onkeydown=e=>{if(e.key==='Escape')render()}
+}
+
+// === TASK DETAIL PANEL ===
+let _detailPanelId=null
+function openDetailPanel(id){
+  const t=state.tasks.find(x=>x.id===id);if(!t)return
+  _detailPanelId=id
+  _renderDetailPanel(t)
+  document.getElementById('detail-panel').classList.add('open')
+  document.getElementById('detail-panel').setAttribute('aria-hidden','false')
+}
+function closeDetailPanel(){
+  const p=document.getElementById('detail-panel');if(!p)return
+  p.classList.remove('open')
+  p.setAttribute('aria-hidden','true')
+  _detailPanelId=null
+}
+function openEditFromPanel(){
+  const id=_detailPanelId;closeDetailPanel();if(id)openEditModal(id)
+}
+function _renderDetailPanel(t){
+  const pct=t.progress_pct||0
+  const displayStatus=getDerivedStatus(t,pct)
+  const sc=STATUS_CLASS[displayStatus]||'s-none'
+  const ov=(state.settings.statusOverrides||{})[displayStatus]
+  const badgeStyle=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
+  const e=taskEnd(t)
+  document.getElementById('dp-name').textContent=t.name||''
+  const tb=document.getElementById('dp-type-badge')
+  tb.textContent=t.type||'task';tb.className='dp-type-badge dp-type-'+(t.type||'task')
+  document.getElementById('dp-status').innerHTML=`<span class="sbadge ${sc}" style="${badgeStyle}">${esc(STATUS_LABELS[displayStatus]||displayStatus)}</span>`
+  document.getElementById('dp-pct').textContent=pct+'%'
+  const fill=document.getElementById('dp-pbar-fill')
+  fill.style.width=pct+'%';fill.style.background=pct===100?'var(--green)':'var(--nt-grad90)'
+  document.getElementById('dp-start').textContent=fmtS(pd(t.start_date))
+  document.getElementById('dp-end').textContent=t.type==='milestone'?'—':fmtS(e)
+  document.getElementById('dp-dur').textContent=t.type==='milestone'?'—':t.duration_days+' days'
+  document.getElementById('dp-assignee').textContent=t.assignee||'—'
+  const catEl=document.getElementById('dp-category')
+  catEl.innerHTML=`<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${CAT_COLORS[t.category]||'#888'};flex-shrink:0"></span>${esc(t.category||'General')}</span>`
+  const parentRow=document.getElementById('dp-parent-row')
+  if(t.parent_id){const p=state.tasks.find(x=>x.id===t.parent_id);document.getElementById('dp-parent').textContent=p?p.name:'—';parentRow.style.display=''}
+  else parentRow.style.display='none'
+  const depsSection=document.getElementById('dp-deps-section')
+  const deps=state.deps.filter(d=>d.to_task_id===t.id||d.from_task_id===t.id)
+  if(deps.length){
+    document.getElementById('dp-deps').innerHTML=deps.map(d=>{
+      const otherId=d.to_task_id===t.id?d.from_task_id:d.to_task_id
+      const dir=d.to_task_id===t.id?'← from':'→ to'
+      const other=state.tasks.find(x=>x.id===otherId)
+      return`<div class="dp-dep-item">${dir} <span>${esc(other?.name||'—')}</span><span class="dep-type">${d.type||'FS'}</span></div>`
+    }).join('')
+    depsSection.style.display=''
+  } else depsSection.style.display='none'
 }
 
 // === UNDO / REDO ===
@@ -2420,10 +2558,28 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(ctxMenu&&!ctxMenu.classList.contains('hidden')){hideTaskContextMenu();return}
     if(closeTopModal())return
+    if(_detailPanelId){closeDetailPanel();return}
+    if(selectedTaskIds.size>0){deselectAll();return}
     ;['holiday-modal','custom-prompt-overlay'].forEach(id=>{
       const m=document.getElementById(id)
       if(m&&m.classList.contains('show')){m.classList.remove('show');m.classList.add('hidden')}
     })
+  }
+  if(!isTyping&&(e.key==='Delete'||e.key==='Backspace')){
+    if(selectedTaskIds.size>0){e.preventDefault();bulkDelete();return}
+    const focused=document.activeElement?.closest('.trow')
+    if(focused&&state.currentView==='gantt'){e.preventDefault();confirmDelete(focused.dataset.id)}
+  }
+  if(!isTyping&&(e.key==='ArrowDown'||e.key==='ArrowUp')){
+    e.preventDefault()
+    const rows=[...document.querySelectorAll('#task-list .trow')]
+    if(!rows.length)return
+    const idx=rows.indexOf(document.activeElement?.closest('.trow'))
+    const next=e.key==='ArrowDown'?rows[Math.min(idx+1,rows.length-1)]:rows[Math.max(idx-1,0)]
+    if(next)next.focus()
+  }
+  if(!isTyping&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='a'&&state.currentView==='gantt'){
+    e.preventDefault();selectAll()
   }
 })
 
