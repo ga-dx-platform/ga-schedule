@@ -1471,7 +1471,7 @@ function renderTaskLogPane(taskId){
   if(!list)return
   const logs=(state.taskLogs[taskId]||[])
   if(!logs.length){list.innerHTML='<div class="tl-log-empty">ยังไม่มีบันทึก</div>';return}
-  const TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+  const EN_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const groups={}
   logs.forEach(l=>{
     const key=l.logged_at.slice(0,7)
@@ -1480,7 +1480,7 @@ function renderTaskLogPane(taskId){
   })
   list.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(key=>{
     const[y,m]=key.split('-')
-    const hdr=`${TH_MON[parseInt(m,10)-1]} ${parseInt(y,10)+543}`
+    const hdr=`${EN_MON[parseInt(m,10)-1]} ${y}`
     const rows=groups[key].map(l=>{
       const d=new Date(l.logged_at)
       const ds=`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
