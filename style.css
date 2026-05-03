@@ -349,6 +349,8 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 #gantt-body{position:relative}
 .g-row{height:var(--row-h);border-bottom:1px solid var(--grid-line-color);overflow:visible}
 .g-row:hover{background:rgba(124,58,237,.018)}
+.trow.hover-sync,.g-row.hover-sync{background-color:#F8FAFC!important;transition:background-color .1s ease}
+.g-row.hover-sync .g-bar{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 4px 6px -1px rgba(124,58,237,.2);transition:all .15s ease}
 .g-wknd{position:absolute;top:0;bottom:0;background:var(--weekend-bg-color)!important;pointer-events:none}
 .g-hol{position:absolute;top:0;bottom:0;background:var(--holiday-color);pointer-events:none;opacity:.6}
 .today-vline{position:absolute;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,transparent,var(--today-col),transparent);opacity:.7;z-index:4;pointer-events:none}

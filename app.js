@@ -332,7 +332,7 @@ function renderTaskList(){
     const isCan=t.status==='Cancelled'
     const row=document.createElement('div')
     row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}`
-    row.dataset.id=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Edit task ${esc(t.name)}`)
+    row.dataset.id=t.id;row.dataset.taskId=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Edit task ${esc(t.name)}`)
     row.innerHTML=`
       <span class="r-num">${ri[t.id]||''}<span class="drag-handle">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
@@ -514,7 +514,7 @@ function renderGantt(RH){
   }
 
   visible.forEach(({task:t},rowIdx)=>{
-    const row=document.createElement('div');row.className='g-row';row.style.width=W+'px'
+    const row=document.createElement('div');row.className='g-row';row.dataset.taskId=t.id;row.style.width=W+'px'
     const hasKids=state.tasks.some(c=>c.parent_id===t.id)
     const{s,e}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
     const x=dBetween(min,s)*DP,w=Math.max((dBetween(s,e)+1)*DP,DP)
@@ -2103,6 +2103,17 @@ document.addEventListener('keydown',e=>{
     e.preventDefault()
     openAddModal()
   }
+})
+
+document.addEventListener('mouseover',e=>{
+  const target=e.target.closest('[data-task-id]');if(!target)return
+  const id=target.dataset.taskId
+  document.querySelectorAll(`[data-task-id="${id}"]`).forEach(el=>el.classList.add('hover-sync'))
+})
+document.addEventListener('mouseout',e=>{
+  const target=e.target.closest('[data-task-id]');if(!target)return
+  const id=target.dataset.taskId
+  document.querySelectorAll(`[data-task-id="${id}"]`).forEach(el=>el.classList.remove('hover-sync'))
 })
 
 ;['t-name','t-parent','t-type','t-category','t-start','t-duration','t-assignee','t-progress-num','f-delayed','f-onhold','f-cancelled','t-locked'].forEach(id=>{
