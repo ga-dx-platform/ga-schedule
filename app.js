@@ -414,7 +414,7 @@ function renderTaskList(){
     row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}${selectedTaskIds.has(t.id)?' is-bulk-selected':''}`
     row.dataset.id=t.id;row.dataset.taskId=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Edit task ${esc(t.name)}`)
     row.innerHTML=`
-      <span class="r-num"><span class="rn-num">${ri[t.id]||''}</span><input type="checkbox" class="row-chk" data-checkid="${t.id}"${selectedTaskIds.has(t.id)?' checked':''}><span class="drag-handle">⠿</span></span>
+      <span class="r-num"><span class="rn-num">${ri[t.id]||''}</span><input type="checkbox" class="row-chk" data-checkid="${t.id}"${selectedTaskIds.has(t.id)?' checked':''} onclick="event.stopPropagation();toggleTaskSelection('${t.id}')"><span class="drag-handle">⠿</span></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
       <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
@@ -427,10 +427,10 @@ function renderTaskList(){
       <span class="r-date">${esc(t.assignee||'—')}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
       <span class="r-pct${hasKids?' par':''}${!hasKids?' pct-editable':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
-        <span${!hasKids?` ondblclick="inlineEditPct(this,'${t.id}')" title="Double-click to edit"`:''}>${pct}%</span>
+        <span${!hasKids?` ondblclick="inlineEditPct(this,'${t.id}')" onclick="event.stopPropagation()" title="Double-click to edit"`:''}>${pct}%</span>
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
-      <span><span class="sbadge ${sc}" style="${badgeStyle}" ondblclick="inlineEditStatus(this,'${t.id}')" title="Double-click to change status">${esc(STATUS_LABELS[displayStatus]||displayStatus)}</span></span>
+      <span><span class="sbadge ${sc}" style="${badgeStyle}" ondblclick="inlineEditStatus(this,'${t.id}')" onclick="event.stopPropagation()" title="Double-click to change status">${esc(STATUS_LABELS[displayStatus]||displayStatus)}</span></span>
       <span class="cat-cell">
         <div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div>
         <span class="cat-lbl">${esc(t.category||'General')}</span>
@@ -452,8 +452,6 @@ function renderTaskList(){
     const exp=e.target.closest('[data-id]');if(exp&&exp.classList.contains('r-exp')){state.collapsed[exp.dataset.id]=!state.collapsed[exp.dataset.id];render();return}
     const eb=e.target.closest('[data-edit]');if(eb){openEditModal(eb.dataset.edit);return}
     const db2=e.target.closest('[data-del]');if(db2){confirmDelete(db2.dataset.del);return}
-    if(e.target.classList.contains('row-chk')){toggleTaskSelection(e.target.dataset.checkid);return}
-    if(e.target.classList.contains('hdr-chk')){e.target.checked?selectAll():deselectAll();return}
     const rw=e.target.closest('.trow')
     if(rw){if(selectedTaskIds.size>0){toggleTaskSelection(rw.dataset.id);return}openEditModal(rw.dataset.id)}
   }
@@ -2114,7 +2112,11 @@ function renderColHdr(){
     {lbl:'Category',align:'center'},{lbl:'Actions',align:'center'}
   ]
   hdr.innerHTML=cols.map((c,i)=>`<div style="position:relative;text-align:${c.align};${c.align==='left'?'padding-left:4px':''}">${c.lbl}<div class="resizer" data-col="${i}"></div></div>`).join('')
-  const selAll=hdr.querySelector('#hdr-select-all');if(selAll)selAll.indeterminate=someSel
+  const selAll=hdr.querySelector('#hdr-select-all')
+  if(selAll){
+    selAll.indeterminate=someSel
+    selAll.onclick=e=>{e.stopPropagation();selAll.checked?selectAll():deselectAll()}
+  }
   hdr.querySelectorAll('.resizer').forEach(el=>el.addEventListener('mousedown',onColResizerDown))
 }
 
