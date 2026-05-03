@@ -9,7 +9,7 @@ async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(
 // === STATE ===
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[]}
 const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
-let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],searchQuery:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -19,6 +19,9 @@ let lastFocusEl=null,focusStack=[],lastSavedAt=null,confirmCallback=null
 let _holidaySet=null,_weekendDays=null
 // PERF-01/04: per-render cache (rebuilt at the top of every render() call)
 let renderCache=null
+// === UNDO/REDO STATE ===
+const _history=[],_redoStack=[]
+const HISTORY_LIMIT=50
 
 // === DISPLAY MAPS ===
 const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
@@ -223,11 +226,17 @@ function getVisible(){
   return vis
 }
 function getFilteredVisible(){
-  const q=state.searchQuery
-  if(!q)return getVisible()
-  const matchIds=new Set()
+  const q=state.searchQuery,fs=state.filterStatus,fc=state.filterCategory,fa=state.filterAssignee
+  if(!q&&!fs&&!fc&&!fa)return getVisible()
   const taskById=renderCache?.taskById
-  state.tasks.forEach(t=>{if((t.name||'').toLowerCase().includes(q)||(t.assignee||'').toLowerCase().includes(q)||(t.status||'').toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q))matchIds.add(t.id)})
+  const matchIds=new Set()
+  state.tasks.forEach(t=>{
+    if(q&&!((t.name||'').toLowerCase().includes(q)||(t.assignee||'').toLowerCase().includes(q)||(t.status||'').toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q)))return
+    if(fs&&t.status!==fs)return
+    if(fc&&t.category!==fc)return
+    if(fa&&(t.assignee||'')!==fa)return
+    matchIds.add(t.id)
+  })
   const visIds=new Set(matchIds)
   function addAncestors(id){const t=taskById?taskById.get(id):state.tasks.find(x=>x.id===id);if(t&&t.parent_id&&!visIds.has(t.parent_id)){visIds.add(t.parent_id);addAncestors(t.parent_id)}}
   matchIds.forEach(id=>addAncestors(id))
@@ -238,6 +247,31 @@ function handleSearch(query){
   state.searchQuery=query.toLowerCase()
   clearTimeout(_searchTimer)
   _searchTimer=setTimeout(()=>render(),150)
+}
+function applyFilter(type,value){
+  if(type==='status')state.filterStatus=value
+  if(type==='category')state.filterCategory=value
+  if(type==='assignee')state.filterAssignee=value
+  updateFilterClearBtn()
+  render()
+}
+function clearFilters(){
+  state.filterStatus=state.filterCategory=state.filterAssignee=''
+  const fs=document.getElementById('filter-status'),fc=document.getElementById('filter-category'),fa=document.getElementById('filter-assignee')
+  if(fs)fs.value='';if(fc)fc.value='';if(fa)fa.value=''
+  updateFilterClearBtn()
+  render()
+}
+function updateFilterClearBtn(){
+  const btn=document.getElementById('filter-clear')
+  if(btn)btn.classList.toggle('hidden-clear',!(state.filterStatus||state.filterCategory||state.filterAssignee))
+}
+function populateAssigneeFilter(){
+  const sel=document.getElementById('filter-assignee')
+  if(!sel)return
+  const assignees=[...new Set(state.tasks.map(t=>t.assignee).filter(Boolean))].sort()
+  const cur=state.filterAssignee
+  sel.innerHTML='<option value="">All Assignee</option>'+assignees.map(a=>`<option value="${esc(a)}"${a===cur?' selected':''}>${esc(a)}</option>`).join('')
 }
 
 function customPrompt(title,defaultValue=''){
@@ -323,6 +357,7 @@ function render(){
   const RH=getROW_H()
   document.documentElement.style.setProperty('--row-h',RH+'px')
   renderLegend()
+  populateAssigneeFilter()
 
   const isEmpty=state.tasks.length===0||(state.currentView==='gantt'&&getFilteredVisible().length===0)
   const emptyEl=document.getElementById('empty-state-container')
@@ -388,11 +423,11 @@ function renderTaskList(){
       <span class="r-date">${t.type==='milestone'?'—':fmtS(e)}</span>
       <span class="r-date">${esc(t.assignee||'—')}</span>
       <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
-      <span class="r-pct${hasKids?' par':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
-        <span>${pct}%</span>
+      <span class="r-pct${hasKids?' par':''}${!hasKids?' pct-editable':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
+        <span${!hasKids?` ondblclick="inlineEditPct(this,'${t.id}')" title="Double-click to edit"`:''}>${pct}%</span>
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
       </span>
-      <span><span class="sbadge ${sc}" style="${badgeStyle}">${esc(STATUS_LABELS[displayStatus]||displayStatus)}</span></span>
+      <span><span class="sbadge ${sc}" style="${badgeStyle}" ondblclick="inlineEditStatus(this,'${t.id}')" title="Double-click to change status">${esc(STATUS_LABELS[displayStatus]||displayStatus)}</span></span>
       <span class="cat-cell">
         <div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div>
         <span class="cat-lbl">${esc(t.category||'General')}</span>
@@ -1520,6 +1555,7 @@ async function saveTask(){
   const btn=document.getElementById('btn-save-task');if(btn)btn.disabled=true
   try{
   const name=document.getElementById('t-name').value.trim();if(!name){toast('⚠️ Please enter a task name');return}
+  pushHistory()
   const pct=Math.min(100,Math.max(0,parseInt(document.getElementById('t-progress-num').value)||0))
   const isCancelled=document.getElementById('f-cancelled').checked
   const isOnHold=document.getElementById('f-onhold').checked
@@ -1567,6 +1603,7 @@ async function saveTask(){
 async function deleteTask(){
   if(!state.editingTaskId)return;const t=state.tasks.find(x=>x.id===state.editingTaskId)
   showConfirm(`Delete "${t?.name}"? Subtasks will also be removed.`,async()=>{
+    pushHistory()
     const ids=getDesc(state.editingTaskId);ids.push(state.editingTaskId);setSS('⟳ Deleting...')
     const{error}=await db.from('tasks').delete().in('id',ids);if(error){toast('❌ Delete failed');return}
     await loadTasks();await loadDeps();setSS('✓ Synced');toast('🗑 Task deleted');closeTaskModal()
@@ -1581,6 +1618,97 @@ function confirmDelete(id){
 function getDesc(id){
   const kids=state.tasks.filter(t=>t.parent_id===id).map(t=>t.id)
   return[...kids,...kids.flatMap(k=>getDesc(k))]
+}
+
+// === INLINE EDITING ===
+async function patchTask(id,fields){
+  const t=state.tasks.find(x=>x.id===id);if(!t)return
+  setSS('⟳ Saving...')
+  const{error}=await db.from('tasks').update(fields).eq('id',id)
+  if(error){toast('❌ Save failed: '+error.message);setSS('✗ Error');render();return}
+  pushHistory()
+  Object.assign(t,fields)
+  setSS('✓ Synced')
+  render()
+}
+function inlineEditPct(el,id){
+  const t=state.tasks.find(x=>x.id===id);if(!t)return
+  const inp=document.createElement('input')
+  inp.type='number';inp.min=0;inp.max=100;inp.value=t.progress_pct
+  inp.className='inline-edit-input'
+  el.replaceWith(inp);inp.focus();inp.select()
+  let committed=false
+  const commit=()=>{
+    if(committed)return;committed=true
+    const v=Math.min(100,Math.max(0,parseInt(inp.value)||0))
+    const specialStatus=['Cancelled','On Hold','Delayed']
+    const fields={progress_pct:v}
+    if(!specialStatus.includes(t.status))fields.status=v===100?'Completed':v>0?'In Progress':'Not Started'
+    patchTask(id,fields)
+  }
+  inp.onblur=commit
+  inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commit()}if(e.key==='Escape')render()}
+}
+function inlineEditStatus(el,id){
+  const t=state.tasks.find(x=>x.id===id);if(!t)return
+  const STATUSES=['Not Started','In Progress','Completed','Delayed','On Hold','Cancelled']
+  const sel=document.createElement('select')
+  sel.className='inline-edit-select'
+  sel.innerHTML=STATUSES.map(s=>`<option value="${s}"${t.status===s?' selected':''}>${s}</option>`).join('')
+  el.replaceWith(sel);sel.focus()
+  let committed=false
+  const commit=()=>{
+    if(committed)return;committed=true
+    const fields={status:sel.value}
+    if(sel.value==='Completed')fields.progress_pct=100
+    else if(sel.value==='Not Started')fields.progress_pct=0
+    patchTask(id,fields)
+  }
+  sel.onchange=commit
+  sel.onblur=commit
+  sel.onkeydown=e=>{if(e.key==='Escape')render()}
+}
+
+// === UNDO / REDO ===
+function pushHistory(){
+  _history.push(JSON.stringify(state.tasks))
+  if(_history.length>HISTORY_LIMIT)_history.shift()
+  _redoStack.length=0
+  updateUndoRedoBtns()
+}
+async function undo(){
+  if(!_history.length)return
+  _redoStack.push(JSON.stringify(state.tasks))
+  const prevTasks=state.tasks
+  state.tasks=JSON.parse(_history.pop())
+  updateUndoRedoBtns()
+  render()
+  await _syncHistoryState(prevTasks,state.tasks)
+  toast('↩ Undone')
+}
+async function redo(){
+  if(!_redoStack.length)return
+  _history.push(JSON.stringify(state.tasks))
+  const prevTasks=state.tasks
+  state.tasks=JSON.parse(_redoStack.pop())
+  updateUndoRedoBtns()
+  render()
+  await _syncHistoryState(prevTasks,state.tasks)
+  toast('↪ Redone')
+}
+async function _syncHistoryState(fromTasks,toTasks){
+  if(!state.currentProjectId)return
+  setSS('⟳ Syncing...')
+  const toIds=new Set(toTasks.map(t=>t.id))
+  const removed=fromTasks.filter(t=>!toIds.has(t.id)).map(t=>t.id)
+  if(removed.length){const{error}=await db.from('tasks').delete().in('id',removed);if(error){setSS('✗ Error');return}}
+  if(toTasks.length){const{error}=await db.from('tasks').upsert(toTasks,{onConflict:'id'});if(error){setSS('✗ Error');return}}
+  setSS('✓ Synced')
+}
+function updateUndoRedoBtns(){
+  const u=document.getElementById('btn-undo'),r=document.getElementById('btn-redo')
+  if(u)u.disabled=!_history.length
+  if(r)r.disabled=!_redoStack.length
 }
 
 // === TOOLBAR ACTIONS ===
@@ -2194,6 +2322,8 @@ document.addEventListener('keydown',e=>{
   const topModal=getTopModalBackdrop()
   if(topModal&&trapFocusIn(topModal,e))return
   const isTyping=['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||e.target.isContentEditable
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();if(!isTyping)undo();return}
+  if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();if(!isTyping)redo();return}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
     e.preventDefault()
     const s=document.getElementById('search-box');if(s){s.focus();s.select()}

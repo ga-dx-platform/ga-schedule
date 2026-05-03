@@ -4,7 +4,9 @@
       "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"enterprise SaaS project management gantt dashboard premium\" --design-system -p \"GA Schedule Pro Max\")",
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"project management SaaS dashboard gantt kanban startup minimal clean modern linear vercel notion\" --design-system -p \"GA Schedule Pro Max\")",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"project management SaaS dashboard gantt kanban startup minimal clean modern linear vercel notion\" --design-system -p \"GA Schedule Pro Max\")",
-      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"startup minimal clean modern linear\" --domain style -n 3)"
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"startup minimal clean modern linear\" --domain style -n 3)",
+      "Bash(powershell -Command \"Select-String -Path 'c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\\\\app.js' -Pattern '^async function render|^function render' | Select-Object -First 5\")",
+      "Bash(powershell -Command \"Select-String -Path 'c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\\\\app.js' -Pattern 'const DEFAULT_SETTINGS|let state=' | Select-Object -First 5\")"
     ]
   }
 }

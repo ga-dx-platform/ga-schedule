@@ -66,6 +66,33 @@
   <div id="toolbar">
     <input type="text" id="search-box" class="tb-input" placeholder="Search tasks..." oninput="handleSearch(this.value)">
     <div class="tb-sep"></div>
+    <div id="filter-bar" class="filter-bar">
+      <span class="filter-label">Filter:</span>
+      <select id="filter-status" class="tb-filter" title="Filter by status" onchange="applyFilter('status',this.value)">
+        <option value="">All Status</option>
+        <option>Not Started</option>
+        <option>In Progress</option>
+        <option>Completed</option>
+        <option>Delayed</option>
+        <option>On Hold</option>
+        <option>Cancelled</option>
+      </select>
+      <select id="filter-category" class="tb-filter" title="Filter by category" onchange="applyFilter('category',this.value)">
+        <option value="">All Category</option>
+        <option>General</option>
+        <option>Develop</option>
+        <option>Test</option>
+        <option>Meeting</option>
+      </select>
+      <select id="filter-assignee" class="tb-filter" title="Filter by assignee" onchange="applyFilter('assignee',this.value)">
+        <option value="">All Assignee</option>
+      </select>
+      <button id="filter-clear" class="tb tb-filter-clear hidden-clear" onclick="clearFilters()">✕ Clear</button>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb" id="btn-undo" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button class="tb" id="btn-redo" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+    <div class="tb-sep"></div>
     <button class="tb link" id="btn-link" onclick="openDependencyModal()" disabled>Link</button>
     <div class="tb-sep"></div>
     <div class="tb-group">
