@@ -140,20 +140,20 @@
 </main>
 
 <!-- Custom Context Menu -->
-<div id="task-context-menu" class="hidden" style="position:absolute;z-index:10000;background:white;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);width:160px;padding:4px;display:flex;flex-direction:column;">
-  <button id="ctx-edit" class="ctx-menu-item" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:none;background:transparent;width:100%;text-align:left;cursor:pointer;border-radius:4px;color:#334155;font-size:13px;">
+<div id="task-context-menu" class="hidden" role="menu" aria-hidden="true" aria-label="Task actions" style="position:absolute;z-index:10000;background:white;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);width:160px;padding:4px;display:flex;flex-direction:column;">
+  <button id="ctx-edit" class="ctx-menu-item" role="menuitem" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:none;background:transparent;width:100%;text-align:left;cursor:pointer;border-radius:4px;color:#334155;font-size:13px;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
     Edit Task
   </button>
   <div style="height:1px;background:#E2E8F0;margin:4px 0;"></div>
-  <button id="ctx-delete" class="ctx-menu-item ctx-danger" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:none;background:transparent;width:100%;text-align:left;cursor:pointer;border-radius:4px;color:#EF4444;font-size:13px;">
+  <button id="ctx-delete" class="ctx-menu-item ctx-danger" role="menuitem" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:none;background:transparent;width:100%;text-align:left;cursor:pointer;border-radius:4px;color:#EF4444;font-size:13px;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
     Delete Task
   </button>
 </div>
 
 <!-- TASK MODAL -->
-<div class="modal-bd" id="task-modal-bd">
+<div class="modal-bd" id="task-modal-bd" aria-hidden="true">
   <div id="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
 
     <!-- Header -->
@@ -170,14 +170,14 @@
 
       <!-- Row 1: Task Name -->
       <div>
-        <label class="flbl">Task Name *</label>
+        <label class="flbl" for="t-name">Task Name *</label>
         <input type="text" id="t-name" class="finput" style="width:100%" placeholder="e.g. Survey 15F layout">
       </div>
 
       <!-- Row 2: Type · Category · Status Flags -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:16px">
         <div>
-          <label class="flbl">Type</label>
+          <label class="flbl" for="t-type">Type</label>
           <select id="t-type" class="finput" style="width:100%">
             <option value="task">Task</option>
             <option value="milestone">Milestone</option>
@@ -185,7 +185,7 @@
           </select>
         </div>
         <div>
-          <label class="flbl">Category</label>
+          <label class="flbl" for="t-category">Category</label>
           <select id="t-category" class="finput" style="width:100%">
             <option value="General">General</option>
             <option value="Develop">Develop</option>
@@ -206,15 +206,15 @@
       <!-- Row 3: Dates -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
         <div>
-          <label class="flbl">Start Date *</label>
+          <label class="flbl" for="t-start">Start Date *</label>
           <input type="date" id="t-start" class="finput" style="width:100%" onchange="calcTaskEndDate()">
         </div>
         <div>
-          <label class="flbl">Duration (days)</label>
+          <label class="flbl" for="t-duration">Duration (days)</label>
           <input type="number" id="t-duration" class="finput" style="width:100%" min="1" oninput="calcTaskEndDate()">
         </div>
         <div>
-          <label class="flbl">End Date</label>
+          <label class="flbl" for="t-end">End Date</label>
           <input type="date" id="t-end" class="finput" style="width:100%;background:#f8fafc;color:var(--txt3);pointer-events:none" readonly>
         </div>
       </div>
@@ -222,18 +222,18 @@
       <!-- Row 4: Progress · Assignee · Parent -->
       <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:16px;align-items:end">
         <div>
-          <label class="flbl">Progress (%)</label>
+          <label class="flbl" for="t-progress-num">Progress (%)</label>
           <div style="display:flex;align-items:center;gap:8px">
             <input type="range" id="t-progress-slide" min="0" max="100" style="flex:1;accent-color:#3B00FF" oninput="document.getElementById('t-progress-num').value=this.value">
             <input type="number" id="t-progress-num" class="finput" style="width:65px" min="0" max="100" oninput="document.getElementById('t-progress-slide').value=this.value">
           </div>
         </div>
         <div>
-          <label class="flbl">Assignee</label>
+          <label class="flbl" for="t-assignee">Assignee</label>
           <input type="text" id="t-assignee" class="finput" style="width:100%" placeholder="Name">
         </div>
         <div>
-          <label class="flbl">Parent Task</label>
+          <label class="flbl" for="t-parent">Parent Task</label>
           <select id="t-parent" class="finput" style="width:100%">
             <option value="">None (Root)</option>
           </select>
@@ -261,7 +261,7 @@
 </div>
 
 <!-- PROJ MODAL -->
-<div class="modal-bd" id="proj-modal-bd">
+<div class="modal-bd" id="proj-modal-bd" aria-hidden="true">
   <div id="proj-modal" role="dialog" aria-modal="true" aria-label="Projects">
     <div class="m-hdr"><span class="m-title">Projects</span><button class="m-close" onclick="closeProjModal()" aria-label="Close">×</button></div>
     <div id="proj-list" style="max-height:280px;overflow-y:auto"></div>
@@ -275,7 +275,7 @@
 </div>
 
 <!-- DEPENDENCY MODAL (UNIFIED: ADD + LIST) -->
-<div class="modal-bd" id="dep-unified-modal-bd">
+<div class="modal-bd" id="dep-unified-modal-bd" aria-hidden="true">
   <div id="dep-unified-modal" role="dialog" aria-modal="true" aria-label="Manage Dependencies">
     <div class="m-hdr"><span class="m-title">Manage Dependencies</span><button class="m-close" onclick="closeDependencyModal()" aria-label="Close">×</button></div>
     <div style="padding:14px 20px;background:#F9FAFB;border-bottom:1px solid var(--bdr);display:flex;gap:10px;align-items:flex-end">
@@ -301,7 +301,7 @@
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="modal-bd" id="settings-modal-bd">
+<div class="modal-bd" id="settings-modal-bd" aria-hidden="true">
   <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="m-hdr">
       <span class="m-title" id="settings-title">Settings</span>
@@ -400,7 +400,7 @@
 </div>
 
 <!-- CONFIRM MODAL -->
-<div class="modal-bd" id="confirm-modal-bd">
+<div class="modal-bd" id="confirm-modal-bd" aria-hidden="true">
   <div id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div class="m-hdr"><span class="m-title" id="confirm-title">Confirm Deletion</span></div>
     <div style="padding:20px 18px;text-align:center">
@@ -414,8 +414,8 @@
 </div>
 
 <!-- Custom Prompt Modal -->
-<div id="custom-prompt-overlay" class="modal-overlay hidden" style="z-index: 9999;">
-  <div class="modal-content" style="max-width: 400px;">
+<div id="custom-prompt-overlay" class="modal-overlay hidden" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="custom-prompt-title" style="max-width: 400px;">
     <h3 id="custom-prompt-title" style="margin-top: 0; color: #0D1B40; font-weight: 600;"></h3>
     <input type="text" id="custom-prompt-input" style="width: 100%; padding: 8px 12px; margin: 16px 0; border: 1px solid #E2E8F0; border-radius: 8px; font-family: inherit; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#7C3AED'" onblur="this.style.borderColor='#E2E8F0'" />
     <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">

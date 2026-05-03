@@ -14,7 +14,7 @@ let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
 let colRafId=null
-let lastFocusEl=null,lastSavedAt=null,confirmCallback=null
+let lastFocusEl=null,focusStack=[],lastSavedAt=null,confirmCallback=null
 // PERF-02: holiday/weekend cache (invalidated whenever settings or holidays change)
 let _holidaySet=null,_weekendDays=null
 // PERF-01/04: per-render cache (rebuilt at the top of every render() call)
@@ -143,12 +143,21 @@ function rollupPct(id){
   return Math.round(ch.reduce((s,c)=>s+rollupPct(c.id),0)/ch.length)
 }
 function buildRenderCache(){
-  // Build parent→children map in one O(n) pass
+  // Build lookup maps once per render; large projects otherwise pay repeated
+  // find/filter costs across the task list, Gantt, and dependency badges.
+  const taskById=new Map()
   const childMap=new Map()
   state.tasks.forEach(t=>{
+    taskById.set(t.id,t)
     const pid=t.parent_id||null
     if(!childMap.has(pid))childMap.set(pid,[])
     childMap.get(pid).push(t)
+  })
+  childMap.forEach(children=>children.sort((a,b)=>(a.sort_order??0)-(b.sort_order??0)))
+  const depsByToTaskId=new Map()
+  state.deps.forEach(dep=>{
+    if(!depsByToTaskId.has(dep.to_task_id))depsByToTaskId.set(dep.to_task_id,[])
+    depsByToTaskId.get(dep.to_task_id).push(dep)
   })
   // Pre-compute rollup % for every task with memoization (O(n) total)
   const pctCache=new Map()
@@ -157,7 +166,7 @@ function buildRenderCache(){
     const ch=childMap.get(id)||[]
     const pct=ch.length
       ?Math.round(ch.reduce((s,c)=>s+computePct(c.id),0)/ch.length)
-      :(state.tasks.find(t=>t.id===id)?.progress_pct||0)
+      :(taskById.get(id)?.progress_pct||0)
     pctCache.set(id,pct)
     return pct
   }
@@ -169,7 +178,7 @@ function buildRenderCache(){
     const children=childMap.get(taskId)||[]
     let result
     if(!children.length){
-      const t=state.tasks.find(x=>x.id===taskId)
+      const t=taskById.get(taskId)
       result=t?{s:pd(t.start_date),e:taskEnd(t)}:null
     }else{
       let minS=null,maxE=null
@@ -181,7 +190,7 @@ function buildRenderCache(){
   }
   // Only pre-warm tasks that actually have children (leaf tasks fall back cheaply)
   state.tasks.filter(t=>childMap.has(t.id)).forEach(t=>computeParentDates(t.id))
-  return{childMap,pctCache,parentDatesCache}
+  return{taskById,childMap,depsByToTaskId,pctCache,parentDatesCache,wbsCache:null,visibleCache:null}
 }
 function getDerivedStatus(task,actualPct){
   const overrideStatuses=['Cancelled','On Hold','Delayed']
@@ -191,22 +200,34 @@ function getDerivedStatus(task,actualPct){
   return'Not Started'
 }
 function getWBS(){
+  if(renderCache?.wbsCache)return renderCache.wbsCache
   const wbs={},ri={};let cnt=0
-  function walk(pid,pre){state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order).forEach((t,i)=>{const w=pre+(i+1);wbs[t.id]=w;ri[t.id]=++cnt;walk(t.id,w+'.')})}
-  walk(null,'');return{wbs,ri}
+  const childMap=renderCache?.childMap
+  function childrenOf(pid){return childMap?(childMap.get(pid)||[]):state.tasks.filter(t=>(t.parent_id||null)===pid).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0))}
+  function walk(pid,pre){childrenOf(pid).forEach((t,i)=>{const w=pre+(i+1);wbs[t.id]=w;ri[t.id]=++cnt;walk(t.id,w+'.')})}
+  walk(null,'')
+  const result={wbs,ri}
+  if(renderCache)renderCache.wbsCache=result
+  return result
 }
 function getVisible(){
+  if(renderCache?.visibleCache)return renderCache.visibleCache
   const vis=[]
-  function walk(pid,lv){state.tasks.filter(t=>t.parent_id===pid).sort((a,b)=>a.sort_order-b.sort_order).forEach(t=>{vis.push({task:t,level:lv});if(!state.collapsed[t.id])walk(t.id,lv+1)})}
-  walk(null,0);return vis
+  const childMap=renderCache?.childMap
+  function childrenOf(pid){return childMap?(childMap.get(pid)||[]):state.tasks.filter(t=>(t.parent_id||null)===pid).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0))}
+  function walk(pid,lv){childrenOf(pid).forEach(t=>{vis.push({task:t,level:lv});if(!state.collapsed[t.id])walk(t.id,lv+1)})}
+  walk(null,0)
+  if(renderCache)renderCache.visibleCache=vis
+  return vis
 }
 function getFilteredVisible(){
   const q=state.searchQuery
   if(!q)return getVisible()
   const matchIds=new Set()
-  state.tasks.forEach(t=>{if(t.name.toLowerCase().includes(q)||(t.assignee||'').toLowerCase().includes(q)||(t.status||'').toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q))matchIds.add(t.id)})
+  const taskById=renderCache?.taskById
+  state.tasks.forEach(t=>{if((t.name||'').toLowerCase().includes(q)||(t.assignee||'').toLowerCase().includes(q)||(t.status||'').toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q))matchIds.add(t.id)})
   const visIds=new Set(matchIds)
-  function addAncestors(id){const t=state.tasks.find(x=>x.id===id);if(t&&t.parent_id&&!visIds.has(t.parent_id)){visIds.add(t.parent_id);addAncestors(t.parent_id)}}
+  function addAncestors(id){const t=taskById?taskById.get(id):state.tasks.find(x=>x.id===id);if(t&&t.parent_id&&!visIds.has(t.parent_id)){visIds.add(t.parent_id);addAncestors(t.parent_id)}}
   matchIds.forEach(id=>addAncestors(id))
   return getVisible().filter(({task})=>visIds.has(task.id))
 }
@@ -230,12 +251,14 @@ function customPrompt(title,defaultValue=''){
     inputEl.value=defaultValue
     overlay.classList.remove('hidden')
     overlay.classList.add('show')
+    overlay.setAttribute('aria-hidden','false')
     inputEl.focus()
     inputEl.select()
 
     const cleanup=()=>{
       overlay.classList.remove('show')
       overlay.classList.add('hidden')
+      overlay.setAttribute('aria-hidden','true')
       btnConfirm.removeEventListener('click',onConfirm)
       btnCancel.removeEventListener('click',onCancel)
       overlay.removeEventListener('click',onOverlayClick)
@@ -331,17 +354,19 @@ function renderTaskList(){
   renderColHdr()
   const{wbs,ri}=getWBS(),visible=getFilteredVisible()
   const visIdxMap=new Map(visible.map(({task},i)=>[task.id,i+1]))
+  const childMap=renderCache?.childMap
+  const depsByToTaskId=renderCache?.depsByToTaskId
   const tl=document.getElementById('task-list');tl.innerHTML=''
   const frag=document.createDocumentFragment()
   visible.forEach(({task:t,level})=>{
-    const hasKids=state.tasks.some(c=>c.parent_id===t.id)
+    const hasKids=childMap?childMap.has(t.id):state.tasks.some(c=>c.parent_id===t.id)
     const{s:rs,e:re}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
     const e=re,pct=hasKids?rollupPct(t.id):t.progress_pct
     const displayStatus=getDerivedStatus(t,pct)
     const sc=STATUS_CLASS[displayStatus]||'s-none'
     const ov=(state.settings.statusOverrides||{})[displayStatus]
     const badgeStyle=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
-    const preds=state.deps.filter(d=>d.to_task_id===t.id).map(d=>visIdxMap.get(d.from_task_id)).filter(Boolean)
+    const preds=(depsByToTaskId?depsByToTaskId.get(t.id)||[]:state.deps.filter(d=>d.to_task_id===t.id)).map(d=>visIdxMap.get(d.from_task_id)).filter(Boolean)
     const isCan=t.status==='Cancelled'
     const row=document.createElement('div')
     row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}`
@@ -388,7 +413,14 @@ function renderTaskList(){
     const rw=e.target.closest('.trow');if(rw)openEditModal(rw.dataset.id)
   }
   tl.querySelectorAll('.trow').forEach(row=>{
-    row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openEditModal(row.dataset.id)}}
+    row.onkeydown=e=>{
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();openEditModal(row.dataset.id)}
+      if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10')){
+        e.preventDefault()
+        const rect=row.getBoundingClientRect()
+        showTaskContextMenu(row.dataset.id,rect.left+24+window.scrollX,rect.top+Math.min(rect.height-4,24)+window.scrollY)
+      }
+    }
     row.ondragstart=e=>{dragTaskId=row.dataset.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragTaskId)}
     row.ondragend=()=>{dragTaskId=null;tl.querySelectorAll('.trow.drag-over').forEach(el=>el.classList.remove('drag-over','drag-over-before','drag-over-after'))}
     row.ondragover=e=>{
@@ -434,6 +466,7 @@ function renderGantt(RH){
   const BPH=Math.max(8,Math.round(RH*0.22))
   const BMS=Math.max(12,Math.round(RH*0.36))
   const visible=getFilteredVisible()
+  const childMap=renderCache?.childMap
   const{min,max}=getMinMax()
   const bMap=new Map((state.comparedBaseline?.tasks||[]).map(t=>[t.id,t]))
   const totalDays=dBetween(min,max)+1
@@ -528,7 +561,7 @@ function renderGantt(RH){
 
   visible.forEach(({task:t},rowIdx)=>{
     const row=document.createElement('div');row.className='g-row';row.dataset.taskId=t.id;row.style.width=W+'px'
-    const hasKids=state.tasks.some(c=>c.parent_id===t.id)
+    const hasKids=childMap?childMap.has(t.id):state.tasks.some(c=>c.parent_id===t.id)
     const{s,e}=hasKids?(getParentDates(t.id)||{s:pd(t.start_date),e:taskEnd(t)}):{s:pd(t.start_date),e:taskEnd(t)}
     const x=dBetween(min,s)*DP,w=Math.max((dBetween(s,e)+1)*DP,DP)
     const pct=hasKids?rollupPct(t.id):t.progress_pct
@@ -1097,14 +1130,11 @@ function initSS(){
 
 // === MODAL: PROJECTS ===
 function openProjModal(){
-  rememberFocus()
   renderProjList()
-  document.getElementById('proj-modal-bd').classList.add('show')
-  setTimeout(()=>document.getElementById('new-proj-name').focus(),100)
+  openModalBackdrop('proj-modal-bd','#new-proj-name')
 }
 function closeProjModal(){
-  document.getElementById('proj-modal-bd').classList.remove('show')
-  restoreFocus()
+  closeModalBackdrop('proj-modal-bd')
 }
 function renderProjList(){
   const pl=document.getElementById('proj-list');pl.innerHTML=''
@@ -1222,7 +1252,6 @@ function applyTaskModalGuards(taskId){
 function openTaskModal(taskId){
   if(!state.currentProjectId){openProjModal();return}
   state.editingTaskId=taskId||null
-  rememberFocus()
   const isEdit=!!taskId
   const t=isEdit?state.tasks.find(x=>x.id===taskId):null
   const deleteBtn=document.getElementById('btn-del-task')
@@ -1253,24 +1282,22 @@ function openTaskModal(taskId){
   // Parent dropdown
   populateParentSel(t?.parent_id||null)
   applyTaskModalGuards(taskId)
-  document.getElementById('task-modal-bd').classList.add('show')
-  setTimeout(()=>document.getElementById('t-name').focus(),100)
+  openModalBackdrop('task-modal-bd','#t-name')
 }
 function openAddModal(){openTaskModal(null)}
 function openEditModal(id){openTaskModal(id)}
 function closeTaskModal(){
-  document.getElementById('task-modal-bd').classList.remove('show')
+  closeModalBackdrop('task-modal-bd')
   state.editingTaskId=null
   render()
-  restoreFocus()
 }
 function showConfirm(message,callback){
   document.getElementById('confirm-msg').textContent=message
   confirmCallback=callback
-  document.getElementById('confirm-modal-bd').classList.add('show')
+  openModalBackdrop('confirm-modal-bd','#confirm-btn')
 }
 function closeConfirmModal(){
-  document.getElementById('confirm-modal-bd').classList.remove('show')
+  closeModalBackdrop('confirm-modal-bd')
   confirmCallback=null
 }
 // === MODAL: SETTINGS ===
@@ -1299,7 +1326,7 @@ function openSettings(){
   document.getElementById('set-hol-col').value=s.holCol||'#fef08a'
   renderHolidayList()
   switchSetTab('appearance',document.querySelector('.set-tab'))
-  document.getElementById('settings-modal-bd').classList.add('show')
+  openModalBackdrop('settings-modal-bd','#settings-modal .set-tab.active')
 }
 function switchSetTab(id,el){
   document.querySelectorAll('#settings-modal .set-pane').forEach(p=>p.classList.remove('active'))
@@ -1358,7 +1385,7 @@ function removeHoliday(i){
   renderHolidayList()
 }
 function closeSettings(){
-  document.getElementById('settings-modal-bd').classList.remove('show')
+  closeModalBackdrop('settings-modal-bd')
 }
 function toggleSkipWeekends(checked){
   state.skipWeekends=!!checked
@@ -1375,12 +1402,10 @@ function openDependencyModal(){
   document.getElementById('ds-to').innerHTML=`<option value="">— To Task —</option>${opts}`
   if(state.tasks.length>1)document.getElementById('ds-to').selectedIndex=2
   renderDepTable()
-  rememberFocus();document.getElementById('dep-unified-modal-bd').classList.add('show')
-  setTimeout(()=>document.getElementById('ds-from').focus(),100)
+  openModalBackdrop('dep-unified-modal-bd','#ds-from')
 }
 function closeDependencyModal(){
-  document.getElementById('dep-unified-modal-bd').classList.remove('show')
-  restoreFocus()
+  closeModalBackdrop('dep-unified-modal-bd')
 }
 async function saveSimpleDep(){
   if(!state.currentProjectId)return
@@ -1784,10 +1809,73 @@ function showL(){document.getElementById('loading').style.display='flex'}
 function hideL(){document.getElementById('loading').style.display='none'}
 function markDirty(){setSS('● Unsaved changes')}
 function fmtTime(d){return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function rememberFocus(){lastFocusEl=document.activeElement}
+function rememberFocus(){
+  lastFocusEl=document.activeElement
+  focusStack.push(lastFocusEl)
+}
 function restoreFocus(){
-  if(lastFocusEl&&typeof lastFocusEl.focus==='function')lastFocusEl.focus()
-  lastFocusEl=null
+  const el=focusStack.pop()||lastFocusEl
+  if(el&&typeof el.focus==='function'&&document.contains(el))el.focus()
+  lastFocusEl=focusStack[focusStack.length-1]||null
+}
+const FOCUSABLE_SEL='a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
+const modalStack=[]
+function getDialogFromBackdrop(backdrop){
+  return backdrop?.querySelector('[role="dialog"],.modal-content')
+}
+function openModalBackdrop(id,focusSelector){
+  const backdrop=document.getElementById(id)
+  if(!backdrop)return
+  if(!backdrop.classList.contains('show'))rememberFocus()
+  backdrop.classList.add('show')
+  backdrop.setAttribute('aria-hidden','false')
+  const existingIdx=modalStack.indexOf(id)
+  if(existingIdx>=0)modalStack.splice(existingIdx,1)
+  modalStack.push(id)
+  const dialog=getDialogFromBackdrop(backdrop)
+  if(dialog&&!dialog.hasAttribute('tabindex'))dialog.tabIndex=-1
+  setTimeout(()=>{
+    const target=focusSelector?backdrop.querySelector(focusSelector):null
+    ;(target||backdrop.querySelector(FOCUSABLE_SEL)||dialog)?.focus?.()
+  },0)
+}
+function closeModalBackdrop(id,{restore=true}={}){
+  const backdrop=document.getElementById(id)
+  if(!backdrop)return
+  const wasOpen=backdrop.classList.contains('show')||modalStack.includes(id)
+  backdrop.classList.remove('show')
+  backdrop.setAttribute('aria-hidden','true')
+  const idx=modalStack.lastIndexOf(id)
+  if(idx>=0)modalStack.splice(idx,1)
+  if(restore&&wasOpen)restoreFocus()
+}
+function getTopModalBackdrop(){
+  for(let i=modalStack.length-1;i>=0;i--){
+    const el=document.getElementById(modalStack[i])
+    if(el?.classList.contains('show'))return el
+  }
+  return null
+}
+function trapFocusIn(backdrop,e){
+  if(e.key!=='Tab')return false
+  const focusables=[...backdrop.querySelectorAll(FOCUSABLE_SEL)].filter(el=>el.offsetParent!==null)
+  if(!focusables.length)return false
+  const first=focusables[0],last=focusables[focusables.length-1]
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();return true}
+  if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();return true}
+  return false
+}
+function closeTopModal(){
+  const top=getTopModalBackdrop()
+  if(!top)return false
+  const id=top.id
+  if(id==='task-modal-bd')closeTaskModal()
+  else if(id==='proj-modal-bd')closeProjModal()
+  else if(id==='confirm-modal-bd')closeConfirmModal()
+  else if(id==='settings-modal-bd')closeSettings()
+  else if(id==='dep-unified-modal-bd')closeDependencyModal()
+  else closeModalBackdrop(id)
+  return true
 }
 
 function applyGanttSettings(){
@@ -2105,6 +2193,8 @@ document.getElementById('confirm-btn').addEventListener('click',()=>{
 })
 
 document.addEventListener('keydown',e=>{
+  const topModal=getTopModalBackdrop()
+  if(topModal&&trapFocusIn(topModal,e))return
   const isTyping=['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||e.target.isContentEditable
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
     e.preventDefault()
@@ -2117,12 +2207,8 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();openAddModal()
   }
   if(e.key==='Escape'){
-    closeTaskModal()
-    closeProjModal()
-    closeConfirmModal()
-    closeSettings()
-    closeDependencyModal()
-    ctxMenu?.classList.add('hidden')
+    if(ctxMenu&&!ctxMenu.classList.contains('hidden')){hideTaskContextMenu();return}
+    if(closeTopModal())return
     ;['holiday-modal','custom-prompt-overlay'].forEach(id=>{
       const m=document.getElementById(id)
       if(m&&m.classList.contains('show')){m.classList.remove('show');m.classList.add('hidden')}
@@ -2143,26 +2229,52 @@ document.addEventListener('mouseout',e=>{
 
 let currentContextMenuTaskId=null
 const ctxMenu=document.getElementById('task-context-menu')
+function hideTaskContextMenu({restore=false}={}){
+  if(!ctxMenu)return
+  ctxMenu.classList.add('hidden')
+  ctxMenu.setAttribute('aria-hidden','true')
+  currentContextMenuTaskId=null
+  if(restore)restoreFocus()
+}
+function showTaskContextMenu(taskId,x,y){
+  if(!ctxMenu)return
+  currentContextMenuTaskId=taskId
+  rememberFocus()
+  ctxMenu.classList.remove('hidden')
+  ctxMenu.setAttribute('aria-hidden','false')
+  const rect=ctxMenu.getBoundingClientRect()
+  const left=Math.min(Math.max(8,x),window.scrollX+window.innerWidth-rect.width-8)
+  const top=Math.min(Math.max(8,y),window.scrollY+window.innerHeight-rect.height-8)
+  ctxMenu.style.left=left+'px'
+  ctxMenu.style.top=top+'px'
+  ctxMenu.querySelector('[role="menuitem"],button')?.focus()
+}
 
 document.addEventListener('contextmenu',e=>{
   const target=e.target.closest('[data-task-id]')
-  if(!target){ctxMenu?.classList.add('hidden');return}
+  if(!target){hideTaskContextMenu();return}
   e.preventDefault()
-  currentContextMenuTaskId=target.dataset.taskId
-  ctxMenu.style.left=e.pageX+'px'
-  ctxMenu.style.top=e.pageY+'px'
-  ctxMenu.classList.remove('hidden')
+  showTaskContextMenu(target.dataset.taskId,e.pageX,e.pageY)
 })
 document.addEventListener('click',e=>{
-  if(ctxMenu&&!ctxMenu.contains(e.target))ctxMenu.classList.add('hidden')
+  if(ctxMenu&&!ctxMenu.contains(e.target))hideTaskContextMenu()
+})
+ctxMenu?.addEventListener('keydown',e=>{
+  const items=[...ctxMenu.querySelectorAll('[role="menuitem"],button')]
+  const idx=items.indexOf(document.activeElement)
+  if(e.key==='Escape'){e.preventDefault();hideTaskContextMenu({restore:true})}
+  if(e.key==='ArrowDown'){e.preventDefault();items[(idx+1+items.length)%items.length]?.focus()}
+  if(e.key==='ArrowUp'){e.preventDefault();items[(idx-1+items.length)%items.length]?.focus()}
 })
 document.getElementById('ctx-edit')?.addEventListener('click',()=>{
-  if(currentContextMenuTaskId)openEditModal(currentContextMenuTaskId)
-  ctxMenu.classList.add('hidden');currentContextMenuTaskId=null
+  const taskId=currentContextMenuTaskId
+  hideTaskContextMenu()
+  if(taskId)openEditModal(taskId)
 })
 document.getElementById('ctx-delete')?.addEventListener('click',()=>{
-  if(currentContextMenuTaskId)confirmDelete(currentContextMenuTaskId)
-  ctxMenu.classList.add('hidden');currentContextMenuTaskId=null
+  const taskId=currentContextMenuTaskId
+  hideTaskContextMenu()
+  if(taskId)confirmDelete(taskId)
 })
 
 ;['t-name','t-parent','t-type','t-category','t-start','t-duration','t-assignee','t-progress-num','f-delayed','f-onhold','f-cancelled','t-locked'].forEach(id=>{
