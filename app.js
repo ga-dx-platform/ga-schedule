@@ -296,6 +296,19 @@ function render(){
   const RH=getROW_H()
   document.documentElement.style.setProperty('--row-h',RH+'px')
   renderLegend()
+
+  const isEmpty=state.tasks.length===0||(state.currentView==='gantt'&&getFilteredVisible().length===0)
+  const emptyEl=document.getElementById('empty-state-container')
+  const activeView=document.getElementById('view-'+state.currentView)
+  if(isEmpty){
+    if(emptyEl){emptyEl.classList.remove('hidden');emptyEl.style.display='flex'}
+    if(activeView)activeView.style.display='none'
+    renderSB()
+    return
+  }
+  if(emptyEl){emptyEl.classList.add('hidden');emptyEl.style.display='none'}
+  if(activeView)activeView.style.display=VIEW_DISPLAY[state.currentView]||''
+
   if(state.currentView==='gantt'){
     renderTaskList()
     renderGantt(RH)
