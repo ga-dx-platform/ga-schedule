@@ -2122,6 +2122,7 @@ document.addEventListener('keydown',e=>{
     closeConfirmModal()
     closeSettings()
     closeDependencyModal()
+    ctxMenu?.classList.add('hidden')
     ;['holiday-modal','custom-prompt-overlay'].forEach(id=>{
       const m=document.getElementById(id)
       if(m&&m.classList.contains('show')){m.classList.remove('show');m.classList.add('hidden')}
@@ -2138,6 +2139,30 @@ document.addEventListener('mouseout',e=>{
   const target=e.target.closest('[data-task-id]');if(!target)return
   const id=target.dataset.taskId
   document.querySelectorAll(`[data-task-id="${id}"]`).forEach(el=>el.classList.remove('hover-sync'))
+})
+
+let currentContextMenuTaskId=null
+const ctxMenu=document.getElementById('task-context-menu')
+
+document.addEventListener('contextmenu',e=>{
+  const target=e.target.closest('[data-task-id]')
+  if(!target){ctxMenu?.classList.add('hidden');return}
+  e.preventDefault()
+  currentContextMenuTaskId=target.dataset.taskId
+  ctxMenu.style.left=e.pageX+'px'
+  ctxMenu.style.top=e.pageY+'px'
+  ctxMenu.classList.remove('hidden')
+})
+document.addEventListener('click',e=>{
+  if(ctxMenu&&!ctxMenu.contains(e.target))ctxMenu.classList.add('hidden')
+})
+document.getElementById('ctx-edit')?.addEventListener('click',()=>{
+  if(currentContextMenuTaskId)openEditModal(currentContextMenuTaskId)
+  ctxMenu.classList.add('hidden');currentContextMenuTaskId=null
+})
+document.getElementById('ctx-delete')?.addEventListener('click',()=>{
+  if(currentContextMenuTaskId)confirmDelete(currentContextMenuTaskId)
+  ctxMenu.classList.add('hidden');currentContextMenuTaskId=null
 })
 
 ;['t-name','t-parent','t-type','t-category','t-start','t-duration','t-assignee','t-progress-num','f-delayed','f-onhold','f-cancelled','t-locked'].forEach(id=>{
