@@ -2092,16 +2092,27 @@ document.getElementById('confirm-btn').addEventListener('click',()=>{
 })
 
 document.addEventListener('keydown',e=>{
+  const isTyping=['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||e.target.isContentEditable
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
+    e.preventDefault()
+    const s=document.getElementById('search-box');if(s){s.focus();s.select()}
+  }
+  if(!isTyping&&e.key.toLowerCase()==='n'&&!e.ctrlKey&&!e.metaKey){
+    e.preventDefault();openAddModal()
+  }
+  if(e.key==='n'&&(e.metaKey||e.ctrlKey)){
+    e.preventDefault();openAddModal()
+  }
   if(e.key==='Escape'){
     closeTaskModal()
     closeProjModal()
     closeConfirmModal()
     closeSettings()
     closeDependencyModal()
-  }
-  if(e.key==='n'&&(e.metaKey||e.ctrlKey)){
-    e.preventDefault()
-    openAddModal()
+    ;['holiday-modal','custom-prompt-overlay'].forEach(id=>{
+      const m=document.getElementById(id)
+      if(m&&m.classList.contains('show')){m.classList.remove('show');m.classList.add('hidden')}
+    })
   }
 })
 
