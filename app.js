@@ -670,8 +670,10 @@ function renderGantt(RH){
       if(!isCan&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
       if(w>40&&DP>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl gb-txt';lbl.textContent=tn;bar.appendChild(lbl)}
       if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${rowTop+bbt2}px`;pl.textContent=pct+'%';row.appendChild(pl)}
-      bar.title=`${tn} | ${t.start_date}→${fmt(e)} | ${pct}%`
       bar.dataset.taskId=t.id
+      bar.addEventListener('mouseenter',e=>_showTaskTooltip(e,t.id))
+      bar.addEventListener('mousemove',_posCalTooltip)
+      bar.addEventListener('mouseleave',_hideCalTooltip)
       bar.onclick=()=>{if(barWasDragged){barWasDragged=false;return}openEditModal(t.id)}
       row.appendChild(bar)
     }
@@ -828,6 +830,9 @@ function renderKanban(){
       }
       card.ondragend=()=>card.classList.remove('dragging')
       card.ondblclick=()=>openTaskModal(t.id)
+      card.addEventListener('mouseenter',e=>_showTaskTooltip(e,t.id))
+      card.addEventListener('mousemove',_posCalTooltip)
+      card.addEventListener('mouseleave',_hideCalTooltip)
       body.appendChild(card)
     })
     colEl.ondragover=e=>{e.preventDefault();colEl.classList.add('drag-over-col')}
@@ -955,6 +960,29 @@ function _posCalTooltip(e){
   tip.style.top=(y+th>window.innerHeight-10?e.clientY-th-10:y)+'px'
 }
 function _hideCalTooltip(){document.getElementById('cal-tooltip')?.classList.add('hidden')}
+function _showTaskTooltip(e,taskId){
+  const t=state.tasks.find(x=>x.id===taskId);if(!t)return
+  const tip=document.getElementById('cal-tooltip');if(!tip)return
+  const pct=rollupPct(taskId)
+  const ds=getDerivedStatus(t,pct),sc=STATUS_CLASS[ds]||'s-none'
+  const ov=(state.settings.statusOverrides||{})[ds]
+  const bs=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
+  const logs=state.taskLogs[taskId]||[]
+  const latestNote=logs.length
+    ?`<div class="tl-tip-note">${esc(logs[0].note)}<span class="tl-tip-date">${fmtS(new Date(logs[0].logged_at))}</span></div>`
+    :`<div class="tl-tip-empty">ยังไม่มีบันทึกความคืบหน้า</div>`
+  tip.innerHTML=`<div style="font-weight:700;color:var(--txt);margin-bottom:6px;line-height:1.3;font-size:12px">${esc(t.name)}</div>
+    <span class="sbadge ${sc}" style="${bs};font-size:10px">${esc(STATUS_LABELS[ds]||ds)}</span>
+    <div style="color:var(--txt3);font-size:10px;margin-top:5px;font-family:var(--mono)">${fmtS(pd(t.start_date))} → ${fmtS(taskEnd(t))}</div>
+    <div style="margin-top:6px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-bottom:3px"><span>Progress</span><span>${pct}%</span></div>
+      <div style="height:4px;background:#E5E7EB;border-radius:4px"><div style="height:100%;width:${pct}%;background:var(--nt-grad90);border-radius:4px"></div></div>
+    </div>
+    <div class="tl-tip-divider"></div>
+    ${latestNote}`
+  tip.classList.remove('hidden')
+  _posCalTooltip(e)
+}
 function showCalMorePopup(el){
   _hideCalTooltip()
   const popup=document.getElementById('cal-day-popup');if(!popup)return
@@ -1443,18 +1471,30 @@ function renderTaskLogPane(taskId){
   if(!list)return
   const logs=(state.taskLogs[taskId]||[])
   if(!logs.length){list.innerHTML='<div class="tl-log-empty">ยังไม่มีบันทึก</div>';return}
-  list.innerHTML=logs.map(l=>{
-    const d=new Date(l.logged_at)
-    const ds=d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})
-    return `<div class="tl-log-entry">
-      <div class="tl-log-meta">
-        <span class="tl-log-pct">${l.progress_pct}%</span>
-        <span class="tl-log-date">${ds}</span>
-        ${l.logged_by?`<span style="font-size:11px;color:var(--txt3)">${esc(l.logged_by)}</span>`:''}
-        <button class="tl-log-del" onclick="deleteTaskLog('${l.id}')" title="ลบ">✕</button>
-      </div>
-      <div class="tl-log-note">${esc(l.note||'')}</div>
-    </div>`
+  const TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+  const groups={}
+  logs.forEach(l=>{
+    const key=l.logged_at.slice(0,7)
+    if(!groups[key])groups[key]=[]
+    groups[key].push(l)
+  })
+  list.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(key=>{
+    const[y,m]=key.split('-')
+    const hdr=`${TH_MON[parseInt(m,10)-1]} ${parseInt(y,10)+543}`
+    const rows=groups[key].map(l=>{
+      const d=new Date(l.logged_at)
+      const ds=`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+      return `<div class="tl-log-entry">
+        <div class="tl-log-meta">
+          <span class="tl-log-pct">${l.progress_pct}%</span>
+          <span class="tl-log-date">${ds}</span>
+          ${l.logged_by?`<span style="font-size:11px;color:var(--txt3)">${esc(l.logged_by)}</span>`:''}
+          <button class="tl-log-del" onclick="deleteTaskLog('${l.id}')" title="ลบ">✕</button>
+        </div>
+        <div class="tl-log-note">${esc(l.note||'')}</div>
+      </div>`
+    }).join('')
+    return `<div class="tl-month-group"><div class="tl-month-hdr">${hdr}</div>${rows}</div>`
   }).join('')
 }
 function _updateLogBadge(taskId){
@@ -1467,8 +1507,11 @@ function _updateLogBadge(taskId){
 async function addTaskLog(){
   if(!state.editingTaskId||!state.currentProjectId)return
   const note=document.getElementById('tl-note').value.trim()
-  const pct=parseInt(document.getElementById('tl-pct-num').value)||0
+  if(!note){toast('⚠️ กรุณากรอกบันทึก');return}
+  const pct=Math.min(100,Math.max(0,parseInt(document.getElementById('tl-pct-num').value)||0))
   const t=state.tasks.find(x=>x.id===state.editingTaskId)
+  const btn=document.querySelector('#tm-pane-log .mbtn.save')
+  if(btn)btn.disabled=true
   const {data,error}=await db.from('task_logs').insert({
     task_id:state.editingTaskId,
     project_id:state.currentProjectId,
@@ -1476,23 +1519,26 @@ async function addTaskLog(){
     progress_pct:pct,
     logged_by:t?.assignee||''
   }).select().single()
+  if(btn)btn.disabled=false
   if(error){toast('❌ บันทึกไม่สำเร็จ: '+error.message);return}
   if(!state.taskLogs[state.editingTaskId])state.taskLogs[state.editingTaskId]=[]
   state.taskLogs[state.editingTaskId].unshift(data)
   document.getElementById('tl-note').value=''
   renderTaskLogPane(state.editingTaskId)
   _updateLogBadge(state.editingTaskId)
-  toast('✓ บันทึกแล้ว')
+  toast('✅ บันทึกเรียบร้อย')
 }
-async function deleteTaskLog(logId){
-  const {error}=await db.from('task_logs').delete().eq('id',logId)
-  if(error){toast('❌ ลบไม่สำเร็จ');return}
-  for(const tid in state.taskLogs){
-    state.taskLogs[tid]=state.taskLogs[tid].filter(l=>l.id!==logId)
-  }
-  renderTaskLogPane(state.editingTaskId)
-  _updateLogBadge(state.editingTaskId)
-  toast('🗑 ลบบันทึกแล้ว')
+function deleteTaskLog(logId){
+  showConfirm('ลบบันทึกนี้?',async()=>{
+    const {error}=await db.from('task_logs').delete().eq('id',logId)
+    if(error){toast('❌ ลบไม่สำเร็จ: '+error.message);return}
+    for(const tid in state.taskLogs){
+      state.taskLogs[tid]=state.taskLogs[tid].filter(l=>l.id!==logId)
+    }
+    renderTaskLogPane(state.editingTaskId)
+    _updateLogBadge(state.editingTaskId)
+    toast('🗑 ลบบันทึกแล้ว')
+  })
 }
 function closeTaskModal(){
   closeModalBackdrop('task-modal-bd')

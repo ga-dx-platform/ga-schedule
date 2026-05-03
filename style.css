@@ -1145,3 +1145,11 @@ html.no-transitions *::after {
 .tl-log-empty{padding:24px 14px;text-align:center;font-size:13px;color:var(--txt3)}
 .tl-add-form{padding:14px 0 0}
 .tl-textarea{resize:vertical;min-height:64px;font-family:var(--font)}
+.tl-month-group{}
+.tl-month-hdr{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);padding:6px 14px 4px;background:var(--bg-app);position:sticky;top:0;z-index:1;border-bottom:1px solid var(--bdr)}
+
+/* === TOOLTIP LOG SECTION === */
+.tl-tip-divider{height:1px;background:var(--bdr);margin:7px 0}
+.tl-tip-note{font-size:11px;color:var(--txt2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tl-tip-date{display:block;font-size:9px;color:var(--txt3);font-family:var(--mono);margin-top:3px}
+.tl-tip-empty{font-size:11px;color:var(--txt3);font-style:italic}
