@@ -9,7 +9,7 @@ async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(
 // === STATE ===
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[]}
 const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
-let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -351,6 +351,17 @@ async function loadBaselines(){
   const{data,error}=await db.from('baselines').select('*').eq('project_id',state.currentProjectId).order('created_at',{ascending:false})
   if(error){console.warn('Failed to load baselines:',error.message);return}
   state.baselines=data||[]
+}
+async function loadTaskLogs(){
+  if(!state.currentProjectId)return
+  const{data,error}=await db.from('task_logs').select('*').eq('project_id',state.currentProjectId).order('logged_at',{ascending:false})
+  if(error){console.warn('loadTaskLogs:',error.message);return}
+  const map={}
+  ;(data||[]).forEach(log=>{
+    if(!map[log.task_id])map[log.task_id]=[]
+    map[log.task_id].push(log)
+  })
+  state.taskLogs=map
 }
 
 // === UI RENDERING ===
@@ -1315,7 +1326,7 @@ async function selectProject(id){
   selectedTaskIds.clear();closeDetailPanel()
   const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
   document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
-  closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();hideL();render();triggerAutoFitOnNextPaint();renderSidebarProjects()
+  closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();await loadTaskLogs();hideL();render();triggerAutoFitOnNextPaint();renderSidebarProjects()
 }
 async function renameProject(id,oldName){
   const newName=await customPrompt('ชื่อโปรเจกต์ใหม่:',oldName)
@@ -1405,10 +1416,84 @@ function openTaskModal(taskId){
   // Parent dropdown
   populateParentSel(t?.parent_id||null)
   applyTaskModalGuards(taskId)
+  // Tabs: show only when editing, always reset to Details tab
+  const tabsEl=document.getElementById('task-modal-tabs')
+  tabsEl.style.display=isEdit?'flex':'none'
+  document.querySelectorAll('.tm-tab').forEach(b=>b.classList.remove('active'))
+  document.querySelectorAll('.tm-pane').forEach(p=>p.classList.remove('active'))
+  document.getElementById('tm-tab-details').classList.add('active')
+  document.getElementById('tm-pane-details').classList.add('active')
+  if(isEdit)_updateLogBadge(taskId)
+  // Sync log progress slider with task progress
+  document.getElementById('tl-pct-slide').value=pct
+  document.getElementById('tl-pct-num').value=pct
   openModalBackdrop('task-modal-bd','#t-name')
 }
 function openAddModal(){openTaskModal(null)}
 function openEditModal(id){openTaskModal(id)}
+function switchTaskModalTab(tab,el){
+  document.querySelectorAll('.tm-tab').forEach(b=>b.classList.remove('active'))
+  document.querySelectorAll('.tm-pane').forEach(p=>p.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('tm-pane-'+tab).classList.add('active')
+  if(tab==='log')renderTaskLogPane(state.editingTaskId)
+}
+function renderTaskLogPane(taskId){
+  const list=document.getElementById('tl-log-list')
+  if(!list)return
+  const logs=(state.taskLogs[taskId]||[])
+  if(!logs.length){list.innerHTML='<div class="tl-log-empty">ยังไม่มีบันทึก</div>';return}
+  list.innerHTML=logs.map(l=>{
+    const d=new Date(l.logged_at)
+    const ds=d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})
+    return `<div class="tl-log-entry">
+      <div class="tl-log-meta">
+        <span class="tl-log-pct">${l.progress_pct}%</span>
+        <span class="tl-log-date">${ds}</span>
+        ${l.logged_by?`<span style="font-size:11px;color:var(--txt3)">${esc(l.logged_by)}</span>`:''}
+        <button class="tl-log-del" onclick="deleteTaskLog('${l.id}')" title="ลบ">✕</button>
+      </div>
+      <div class="tl-log-note">${esc(l.note||'')}</div>
+    </div>`
+  }).join('')
+}
+function _updateLogBadge(taskId){
+  const badge=document.getElementById('tm-log-badge')
+  if(!badge)return
+  const n=(state.taskLogs[taskId]||[]).length
+  badge.textContent=n
+  badge.style.display=n?'inline':'none'
+}
+async function addTaskLog(){
+  if(!state.editingTaskId||!state.currentProjectId)return
+  const note=document.getElementById('tl-note').value.trim()
+  const pct=parseInt(document.getElementById('tl-pct-num').value)||0
+  const t=state.tasks.find(x=>x.id===state.editingTaskId)
+  const {data,error}=await db.from('task_logs').insert({
+    task_id:state.editingTaskId,
+    project_id:state.currentProjectId,
+    note,
+    progress_pct:pct,
+    logged_by:t?.assignee||''
+  }).select().single()
+  if(error){toast('❌ บันทึกไม่สำเร็จ: '+error.message);return}
+  if(!state.taskLogs[state.editingTaskId])state.taskLogs[state.editingTaskId]=[]
+  state.taskLogs[state.editingTaskId].unshift(data)
+  document.getElementById('tl-note').value=''
+  renderTaskLogPane(state.editingTaskId)
+  _updateLogBadge(state.editingTaskId)
+  toast('✓ บันทึกแล้ว')
+}
+async function deleteTaskLog(logId){
+  const {error}=await db.from('task_logs').delete().eq('id',logId)
+  if(error){toast('❌ ลบไม่สำเร็จ');return}
+  for(const tid in state.taskLogs){
+    state.taskLogs[tid]=state.taskLogs[tid].filter(l=>l.id!==logId)
+  }
+  renderTaskLogPane(state.editingTaskId)
+  _updateLogBadge(state.editingTaskId)
+  toast('🗑 ลบบันทึกแล้ว')
+}
 function closeTaskModal(){
   closeModalBackdrop('task-modal-bd')
   state.editingTaskId=null
@@ -1696,7 +1781,7 @@ async function deleteTask(){
     pushHistory()
     const ids=getDesc(state.editingTaskId);ids.push(state.editingTaskId);setSS('⟳ Deleting...')
     const{error}=await db.from('tasks').delete().in('id',ids);if(error){toast('❌ Delete failed');return}
-    await loadTasks();await loadDeps();setSS('✓ Synced');toast('🗑 Task deleted');closeTaskModal()
+    await loadTasks();await loadDeps();await loadTaskLogs();setSS('✓ Synced');toast('🗑 Task deleted');closeTaskModal()
   })
 }
 function confirmDelete(id){
@@ -1993,6 +2078,7 @@ async function saveAll(){
   showL()
   await loadTasks()
   await loadDeps()
+  await loadTaskLogs()
   hideL()
   render()
   lastSavedAt=new Date()
@@ -2005,7 +2091,7 @@ async function clearProject(){
     setSS('⟳ Clearing...')
     const{error}=await db.from('tasks').delete().eq('project_id',state.currentProjectId)
     if(error){toast('❌ Failed to clear project: '+error.message);setSS('✗ Error');return}
-    await loadTasks();await loadDeps();setSS('✓ Synced');render();toast('🗑 Project cleared')
+    await loadTasks();await loadDeps();await loadTaskLogs();setSS('✓ Synced');render();toast('🗑 Project cleared')
   })
 }
 // === EXPORT ===

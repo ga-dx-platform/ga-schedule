@@ -285,3 +285,33 @@ with recursive wbs_cte as (
 select *, wbs_path as wbs from wbs_cte;
 
 comment on view public.tasks_with_wbs is 'Tasks with calculated WBS number (e.g. 1, 1.1, 1.2, 2, 2.1)';
+
+-- ============================================================
+-- TASK LOGS
+-- ============================================================
+create table public.task_logs (
+  id            uuid primary key default uuid_generate_v4(),
+  task_id       uuid not null references public.tasks(id) on delete cascade,
+  project_id    uuid not null references public.projects(id) on delete cascade,
+  note          text not null default '',
+  progress_pct  integer not null default 0 check (progress_pct between 0 and 100),
+  logged_by     text,
+  logged_at     timestamptz not null default now()
+);
+
+comment on table public.task_logs is 'Timestamped progress notes per task';
+comment on column public.task_logs.project_id is 'Denormalized for RLS join performance';
+
+create index idx_task_logs_task    on public.task_logs(task_id, logged_at desc);
+create index idx_task_logs_project on public.task_logs(project_id);
+
+alter table public.task_logs enable row level security;
+
+create policy "task_logs_select" on public.task_logs for select
+  using (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()));
+
+create policy "task_logs_insert" on public.task_logs for insert
+  with check (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()));
+
+create policy "task_logs_delete" on public.task_logs for delete
+  using (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()));

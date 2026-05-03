@@ -1121,3 +1121,27 @@ html.no-transitions *::after {
 .es-desc{font-size:13px;color:var(--txt3);margin:0 0 18px;max-width:280px;line-height:1.55}
 .es-btn{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,box-shadow .15s;box-shadow:var(--nt-glow)}
 .es-btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+
+/* === TASK MODAL TABS === */
+.tm-tabs{display:flex;gap:2px;border-bottom:1px solid var(--bdr);margin:0 -28px;padding:0 28px}
+.tm-tab{position:relative;padding:8px 16px;font-size:13px;font-weight:500;color:var(--txt3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);transition:color .15s,border-color .15s;display:flex;align-items:center;gap:6px;margin-bottom:-1px}
+.tm-tab:hover{color:var(--txt)}
+.tm-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.tm-pane{display:none}
+.tm-pane.active{display:block}
+.tm-log-badge{background:var(--primary);color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:1px 6px;line-height:1.4}
+
+/* === TASK LOG PANE === */
+.tl-log-list{display:flex;flex-direction:column;gap:0;max-height:260px;overflow-y:auto;border:1px solid var(--bdr);border-radius:var(--r-md);background:var(--bg-surface)}
+.tl-log-entry{padding:10px 14px;border-bottom:1px solid var(--bdr);transition:background .1s}
+.tl-log-entry:last-child{border-bottom:none}
+.tl-log-entry:hover{background:#F8FAFC}
+.tl-log-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.tl-log-pct{background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;font-family:var(--mono)}
+.tl-log-date{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+.tl-log-note{font-size:13px;color:var(--txt);line-height:1.5;white-space:pre-wrap}
+.tl-log-del{margin-left:auto;width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--txt3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;transition:color .1s,background .1s}
+.tl-log-del:hover{color:var(--red);background:#FEE2E2}
+.tl-log-empty{padding:24px 14px;text-align:center;font-size:13px;color:var(--txt3)}
+.tl-add-form{padding:14px 0 0}
+.tl-textarea{resize:vertical;min-height:64px;font-family:var(--font)}
