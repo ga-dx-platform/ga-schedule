@@ -112,8 +112,9 @@ async function persistCascadedTasks(changedMap){
 
 function getParentDates(taskId){
   if(renderCache&&renderCache.parentDatesCache.has(taskId))return renderCache.parentDatesCache.get(taskId)
-  const children=state.tasks.filter(c=>c.parent_id===taskId)
-  if(!children.length){const t=state.tasks.find(t=>t.id===taskId);return t?{s:pd(t.start_date),e:taskEnd(t)}:null}
+  const cm=renderCache?.childMap,tb=renderCache?.taskById
+  const children=cm?cm.get(taskId)||[]:state.tasks.filter(c=>c.parent_id===taskId)
+  if(!children.length){const t=tb?tb.get(taskId):state.tasks.find(t=>t.id===taskId);return t?{s:pd(t.start_date),e:taskEnd(t)}:null}
   let minS=null,maxE=null
   children.forEach(c=>{const d=getParentDates(c.id);if(!d)return;if(!minS||d.s<minS)minS=d.s;if(!maxE||d.e>maxE)maxE=d.e})
   return{s:minS,e:maxE}
@@ -138,8 +139,9 @@ function dBetween(a,b){return Math.round((b-a)/86400000)}
 
 function rollupPct(id){
   if(renderCache&&renderCache.pctCache.has(id))return renderCache.pctCache.get(id)
-  const ch=state.tasks.filter(t=>t.parent_id===id)
-  if(!ch.length)return state.tasks.find(t=>t.id===id)?.progress_pct||0
+  const cm=renderCache?.childMap,tb=renderCache?.taskById
+  const ch=cm?cm.get(id)||[]:state.tasks.filter(t=>t.parent_id===id)
+  if(!ch.length)return (tb?tb.get(id):state.tasks.find(t=>t.id===id))?.progress_pct||0
   return Math.round(ch.reduce((s,c)=>s+rollupPct(c.id),0)/ch.length)
 }
 function buildRenderCache(){
@@ -678,6 +680,7 @@ function switchView(name){
 // === KANBAN ===
 function renderKanban(){
   renderCache=buildRenderCache()
+  const cm=renderCache.childMap,tb=renderCache.taskById
   const container=document.getElementById('view-kanban')
   if(!container)return
   const COLS=[
@@ -690,8 +693,7 @@ function renderKanban(){
   const grouped={}
   COLS.forEach(c=>{grouped[c.id]=[]})
   state.tasks.forEach(t=>{
-    const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
-    const st=getDerivedStatus(t,pct)
+    const st=getDerivedStatus(t,rollupPct(t.id))
     if(st==='Cancelled')return
     if(grouped[st])grouped[st].push(t)
   })
@@ -715,10 +717,10 @@ function renderKanban(){
       body.appendChild(empty)
     }
     tasks.forEach(t=>{
-      const hasKids=state.tasks.some(c=>c.parent_id===t.id)
-      const pct=hasKids?rollupPct(t.id):t.progress_pct
+      const hasKids=cm.has(t.id)
+      const pct=rollupPct(t.id)
       const isSubtask=!!t.parent_id
-      const parentTask=isSubtask?state.tasks.find(x=>x.id===t.parent_id):null
+      const parentTask=isSubtask?tb.get(t.parent_id)||null:null
       const catColor=CAT_COLORS[t.category]||'#888'
       const card=document.createElement('div')
       card.className=`kb-card ${isSubtask?'kb-card-sub':'kb-card-main'}`
@@ -861,18 +863,13 @@ function renderDashboard(){
 
   // ── KPI calculations ──────────────────────────────────────────
   const tasks=state.tasks
+  const cm=renderCache?.childMap
   const today=new Date()
   const total=tasks.length
   const cancelled=tasks.filter(t=>t.status==='Cancelled').length
   const activeTasks=tasks.filter(t=>t.status!=='Cancelled')
-  const completed=tasks.filter(t=>{
-    const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
-    return getDerivedStatus(t,pct)==='Completed'
-  }).length
-  const inProgress=tasks.filter(t=>{
-    const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
-    return getDerivedStatus(t,pct)==='In Progress'
-  }).length
+  const completed=tasks.filter(t=>getDerivedStatus(t,rollupPct(t.id))==='Completed').length
+  const inProgress=tasks.filter(t=>getDerivedStatus(t,rollupPct(t.id))==='In Progress').length
   const delayed=tasks.filter(t=>{
     if(t.status==='Cancelled'||t.status==='Completed')return false
     return taskEnd(t)<today||t.status==='Delayed'
@@ -885,8 +882,7 @@ function renderDashboard(){
   // ── Status counts ─────────────────────────────────────────────
   const statusCounts={'Not Started':0,'In Progress':0,'Completed':0,'Delayed':0,'On Hold':0,'Cancelled':0}
   tasks.forEach(t=>{
-    const pct=state.tasks.some(c=>c.parent_id===t.id)?rollupPct(t.id):t.progress_pct
-    const st=getDerivedStatus(t,pct)
+    const st=getDerivedStatus(t,rollupPct(t.id))
     if(statusCounts[st]!==undefined)statusCounts[st]++
   })
   const statusColors={'Not Started':'#94a3b8','In Progress':'#3B00FF','Completed':'#059669','Delayed':'#ef4444','On Hold':'#d97706','Cancelled':'#cbd5e1'}
@@ -905,7 +901,7 @@ function renderDashboard(){
 
   // ── Top tasks by progress ─────────────────────────────────────
   const topTasks=[...tasks]
-    .filter(t=>!state.tasks.some(c=>c.parent_id===t.id)&&t.status!=='Cancelled')
+    .filter(t=>!(cm?cm.has(t.id):state.tasks.some(c=>c.parent_id===t.id))&&t.status!=='Cancelled')
     .sort((a,b)=>b.progress_pct-a.progress_pct)
     .slice(0,10)
 
@@ -1709,7 +1705,7 @@ function exportCSV(){
   const rows = [['WBS', 'Task Name', 'Type', 'Category', 'Start', 'End', 'Duration', '%', 'Status', 'Assignee']];
   
   getVisible().forEach(({task:t}) => {
-    const hasKids = state.tasks.some(c => c.parent_id === t.id);
+    const hasKids=renderCache?.childMap?.has(t.id)??state.tasks.some(c=>c.parent_id===t.id)
     const {s:rs, e:re} = hasKids ? (getParentDates(t.id) || {s:pd(t.start_date), e:taskEnd(t)}) : {s:pd(t.start_date), e:taskEnd(t)};
     
     rows.push([wbs[t.id]||'', t.name, t.type, t.category, fmt(rs), fmt(re), t.duration_days+'d', t.progress_pct+'%', STATUS_LABELS[t.status]||t.status, t.assignee||'']);
