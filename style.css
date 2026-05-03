@@ -292,16 +292,15 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 .trow.drag-over-before::after{top:0}.trow.drag-over-after::after{bottom:0}
 
 .r-num{font-size:var(--fs-mono);color:var(--txt3);text-align:center;font-family:var(--mono);position:relative;display:flex;align-items:center;justify-content:center}
-.rn-num{pointer-events:none}
+.rn-num{pointer-events:none;transition:opacity var(--dur) var(--ease)}
 .row-chk{position:absolute;opacity:0;cursor:pointer;accent-color:var(--primary);width:14px;height:14px;margin:0;transition:opacity var(--dur) var(--ease)}
 .r-num:hover .row-chk{opacity:1}
 .r-num:hover .rn-num{opacity:0}
 .trow.is-bulk-selected .row-chk{opacity:1}
 .trow.is-bulk-selected .rn-num{opacity:0}
-.trow.is-bulk-selected .drag-handle{opacity:0!important}
-.drag-handle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;color:var(--primary);opacity:0;transition:opacity var(--dur) var(--ease);cursor:grab;-webkit-user-select:none;user-select:none}
-.trow:hover .drag-handle{opacity:.55}
-.r-num:hover .drag-handle{opacity:0!important}
+.drag-handle{flex-shrink:0;font-size:10px;color:var(--txt3);opacity:0;cursor:grab;-webkit-user-select:none;user-select:none;transition:opacity var(--dur) var(--ease);margin-right:2px;line-height:1}
+.trow:hover .drag-handle{opacity:.5}
+.trow.is-bulk-selected .drag-handle,.trow.drag-active .drag-handle{opacity:0}
 /* Header select-all checkbox */
 .hdr-hash{pointer-events:none}
 .hdr-chk{position:absolute;opacity:0;cursor:pointer;accent-color:var(--primary);width:14px;height:14px;margin:0;left:50%;top:50%;transform:translate(-50%,-50%);transition:opacity var(--dur) var(--ease)}
@@ -309,7 +308,7 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 #col-hdr > div:first-child:hover .hdr-hash{opacity:0}
 #col-hdr > div:first-child{cursor:pointer;position:relative}
 .r-exp{font-size:var(--fs-mono);color:var(--txt3);text-align:center;user-select:none;cursor:pointer}
-.r-name{display:flex;align-items:center;gap:4px;overflow:hidden;min-width:0}
+.r-name{display:flex;align-items:center;gap:4px;overflow:hidden;min-width:0;position:relative}
 .r-name .lbl{font-size:var(--fs-name);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);font-weight:400}
 .r-name.parent .lbl{font-weight:600;color:var(--txt)}
 .r-name.child .lbl{color:var(--txt2)}
