@@ -1114,7 +1114,7 @@ function renderDashboard(){
       const dt=new Date(log.logged_at)
       const dateStr=dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
       const timeStr=dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
-      return`<tr class="dash-log-row">
+      return`<tr class="dash-log-row dash-log-entry">
         <td class="dash-log-td dash-log-td--date"><div class="dash-log-date">${dateStr}</div><div class="dash-log-time">${timeStr}</div></td>
         <td class="dash-log-td dash-log-td--pct"><span class="dash-log-pct-badge" style="background:${pctC(pct)}18;color:${pctC(pct)}">${pct}%</span></td>
         <td class="dash-log-td dash-log-td--note">${esc(log.note||'—')}</td>
