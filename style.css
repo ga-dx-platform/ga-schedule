@@ -856,6 +856,23 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 .dash-tl-bar{height:100%;border-radius:10px;transition:width .5s var(--ease)}
 .dash-tl-pct{font-size:11px;font-family:var(--mono);color:var(--txt3);text-align:right;font-weight:600}
 
+/* === PROGRESSION LOG TABLE === */
+.dash-log-wrap{background:var(--bg-surface);border-radius:22px;box-shadow:var(--shadow-md);border:1px solid var(--bdr);padding:4px 0;overflow:hidden}
+.dash-log-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.dash-log-th{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--txt3);padding:12px 18px;border-bottom:1.5px solid var(--bdr);background:var(--bg);text-align:left;white-space:nowrap}
+.dash-log-row{transition:background var(--dur) var(--ease)}
+.dash-log-row:hover{background:#6366f108}
+.dash-log-row:not(:last-child) td{border-bottom:1px solid var(--bdr)}
+.dash-log-td{padding:11px 18px;vertical-align:middle;color:var(--txt)}
+.dash-log-td--date{white-space:nowrap;min-width:110px}
+.dash-log-date{font-size:12px;font-weight:600;color:var(--txt)}
+.dash-log-time{font-size:10.5px;font-family:var(--mono);color:var(--txt3);margin-top:1px}
+.dash-log-task-name{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--txt);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-log-pct-badge{display:inline-block;font-size:11px;font-weight:700;font-family:var(--mono);padding:3px 10px;border-radius:20px;white-space:nowrap}
+.dash-log-td--note{color:var(--txt2);max-width:340px}
+.dash-log-td--by{font-size:12px;color:var(--txt3);white-space:nowrap}
+.dash-log-empty{text-align:center;padding:40px 24px;font-size:13px;color:var(--txt3)}
+
 /* === SYNC STATUS (toolbar) === */
 #sync-status{font-size:10px;color:var(--txt3);font-family:var(--mono)}
 

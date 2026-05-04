@@ -1093,6 +1093,28 @@ function renderDashboard(){
 
   const now=new Date().toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})
 
+  // ── Progression log data ──────────────────────────────────────
+  const taskMap=Object.fromEntries(state.tasks.map(t=>[t.id,t]))
+  const allLogs=Object.values(state.taskLogs).flat().sort((a,b)=>new Date(b.logged_at)-new Date(a.logged_at))
+  const logRowsHtml=allLogs.map(log=>{
+    const task=taskMap[log.task_id]
+    if(!task)return''
+    const st=getDerivedStatus(task,rollupPct(task.id))
+    const dotColor=statusColors[st]||'#94a3b8'
+    const pct=log.progress_pct
+    const pctColor=pct===100?'#059669':pct>=60?'#3B00FF':pct>0?'#d97706':'#94a3b8'
+    const dt=new Date(log.logged_at)
+    const dateStr=dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+    const timeStr=dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
+    return`<tr class="dash-log-row">
+      <td class="dash-log-td dash-log-td--date"><div class="dash-log-date">${dateStr}</div><div class="dash-log-time">${timeStr}</div></td>
+      <td class="dash-log-td"><div class="dash-log-task-name"><span class="dash-tl-dot" style="background:${dotColor}"></span><span title="${esc(task.name)}">${esc(task.name)}</span></div></td>
+      <td class="dash-log-td dash-log-td--pct"><span class="dash-log-pct-badge" style="background:${pctColor}18;color:${pctColor}">${pct}%</span></td>
+      <td class="dash-log-td dash-log-td--note">${esc(log.note||'—')}</td>
+      <td class="dash-log-td dash-log-td--by">${esc(log.logged_by||'—')}</td>
+    </tr>`
+  }).join('')
+
   // ── Build HTML ────────────────────────────────────────────────
   container.innerHTML=`
   <div class="dash-wrap">
@@ -1171,6 +1193,26 @@ function renderDashboard(){
             <canvas id="canvas-assignee"></canvas>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="dash-section-hdr">
+        <span class="dash-section-title">Progression Log</span>
+        <span class="dash-section-meta">${allLogs.length} entries &nbsp;·&nbsp; all tasks</span>
+      </div>
+      <div class="dash-log-wrap">
+        ${allLogs.length?`
+        <table class="dash-log-table">
+          <thead><tr>
+            <th class="dash-log-th">Date &amp; Time</th>
+            <th class="dash-log-th">Task</th>
+            <th class="dash-log-th">Progress</th>
+            <th class="dash-log-th">Note</th>
+            <th class="dash-log-th">Logged By</th>
+          </tr></thead>
+          <tbody>${logRowsHtml}</tbody>
+        </table>`:`<div class="dash-log-empty">No progress logs recorded yet.</div>`}
       </div>
     </div>
 

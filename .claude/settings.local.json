@@ -14,7 +14,10 @@
       "Bash(Select-Object -First 50)",
       "Bash(powershell -Command \"\\(Get-Content 'c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\\\\app.js'\\).Count\")",
       "Bash(powershell -Command \"Get-ChildItem 'c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\\\\' | Select-Object Name, Length\")",
-      "Bash(node --check app.js)"
+      "Bash(node --check app.js)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\" -Recurse -Depth 2)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)"
     ]
   }
 }
