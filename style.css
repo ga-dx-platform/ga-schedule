@@ -856,29 +856,31 @@ button:focus-visible,.trow:focus-visible,.r-exp:focus-visible,.act:focus-visible
 .dash-tl-bar{height:100%;border-radius:10px;transition:width .5s var(--ease)}
 .dash-tl-pct{font-size:11px;font-family:var(--mono);color:var(--txt3);text-align:right;font-weight:600}
 
-/* === PROGRESSION LOG TABLE === */
-.dash-log-wrap{background:var(--bg-surface);border-radius:22px;box-shadow:var(--shadow-md);border:1px solid var(--bdr);padding:4px 0;overflow:hidden}
-.dash-log-table{width:100%;border-collapse:collapse;font-size:12.5px}
-.dash-log-th{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--txt3);padding:12px 18px;border-bottom:1.5px solid var(--bdr);background:var(--bg);text-align:left;white-space:nowrap}
-.dash-log-row{transition:background var(--dur) var(--ease)}
-.dash-log-row:hover{background:#6366f108}
-.dash-log-row:not(:last-child) td{border-bottom:1px solid var(--bdr)}
-.dash-log-td{padding:11px 18px;vertical-align:middle;color:var(--txt)}
-.dash-log-td--date{white-space:nowrap;min-width:110px}
-.dash-log-date{font-size:12px;font-weight:600;color:var(--txt)}
-.dash-log-time{font-size:10.5px;font-family:var(--mono);color:var(--txt3);margin-top:1px}
-.dash-log-task-name{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--txt);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* === PROGRESSION LOG CARDS === */
+.dash-log-wrap{background:var(--bg-surface);border-radius:22px;box-shadow:var(--shadow-md);border:1px solid var(--bdr);padding:32px}
 .dash-log-pct-badge{display:inline-block;font-size:11px;font-weight:700;font-family:var(--mono);padding:3px 10px;border-radius:20px;white-space:nowrap}
-.dash-log-td--note{color:var(--txt2);max-width:340px}
-.dash-log-td--by{font-size:12px;color:var(--txt3);white-space:nowrap}
 .dash-log-empty{text-align:center;padding:40px 24px;font-size:13px;color:var(--txt3)}
-.dash-log-group-hdr{background:var(--bg)}
-.dash-log-entry td:first-child{padding-left:32px}
-.dash-log-group-td{padding:10px 18px;border-top:2px solid var(--bdr);border-bottom:1px solid var(--bdr)}
-.dash-log-group-hdr:first-child .dash-log-group-td{border-top:none}
-.dash-log-group-inner{display:flex;align-items:center;gap:10px;min-width:0}
-.dash-log-group-name{font-size:13px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.dash-log-group-count{font-size:10.5px;font-weight:600;color:var(--txt3);font-family:var(--mono);white-space:nowrap;margin-left:auto}
+.dash-log-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+/* card */
+.dlc{background:var(--bg-surface);border-radius:18px;box-shadow:var(--shadow-md);border:1px solid var(--bdr);overflow:hidden;transition:transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
+.dlc:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.dlc-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 10px}
+.dlc-title{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.dlc-name{font-size:13.5px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlc-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.dlc-count{font-size:10.5px;font-weight:600;color:var(--txt3);font-family:var(--mono);white-space:nowrap}
+.dlc-bar-wrap{height:3px;background:#f1f5f9;margin:0 18px 0}
+.dlc-bar{height:100%;border-radius:2px;transition:width .5s var(--ease)}
+.dlc-body{padding:4px 0 6px}
+/* entries */
+.dlc-entry{padding:10px 18px}
+.dlc-entry--border{border-bottom:1px solid var(--bdr)}
+.dlc-entry-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dlc-entry-dt{display:flex;flex-direction:column;flex:1;min-width:80px}
+.dlc-entry-date{font-size:12px;font-weight:600;color:var(--txt)}
+.dlc-entry-time{font-size:10px;font-family:var(--mono);color:var(--txt3)}
+.dlc-entry-by{font-size:11px;color:var(--txt3);background:var(--bg);border:1px solid var(--bdr);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.dlc-entry-note{font-size:12px;color:var(--txt2);margin-top:5px;line-height:1.5;word-break:break-word}
 
 /* === SYNC STATUS (toolbar) === */
 #sync-status{font-size:10px;color:var(--txt3);font-family:var(--mono)}

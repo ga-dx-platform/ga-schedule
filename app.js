@@ -1102,35 +1102,42 @@ function renderDashboard(){
   const groupEntries=Object.entries(grouped).sort((a,b)=>new Date(b[1][0].logged_at)-new Date(a[1][0].logged_at))
   const totalLogs=groupEntries.reduce((s,[,l])=>s+l.length,0)
   const pctC=p=>p===100?'#059669':p>=60?'#3B00FF':p>0?'#d97706':'#94a3b8'
-  const logBodyHtml=groupEntries.map(([tid,logs])=>{
+  const logCardsHtml=groupEntries.map(([tid,logs])=>{
     const task=taskMap[tid]
     if(!task)return''
     const st=getDerivedStatus(task,rollupPct(task.id))
     const dotColor=statusColors[st]||'#94a3b8'
     const curPct=task.progress_pct
     const curPctColor=pctC(curPct)
-    const entries=logs.map(log=>{
+    const barColor=curPct===100?'#059669':curPct>=60?'#3B00FF':curPct>0?'#d97706':'#e2e8f0'
+    const entries=logs.map((log,i)=>{
       const pct=log.progress_pct
       const dt=new Date(log.logged_at)
       const dateStr=dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
       const timeStr=dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
-      return`<tr class="dash-log-row dash-log-entry">
-        <td class="dash-log-td dash-log-td--date"><div class="dash-log-date">${dateStr}</div><div class="dash-log-time">${timeStr}</div></td>
-        <td class="dash-log-td dash-log-td--pct"><span class="dash-log-pct-badge" style="background:${pctC(pct)}18;color:${pctC(pct)}">${pct}%</span></td>
-        <td class="dash-log-td dash-log-td--note">${esc(log.note||'—')}</td>
-        <td class="dash-log-td dash-log-td--by">${esc(log.logged_by||'—')}</td>
-      </tr>`
-    }).join('')
-    return`<tr class="dash-log-group-hdr">
-      <td colspan="4" class="dash-log-group-td">
-        <div class="dash-log-group-inner">
-          <span class="dash-tl-dot" style="background:${dotColor};width:8px;height:8px"></span>
-          <span class="dash-log-group-name" title="${esc(task.name)}">${esc(task.name)}</span>
-          <span class="dash-log-pct-badge" style="background:${curPctColor}18;color:${curPctColor}">${curPct}%</span>
-          <span class="dash-log-group-count">${logs.length} log${logs.length!==1?'s':''}</span>
+      return`<div class="dlc-entry${i<logs.length-1?' dlc-entry--border':''}">
+        <div class="dlc-entry-top">
+          <span class="dlc-entry-dt"><span class="dlc-entry-date">${dateStr}</span><span class="dlc-entry-time">${timeStr}</span></span>
+          <span class="dash-log-pct-badge" style="background:${pctC(pct)}18;color:${pctC(pct)}">${pct}%</span>
+          ${log.logged_by?`<span class="dlc-entry-by">${esc(log.logged_by)}</span>`:''}
         </div>
-      </td>
-    </tr>${entries}`
+        ${log.note?`<div class="dlc-entry-note">${esc(log.note)}</div>`:''}
+      </div>`
+    }).join('')
+    return`<div class="dlc">
+      <div class="dlc-hdr">
+        <div class="dlc-title">
+          <span class="dash-tl-dot" style="background:${dotColor};width:8px;height:8px;flex-shrink:0"></span>
+          <span class="dlc-name" title="${esc(task.name)}">${esc(task.name)}</span>
+        </div>
+        <div class="dlc-meta">
+          <span class="dash-log-pct-badge" style="background:${curPctColor}18;color:${curPctColor}">${curPct}%</span>
+          <span class="dlc-count">${logs.length} log${logs.length!==1?'s':''}</span>
+        </div>
+      </div>
+      <div class="dlc-bar-wrap"><div class="dlc-bar" style="width:${curPct}%;background:${barColor}"></div></div>
+      <div class="dlc-body">${entries}</div>
+    </div>`
   }).join('')
 
   // ── Build HTML ────────────────────────────────────────────────
@@ -1219,17 +1226,8 @@ function renderDashboard(){
         <span class="dash-section-title">Progression Log</span>
         <span class="dash-section-meta">${totalLogs} entries &nbsp;·&nbsp; ${groupEntries.length} tasks</span>
       </div>
-      <div class="dash-log-wrap">
-        ${totalLogs?`
-        <table class="dash-log-table">
-          <thead><tr>
-            <th class="dash-log-th">Date &amp; Time</th>
-            <th class="dash-log-th">Progress</th>
-            <th class="dash-log-th">Note</th>
-            <th class="dash-log-th">Logged By</th>
-          </tr></thead>
-          <tbody>${logBodyHtml}</tbody>
-        </table>`:`<div class="dash-log-empty">No progress logs recorded yet.</div>`}
+      <div class="${totalLogs?'dash-log-grid':'dash-log-wrap'}">
+        ${totalLogs?logCardsHtml:`<div class="dash-log-empty">No progress logs recorded yet.</div>`}
       </div>
     </div>
 
