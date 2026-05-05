@@ -7,7 +7,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
 
 // === STATE ===
-const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[]}
+const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[],categories:[{name:'General',color:'#5B21B6'},{name:'Develop',color:'#059669'},{name:'Test',color:'#10B981'},{name:'Meeting',color:'#D97706'}]}
 const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
 let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
 let isSS=false,dragTaskId=null
@@ -26,8 +26,7 @@ const HISTORY_LIMIT=50
 const selectedTaskIds=new Set()
 
 // === DISPLAY MAPS ===
-const CAT_COLORS={General:'#5a20ff',Develop:'#00b87a',Test:'#10b981',Meeting:'#d97706'}
-const CAT_BAR={General:'gb-general',Develop:'gb-develop',Test:'gb-test',Meeting:'gb-meeting'}
+function getCatColor(catName){const cats=state.settings.categories||DEFAULT_SETTINGS.categories;const found=cats.find(c=>c.name===catName);return found?found.color:'#888888'}
 const STATUS_CLASS={'Not Started':'s-none','In Progress':'s-prog',Completed:'s-done',Cancelled:'s-cancel','On Hold':'s-hold',Delayed:'s-delay'}
 const STATUS_LABELS={'Not Started':'Not Started','In Progress':'In Progress',Completed:'Completed',Cancelled:'Cancelled','On Hold':'On Hold',Delayed:'Delayed'}
 
@@ -297,6 +296,70 @@ function populateAssigneeFilter(){
   sel.innerHTML='<option value="">All Assignee</option>'+assignees.map(a=>`<option value="${esc(a)}"${a===cur?' selected':''}>${esc(a)}</option>`).join('')
 }
 
+function populateCategoryDropdowns(){
+  const cats=state.settings.categories||DEFAULT_SETTINGS.categories
+  const modalSel=document.getElementById('t-category')
+  const filterSel=document.getElementById('filter-category')
+  if(modalSel){
+    const cur=modalSel.value
+    modalSel.innerHTML=cats.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('')
+    if(cur&&cats.some(c=>c.name===cur))modalSel.value=cur
+    else if(cats.length)modalSel.value=cats[0].name
+  }
+  if(filterSel){
+    const cur=filterSel.value
+    filterSel.innerHTML=`<option value="">All Category</option>`+cats.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('')
+    if(cur&&cats.some(c=>c.name===cur))filterSel.value=cur
+  }
+}
+
+function renderCategorySettingsList(){
+  const tbody=document.getElementById('category-settings-body')
+  if(!tbody)return
+  const cats=state.settings.categories||DEFAULT_SETTINGS.categories
+  tbody.innerHTML=cats.map((c,i)=>`
+    <tr>
+      <td style="font-size:13px;color:var(--txt2)">${esc(c.name)}</td>
+      <td><input type="color" value="${c.color}" onchange="updateCategoryColor(${i},this.value)" style="width:100%;height:24px;border:none;padding:0;cursor:pointer;background:transparent;"></td>
+      <td style="text-align:center"><button class="act del" onclick="removeCategory(${i})" title="Remove">🗑</button></td>
+    </tr>`).join('')
+}
+
+function addCategory(){
+  const nameEl=document.getElementById('new-cat-name')
+  const colorEl=document.getElementById('new-cat-color')
+  const name=nameEl.value.trim()
+  if(!name){toast('⚠️ Enter a category name');return}
+  if(!state.settings.categories)state.settings.categories=[...DEFAULT_SETTINGS.categories]
+  if(state.settings.categories.some(c=>c.name.toLowerCase()===name.toLowerCase())){toast('⚠️ Category already exists');return}
+  state.settings.categories.push({name,color:colorEl.value})
+  nameEl.value=''
+  renderCategorySettingsList()
+  populateCategoryDropdowns()
+  render()
+  toast('✅ Category added')
+}
+
+function updateCategoryColor(index,newColor){
+  if(state.settings.categories&&state.settings.categories[index]){
+    state.settings.categories[index].color=newColor
+    populateCategoryDropdowns()
+    render()
+  }
+}
+
+function removeCategory(index){
+  if(state.settings.categories&&state.settings.categories.length>1){
+    state.settings.categories.splice(index,1)
+    renderCategorySettingsList()
+    populateCategoryDropdowns()
+    render()
+    toast('🗑 Category removed')
+  }else{
+    toast('⚠️ You must have at least one category.')
+  }
+}
+
 function customPrompt(title,defaultValue=''){
   return new Promise(resolve=>{
     const overlay=document.getElementById('custom-prompt-overlay')
@@ -451,7 +514,7 @@ function render(){
 
 function renderLegend(){
   const cats=[...new Set(state.tasks.map(t=>t.category))]
-  document.getElementById('nav-legend').innerHTML=cats.map(c=>`<div class="nleg"><div class="nleg-dot" style="background:${CAT_COLORS[c]||'#888'}"></div>${c}</div>`).join('')
+  document.getElementById('nav-legend').innerHTML=cats.map(c=>`<div class="nleg"><div class="nleg-dot" style="background:${getCatColor(c)}"></div>${c}</div>`).join('')
 }
 
 function renderTaskList(){
@@ -495,7 +558,7 @@ function renderTaskList(){
       </span>
       <span><span class="sbadge ${sc}" style="${badgeStyle}" ondblclick="inlineEditStatus(this,'${t.id}')" onclick="event.stopPropagation()" title="Double-click to change status">${esc(STATUS_LABELS[displayStatus]||displayStatus)}</span></span>
       <span class="cat-cell">
-        <div class="cat-dot" style="background:${CAT_COLORS[t.category]||'#888'}"></div>
+        <div class="cat-dot" style="background:${getCatColor(t.category)}"></div>
         <span class="cat-lbl">${esc(t.category||'General')}</span>
       </span>
       <span class="acts">
@@ -685,7 +748,7 @@ function renderGantt(RH){
       if(bt&&bt.type!=='milestone'){const bs=pd(bt.start_date),be=taskEnd(bt);const bx=dBetween(min,bs)*DP,bw=Math.max((dBetween(bs,be)+1)*DP,DP);const ghost=document.createElement('div');ghost.className='gbar-ghost';ghost.style.cssText=`left:${bx}px;width:${bw}px;height:${bh}px;top:${rowTop+bbt2}px`;row.appendChild(ghost)}
       const bar=document.createElement('div');bar.id='bar-'+t.id
       if(hasKids){bar.className='gbar gb-parent';bar.style.cssText=`position:absolute;left:${x}px;width:${w}px;height:${bh}px;top:${rowTop+bbt2}px`}
-      else{bar.className=`gbar ${isCan?'gb-cancel':(CAT_BAR[t.category]||'gb-general')}`;bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${rowTop+bbt2}px`}
+      else{bar.className=`gbar ${isCan?'gb-cancel':'gb-custom'}`;bar.style.cssText=`left:${x}px;width:${w}px;height:${bh}px;top:${rowTop+bbt2}px`;if(!isCan&&!hasKids){const cColor=getCatColor(t.category);bar.style.backgroundColor=cColor;bar.style.boxShadow=`0 2px 8px ${cColor}40`}}
       if(t.locked)bar.classList.add('locked-bar')
       if(isLate)bar.classList.add('baseline-late')
       if(!isCan&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
@@ -827,7 +890,7 @@ function renderKanban(){
       const pct=rollupPct(t.id)
       const isSubtask=!!t.parent_id
       const parentTask=isSubtask?tb.get(t.parent_id)||null:null
-      const catColor=CAT_COLORS[t.category]||'#888'
+      const catColor=getCatColor(t.category)
       const card=document.createElement('div')
       card.className=`kb-card ${isSubtask?'kb-card-sub':'kb-card-main'}`
       card.draggable=true
@@ -938,7 +1001,7 @@ function renderCalendar(){
       :d
     let bars=''
     tasks.slice(0,MAX).forEach(t=>{
-      const c=CAT_COLORS[t.category]||'#888'
+      const c=getCatColor(t.category)
       bars+=`<div class="cal-task-bar" data-task-id="${esc(t.id)}" style="background:${c}" title="${esc(t.name)}">${esc(t.name)}</div>`
     })
     if(tasks.length>MAX)bars+=`<div class="cal-more" data-task-ids="${tasks.map(t=>t.id).join(',')}" onclick="event.stopPropagation();showCalMorePopup(this)">+${tasks.length-MAX} more</div>`
@@ -1015,7 +1078,7 @@ function showCalMorePopup(el){
       const pct=t.progress_pct||0,ds=getDerivedStatus(t,pct),sc=STATUS_CLASS[ds]||'s-none'
       const ov=(state.settings.statusOverrides||{})[ds]
       const bs=(ov&&ov.override&&ov.color)?`background:${ov.color}22;color:${ov.color};border:1px solid ${ov.color}44`:''
-      return`<div class="cdp-item" style="border-left:3px solid ${CAT_COLORS[t.category]||'#888'}" onclick="openDetailPanel('${t.id}');document.getElementById('cal-day-popup').classList.add('hidden')">
+      return`<div class="cdp-item" style="border-left:3px solid ${getCatColor(t.category)}" onclick="openDetailPanel('${t.id}');document.getElementById('cal-day-popup').classList.add('hidden')">
         <div class="cdp-name">${esc(t.name)}</div>
         <span class="sbadge ${sc}" style="${bs};font-size:9px;padding:1px 5px">${esc(STATUS_LABELS[ds]||ds)}</span>
       </div>`}).join('')}</div>`
@@ -1300,7 +1363,7 @@ function renderDashboard(){
   }
 
   // Bar — category
-  const catColArr=catKeys.map(k=>CAT_COLORS[k]||'#888')
+  const catColArr=catKeys.map(k=>getCatColor(k))
   const ctxC=document.getElementById('canvas-category')
   if(ctxC&&catKeys.length){
     _chartCategory=new Chart(ctxC,{
@@ -1657,6 +1720,7 @@ function openSettings(){
   document.getElementById('set-weekends-group').querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=(s.weekendDays||[0,6]).includes(parseInt(cb.value))})
   document.getElementById('set-hol-col').value=s.holCol||'#fef08a'
   renderHolidayList()
+  renderCategorySettingsList()
   switchSetTab('appearance',document.querySelector('.set-tab'))
   openModalBackdrop('settings-modal-bd','#settings-modal .set-tab.active')
 }
@@ -1809,6 +1873,7 @@ function applySettings(){
   r.style.setProperty('--holiday-color',s.holCol)
   localStorage.setItem('gaScheduleSettings',JSON.stringify(s))
   invalidateCalendarCache()
+  populateCategoryDropdowns()
   closeSettings();render();toast('✅ Settings applied')
 }
 function loadSettings(){
@@ -2021,7 +2086,7 @@ function _renderDetailPanel(t){
   document.getElementById('dp-dur').textContent=t.type==='milestone'?'—':t.duration_days+' days'
   document.getElementById('dp-assignee').textContent=t.assignee||'—'
   const catEl=document.getElementById('dp-category')
-  catEl.innerHTML=`<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${CAT_COLORS[t.category]||'#888'};flex-shrink:0"></span>${esc(t.category||'General')}</span>`
+  catEl.innerHTML=`<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${getCatColor(t.category)};flex-shrink:0"></span>${esc(t.category||'General')}</span>`
   const parentRow=document.getElementById('dp-parent-row')
   if(t.parent_id){const p=state.tasks.find(x=>x.id===t.parent_id);document.getElementById('dp-parent').textContent=p?p.name:'—';parentRow.style.display=''}
   else parentRow.style.display='none'
@@ -2899,7 +2964,7 @@ async function init(){
   try{
     await ensureAuth()
     await Promise.all([loadProjects(),loadHolidays()])
-    initSS();applyGanttSettings();render()
+    initSS();applyGanttSettings();render();populateCategoryDropdowns()
     triggerAutoFitOnNextPaint()
     if(state.projects.length===1)selectProject(state.projects[0].id)
     else if(state.projects.length>1)openProjModal()

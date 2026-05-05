@@ -95,10 +95,6 @@
           <label class="flbl">Category</label>
           <select id="filter-category" class="finput" style="width: 100%; height: 32px;" onchange="applyFilter('category',this.value)">
             <option value="">All Category</option>
-            <option>General</option>
-            <option>Develop</option>
-            <option>Test</option>
-            <option>Meeting</option>
           </select>
         </div>
 
@@ -314,12 +310,7 @@
           </div>
           <div>
             <label class="flbl" for="t-category">Category</label>
-            <select id="t-category" class="finput" style="width:100%">
-              <option value="General">General</option>
-              <option value="Develop">Develop</option>
-              <option value="Test">Test</option>
-              <option value="Meeting">Meeting</option>
-            </select>
+            <select id="t-category" class="finput" style="width:100%"></select>
           </div>
           <div>
             <label class="flbl">Status Flags <span style="font-size:10px;color:var(--txt3);font-weight:normal">(overrides derived)</span></label>
@@ -460,6 +451,7 @@
         <button class="set-tab" onclick="switchSetTab('grid',this)">Gantt Grid</button>
         <button class="set-tab" onclick="switchSetTab('status',this)">Status Colors</button>
         <button class="set-tab" onclick="switchSetTab('calendar',this)">Calendar</button>
+        <button class="set-tab" onclick="switchSetTab('category',this)">Categories</button>
       </div>
     </div>
     <div style="padding:16px 20px;min-height:220px;max-height:58vh;overflow-y:auto">
@@ -533,6 +525,20 @@
         <table class="set-table">
           <thead><tr><th>Date</th><th>Name</th><th style="width:40px"></th></tr></thead>
           <tbody id="holiday-settings-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Categories -->
+      <div id="set-category" class="set-pane">
+        <p class="set-desc">Manage task categories and their associated colors.</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+          <input type="text" id="new-cat-name" placeholder="New Category Name" class="finput" style="flex:1">
+          <input type="color" id="new-cat-color" value="#0ea5e9" style="width:40px;height:32px;padding:0;border:1px solid var(--bdr);border-radius:4px;cursor:pointer;">
+          <button class="mbtn save" style="padding:0 14px;height:32px;flex-shrink:0" onclick="addCategory()">+ Add</button>
+        </div>
+        <table class="set-table">
+          <thead><tr><th>Category Name</th><th style="width:70px">Color</th><th style="width:40px"></th></tr></thead>
+          <tbody id="category-settings-body"></tbody>
         </table>
       </div>
 
