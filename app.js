@@ -481,7 +481,7 @@ function renderTaskList(){
       <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         <span class="drag-handle" title="Drag to reorder">⠿</span>
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
-        <span class="lbl" title="${esc(t.name)}" onclick="event.stopPropagation();openDetailPanel('${t.id}')">${esc(t.name)}</span>
+        <span class="lbl" title="Double-click to rename" onclick="event.stopPropagation();openDetailPanel('${t.id}')" ondblclick="event.stopPropagation();inlineEditName(this,'${t.id}')">${esc(t.name)}</span>
         ${t.locked?'<span class="lock-ind" title="Locked task" aria-label="Locked task">🔒</span>':''}
         ${preds.length?`<span class="dep-count" title="Predecessors: rows ${preds.join(', ')}">${preds.join(',')}</span>`:''}
       </span>
@@ -1944,6 +1944,22 @@ function inlineEditPct(el,id){
     const fields={progress_pct:v}
     if(!specialStatus.includes(t.status))fields.status=v===100?'Completed':v>0?'In Progress':'Not Started'
     patchTask(id,fields)
+  }
+  inp.onblur=commit
+  inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commit()}if(e.key==='Escape')render()}
+}
+function inlineEditName(el,id){
+  const t=state.tasks.find(x=>x.id===id);if(!t)return
+  const inp=document.createElement('input')
+  inp.type='text';inp.value=t.name||''
+  inp.className='inline-name-input'
+  el.replaceWith(inp);inp.focus();inp.select()
+  let committed=false
+  const commit=()=>{
+    if(committed)return;committed=true
+    const newVal=inp.value.trim()||'Untitled Task'
+    if(newVal!==t.name)patchTask(id,{name:newVal})
+    else render()
   }
   inp.onblur=commit
   inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commit()}if(e.key==='Escape')render()}

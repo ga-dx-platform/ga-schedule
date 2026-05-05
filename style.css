@@ -235,6 +235,7 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 @keyframes bulkSlideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .inline-edit-input{width:52px;height:22px;font-size:12px;text-align:center;border:1.5px solid var(--primary);border-radius:4px;padding:0 4px;font-family:var(--font);outline:none;box-shadow:var(--primary-glow)}
 .inline-edit-select{font-size:11px;height:22px;border:1.5px solid var(--primary);border-radius:4px;padding:0 2px;font-family:var(--font);outline:none;box-shadow:var(--primary-glow);cursor:pointer}
+.inline-name-input{width:100%;height:24px;font-size:var(--fs-name);font-weight:600;text-align:left;border:1.5px solid var(--primary);border-radius:4px;padding:0 4px;font-family:var(--font);outline:none;box-shadow:var(--primary-glow);background:#fff}
 .pct-editable>span{cursor:text}
 .pct-editable>span:hover{color:var(--primary)!important;text-decoration:underline dotted}
 .sbadge{cursor:pointer}
@@ -350,7 +351,7 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 #col-hdr{
   display:grid;grid-template-columns:var(--col-grid);gap:3px;padding:0 12px;
   height:36px;align-items:center;flex-shrink:0;
-  background:transparent;border:none;border-bottom:1px solid #E2E8F0;
+  background:rgba(255,255,255,.82);border:none;border-bottom:1px solid rgba(0,0,0,.06);
   font-size:11px;font-weight:600;color:#64748B;
   letter-spacing:.05em;text-transform:uppercase;font-family:var(--font);
 }
@@ -444,10 +445,10 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 #right{flex:1;overflow:auto;background:var(--bg-app);position:relative}
 #gantt-wrap{position:relative;min-width:100%}
 #gantt-hdr{
-  position:sticky;top:0;z-index:5;
-  background:transparent;
-  backdrop-filter:none;-webkit-backdrop-filter:none;
-  border:none;border-bottom:1px solid #E2E8F0;
+  position:sticky;top:0;z-index:20;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:none;border-bottom:1px solid rgba(0,0,0,.06);
   height:36px;display:flex;flex-direction:column;overflow:hidden;
 }
 .g-month-row{display:flex;height:15px;flex-shrink:0;align-items:center;background:transparent;border:none}
@@ -457,8 +458,15 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 .g-day.weekend{color:var(--weekend-text-color)!important;font-weight:600}
 .g-day.today-d{background:transparent!important;color:#EF4444!important;font-weight:700!important}
 
+/* Premium Glassmorphism for Headers */
 #col-hdr,
-#gantt-hdr,
+#gantt-hdr{
+  background:rgba(255,255,255,.82)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+  border-bottom:1px solid rgba(0,0,0,.06)!important;
+  z-index:20;
+}
 .gantt-header-row,
 .gantt-month-row,
 .gantt-day-row,
@@ -467,7 +475,7 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
   background:transparent!important;
   background-color:transparent!important;
   border:none!important;
-  border-bottom:1px solid #E2E8F0!important;
+  border-bottom:1px solid rgba(0,0,0,.06)!important;
 }
 #col-hdr > div,
 .gantt-month-cell,
@@ -688,11 +696,12 @@ body.is-exporting .gbar-fill   { background:rgba(255,255,255,.28)!important; }
 /* 4. Today line — was a gradient with transparent stops */
 body.is-exporting .today-vline { background:var(--today-col)!important; opacity:.7!important; }
 
-/* 5. Gantt header — remove backdrop-filter */
+/* 5. Gantt/col headers — remove backdrop-filter for export */
+body.is-exporting #col-hdr,
 body.is-exporting #gantt-hdr {
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
-  background:transparent!important;
+  background:#FFFFFF!important;
   border:none!important;
   border-bottom:1px solid #E2E8F0!important;
 }
