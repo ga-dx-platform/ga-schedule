@@ -2487,6 +2487,106 @@ function importJSON(e){
   reader.readAsText(file)
 }
 
+function parseCSVStr(str){
+  const arr=[]
+  let quote=false,row=0,col=0
+  for(let c=0;c<str.length;c++){
+    const cc=str[c],nc=str[c+1]
+    arr[row]=arr[row]||[]
+    arr[row][col]=arr[row][col]||''
+    if(cc==='"'&&quote&&nc==='"'){arr[row][col]+=cc;++c;continue}
+    if(cc==='"'){quote=!quote;continue}
+    if(cc===','&&!quote){++col;continue}
+    if(cc==='\r'&&nc==='\n'&&!quote){++row;col=0;++c;continue}
+    if((cc==='\n'||cc==='\r')&&!quote){++row;col=0;continue}
+    arr[row][col]+=cc
+  }
+  return arr
+}
+
+function parseCSVDate(s){
+  if(!s)return fmtISO(new Date())
+  const p=s.split(/[-/]/)
+  if(p.length===3){
+    if(p[0].length===4)return`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`
+    return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`
+  }
+  const d=new Date(s)
+  return isNaN(d)?fmtISO(new Date()):fmtISO(d)
+}
+
+function importCSV(e){
+  const file=e.target.files[0]
+  if(!file)return
+  if(!state.currentProjectId){toast('⚠️ Select a project first');e.target.value='';return}
+  const reader=new FileReader()
+  reader.onload=async(ev)=>{
+    try{
+      const rows=parseCSVStr(ev.target.result)
+      if(rows.length<2){toast('❌ CSV is empty or invalid');return}
+      showConfirm(`Importing this CSV will REPLACE all existing tasks in the current project to avoid duplicates. Continue?`,async()=>{
+        setSS('⟳ Importing CSV...');showL()
+        try{
+          // 1. Clear existing data
+          await db.from('dependencies').delete().eq('project_id',state.currentProjectId)
+          await db.from('tasks').delete().eq('project_id',state.currentProjectId)
+          const newTasks=[]
+          const wbsMap={}
+          // Header: WBS, Task Name, Type, Category, Start, End, Duration, %, Status, Assignee
+          for(let i=1;i<rows.length;i++){
+            const r=rows[i]
+            if(!r||r.length<2||!r[1]?.trim())continue
+            const wbs=(r[0]||'').trim()
+            const name=r[1].trim()||'Untitled Task'
+            const type=(r[2]||'task').trim().toLowerCase()
+            const category=(r[3]||'General').trim()
+            const start_date=parseCSVDate((r[4]||'').trim())
+            const duration_days=Math.max(1,parseInt((r[6]||'1').replace(/[^\d.]/g,''),10)||1)
+            const progress_pct=Math.min(100,Math.max(0,parseInt((r[7]||'0').replace(/[^\d.]/g,''),10)||0))
+            const status=(r[8]||'Not Started').trim()
+            const assignee=(r[9]||'').trim()||null
+            const taskId=crypto.randomUUID()
+            if(wbs)wbsMap[wbs]=taskId
+            // 2. Smart parent re-linking via WBS hierarchy
+            let parent_id=null
+            if(wbs&&wbs.includes('.')){
+              const parentWbs=wbs.substring(0,wbs.lastIndexOf('.'))
+              if(wbsMap[parentWbs])parent_id=wbsMap[parentWbs]
+            }
+            newTasks.push({
+              id:taskId,
+              project_id:state.currentProjectId,
+              parent_id,
+              name,
+              type:['task','milestone','parent'].includes(type)?type:'task',
+              category,
+              start_date,
+              duration_days,
+              progress_pct,
+              status,
+              assignee,
+              sort_order:i*10
+            })
+          }
+          // 3. Insert
+          if(newTasks.length){const{error}=await db.from('tasks').insert(newTasks);if(error)throw error}
+          // 4. Reload
+          await loadTasks();render()
+          setSS('✓ Synced')
+          toast(`✅ Imported ${newTasks.length} tasks from CSV`)
+        }catch(dbErr){
+          toast('❌ Import Error: '+dbErr.message);setSS('✗ Error')
+        }finally{hideL()}
+      })
+    }catch(err){
+      toast('❌ Failed to parse CSV: '+err.message)
+    }finally{
+      e.target.value=''
+    }
+  }
+  reader.readAsText(file)
+}
+
 // === UI HELPERS ===
 function setSS(t){
   document.getElementById('sync-status').textContent=t
