@@ -1730,15 +1730,16 @@ function openSettings(){
   document.getElementById('set-wknd-txt').value=s.wkndTxt||'#d32f2f'
   document.getElementById('set-grid-line').value=s.gridLineCol||'#e2e8f0'
   // Status Colors
-  buildStatusSettingsBody()
+  if(typeof buildStatusSettingsBody==='function')buildStatusSettingsBody()
   // Calendar
   const skipWeekendsEl=document.getElementById('set-skip-weekends')
   if(skipWeekendsEl)skipWeekendsEl.checked=!!state.skipWeekends
   document.getElementById('set-weekends-group').querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=(s.weekendDays||[0,6]).includes(parseInt(cb.value))})
   document.getElementById('set-hol-col').value=s.holCol||'#fef08a'
-  renderHolidayList()
-  renderCategorySettingsList()
-  renderColumnSettings()
+  if(typeof renderHolidayList==='function')renderHolidayList()
+  // Dynamic render calls
+  if(typeof renderCategorySettingsList==='function')renderCategorySettingsList()
+  if(typeof renderColumnSettings==='function')renderColumnSettings()
   switchSetTab('appearance',document.querySelector('.set-tab'))
   openModalBackdrop('settings-modal-bd','#settings-modal .set-tab.active')
 }
