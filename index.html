@@ -66,32 +66,62 @@
   <div id="toolbar">
     <input type="text" id="search-box" class="tb-input" placeholder="Search tasks..." oninput="handleSearch(this.value)">
     <div class="tb-sep"></div>
-    <div id="filter-bar" class="filter-bar">
-      <span class="filter-label">Filter:</span>
-      <select id="filter-status" class="tb-filter" title="Filter by status" onchange="applyFilter('status',this.value)">
-        <option value="">All Status</option>
-        <option>Not Started</option>
-        <option>In Progress</option>
-        <option>Completed</option>
-        <option>Delayed</option>
-        <option>On Hold</option>
-        <option>Cancelled</option>
-      </select>
-      <select id="filter-category" class="tb-filter" title="Filter by category" onchange="applyFilter('category',this.value)">
-        <option value="">All Category</option>
-        <option>General</option>
-        <option>Develop</option>
-        <option>Test</option>
-        <option>Meeting</option>
-      </select>
-      <select id="filter-assignee" class="tb-filter" title="Filter by assignee" onchange="applyFilter('assignee',this.value)">
-        <option value="">All Assignee</option>
-      </select>
-      <button id="filter-clear" class="tb tb-filter-clear hidden-clear" onclick="clearFilters()">✕ Clear</button>
+    <!-- Compact Popover Filter -->
+    <div class="filter-container" style="position: relative;">
+      <button class="tb" onclick="toggleFilterPopup()" title="Filter Tasks">
+        <i class="fas fa-filter" style="margin-right: 4px; opacity: 0.7;"></i> Filter
+        <span id="filter-badge" style="display: none; background: var(--primary); color: white; border-radius: 10px; padding: 2px 6px; font-size: 9px; margin-left: 6px; font-weight: 700;">0</span>
+      </button>
+
+      <div id="filter-popup" class="hidden" style="position: absolute; top: calc(100% + 6px); left: 0; background: var(--bg-surface); border: 1px solid var(--bdr); border-radius: 12px; padding: 16px; box-shadow: var(--shadow-lg); z-index: 100; display: flex; flex-direction: column; gap: 12px; width: 220px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em;">Filters</span>
+        </div>
+
+        <div>
+          <label class="flbl">Status</label>
+          <select id="filter-status" class="finput" style="width: 100%; height: 32px;" onchange="applyFilter('status',this.value)">
+            <option value="">All Status</option>
+            <option>Not Started</option>
+            <option>In Progress</option>
+            <option>Completed</option>
+            <option>Delayed</option>
+            <option>On Hold</option>
+            <option>Cancelled</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="flbl">Category</label>
+          <select id="filter-category" class="finput" style="width: 100%; height: 32px;" onchange="applyFilter('category',this.value)">
+            <option value="">All Category</option>
+            <option>General</option>
+            <option>Develop</option>
+            <option>Test</option>
+            <option>Meeting</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="flbl">Assignee</label>
+          <select id="filter-assignee" class="finput" style="width: 100%; height: 32px;" onchange="applyFilter('assignee',this.value)">
+            <option value="">All Assignee</option>
+          </select>
+        </div>
+
+        <button id="filter-clear" class="mbtn cancel hidden-clear" style="width: 100%; margin-top: 4px; justify-content: center;" onclick="clearFilters(); toggleFilterPopup();">✕ Clear All</button>
+      </div>
     </div>
     <div class="tb-sep"></div>
     <button class="tb" id="btn-undo" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
     <button class="tb" id="btn-redo" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+    <div class="tb-sep"></div>
+    <!-- Compact Display Actions (Icon Group) -->
+    <div class="tb-group">
+      <button class="tb tb-tab" onclick="autoFitAll()" title="Auto-fit Columns" style="font-size: 14px;"><i class="fas fa-arrows-left-right-to-line"></i></button>
+      <button class="tb tb-tab" onclick="expandAll()" title="Expand All" style="font-size: 14px;"><i class="fas fa-angle-double-down"></i></button>
+      <button class="tb tb-tab" onclick="collapseAll()" title="Collapse All" style="font-size: 14px;"><i class="fas fa-angle-double-up"></i></button>
+    </div>
     <div class="tb-sep"></div>
     <button class="tb link" id="btn-link" onclick="openDependencyModal()" disabled>Link</button>
     <div class="tb-sep"></div>
@@ -111,13 +141,6 @@
       <button class="tb tb-tab" id="tab-month" onclick="setZoom('month')">Month</button>
     </div>
     <button class="tb today" onclick="scrollToday()">Today</button>
-    <!-- Compact Display Actions (Icon Group) -->
-    <div class="tb-group">
-      <button class="tb tb-tab" onclick="autoFitAll()" title="Auto-fit Columns" style="font-size: 14px;"><i class="fas fa-arrows-left-right-to-line"></i></button>
-      <button class="tb tb-tab" onclick="expandAll()" title="Expand All" style="font-size: 14px;"><i class="fas fa-angle-double-down"></i></button>
-      <button class="tb tb-tab" onclick="collapseAll()" title="Collapse All" style="font-size: 14px;"><i class="fas fa-angle-double-up"></i></button>
-    </div>
-
     <div class="tb-sep"></div>
 
     <!-- Consolidated Export Actions -->

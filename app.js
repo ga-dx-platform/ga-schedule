@@ -266,8 +266,29 @@ function clearFilters(){
 }
 function updateFilterClearBtn(){
   const btn=document.getElementById('filter-clear')
-  if(btn)btn.classList.toggle('hidden-clear',!(state.filterStatus||state.filterCategory||state.filterAssignee))
+  const hasFilter=!!(state.filterStatus||state.filterCategory||state.filterAssignee)
+  if(btn)btn.classList.toggle('hidden-clear',!hasFilter)
+  const badge=document.getElementById('filter-badge')
+  if(badge){
+    let count=0
+    if(state.filterStatus)count++
+    if(state.filterCategory)count++
+    if(state.filterAssignee)count++
+    badge.textContent=count
+    badge.style.display=count>0?'inline-block':'none'
+  }
 }
+function toggleFilterPopup(){
+  const popup=document.getElementById('filter-popup')
+  if(popup)popup.classList.toggle('hidden')
+}
+document.addEventListener('click',e=>{
+  const filterContainer=e.target.closest('.filter-container')
+  const popup=document.getElementById('filter-popup')
+  if(!filterContainer&&popup&&!popup.classList.contains('hidden')){
+    popup.classList.add('hidden')
+  }
+})
 function populateAssigneeFilter(){
   const sel=document.getElementById('filter-assignee')
   if(!sel)return
