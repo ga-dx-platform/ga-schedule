@@ -2422,6 +2422,71 @@ async function exportPDF(){
   finally{if(stage&&stage.parentNode)stage.parentNode.removeChild(stage);document.body.classList.remove('is-exporting');hideL()}
 }
 
+function exportJSON(){
+  if(!state.currentProjectId){toast('⚠️ Select a project first');return}
+  if(!state.tasks.length){toast('⚠️ No tasks to export');return}
+  const data={version:1,exportDate:new Date().toISOString(),tasks:state.tasks,deps:state.deps}
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'})
+  const url=URL.createObjectURL(blob)
+  const a=document.createElement('a')
+  a.href=url
+  const pName=(document.getElementById('proj-name')?.textContent||'project').replace(/[^\wก-๙-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project'
+  a.download=`ga-backup-${pName}-${fmtISO(new Date())}.json`
+  document.body.appendChild(a);a.click();document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  toast('📦 Project Backup Exported')
+}
+
+function importJSON(e){
+  const file=e.target.files[0]
+  if(!file)return
+  if(!state.currentProjectId){toast('⚠️ Please select or create a project first');e.target.value='';return}
+  const reader=new FileReader()
+  reader.onload=async(ev)=>{
+    try{
+      const data=JSON.parse(ev.target.result)
+      if(!data.tasks||!Array.isArray(data.tasks)){toast('❌ Invalid backup file format');return}
+      showConfirm(`This will REPLACE all tasks in the current project with the imported backup (${data.tasks.length} tasks). Continue?`,async()=>{
+        setSS('⟳ Importing...');showL()
+        try{
+          // 1. Delete existing data
+          await db.from('dependencies').delete().eq('project_id',state.currentProjectId)
+          await db.from('tasks').delete().eq('project_id',state.currentProjectId)
+          // 2. Smart ID remapping — new UUIDs prevent PK collisions on import to any project
+          const idMap={}
+          data.tasks.forEach(t=>{idMap[t.id]=crypto.randomUUID()})
+          const newTasks=data.tasks.map(t=>{
+            const nt={...t,project_id:state.currentProjectId,id:idMap[t.id]}
+            nt.parent_id=(nt.parent_id&&idMap[nt.parent_id])||null
+            return nt
+          })
+          const newDeps=(data.deps||[]).map(d=>({
+            ...d,
+            project_id:state.currentProjectId,
+            id:crypto.randomUUID(),
+            from_task_id:idMap[d.from_task_id],
+            to_task_id:idMap[d.to_task_id]
+          })).filter(d=>d.from_task_id&&d.to_task_id)
+          // 3. Bulk insert
+          if(newTasks.length){const{error:tErr}=await db.from('tasks').insert(newTasks);if(tErr)throw tErr}
+          if(newDeps.length){const{error:dErr}=await db.from('dependencies').insert(newDeps);if(dErr)throw dErr}
+          // 4. Reload state
+          await loadTasks();await loadDeps();render()
+          setSS('✓ Synced')
+          toast(`✅ Successfully restored ${newTasks.length} tasks`)
+        }catch(dbErr){
+          toast('❌ Database Error: '+dbErr.message);setSS('✗ Error')
+        }finally{hideL()}
+      })
+    }catch(err){
+      toast('❌ Failed to read JSON file: '+err.message)
+    }finally{
+      e.target.value=''
+    }
+  }
+  reader.readAsText(file)
+}
+
 // === UI HELPERS ===
 function setSS(t){
   document.getElementById('sync-status').textContent=t

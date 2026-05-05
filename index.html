@@ -139,13 +139,17 @@
     <button class="tb today" onclick="scrollToday()">Today</button>
     <div class="tb-sep"></div>
 
-    <!-- Consolidated Export Actions -->
-    <select class="tb-filter" title="Export project" style="width: 110px;" onchange="const v=this.value; if(v==='csv')exportCSV(); else if(v==='png')exportPNG(); else if(v==='pdf')exportPDF(); this.value='';">
-      <option value="" disabled selected>📥 Export...</option>
-      <option value="csv">CSV Document</option>
-      <option value="png">PNG Image</option>
-      <option value="pdf">PDF Report</option>
+    <!-- Consolidated Data & Export Actions -->
+    <select class="tb-filter" title="Data & Export" style="width: 140px;" onchange="const v=this.value; if(v==='csv')exportCSV(); else if(v==='png')exportPNG(); else if(v==='pdf')exportPDF(); else if(v==='exp_json')exportJSON(); else if(v==='imp_json')document.getElementById('import-json-input').click(); this.value='';">
+      <option value="" disabled selected>💽 Data &amp; Export</option>
+      <option value="imp_json">📥 Import Backup (JSON)</option>
+      <option value="exp_json">📤 Export Backup (JSON)</option>
+      <option value="" disabled>──────────</option>
+      <option value="csv">📊 Export to CSV</option>
+      <option value="png">🖼️ Export to PNG</option>
+      <option value="pdf">📄 Export to PDF</option>
     </select>
+    <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="importJSON(event)">
 
     <div class="tb-sep"></div>
     <label class="sw-opt" title="Toggle Text on Gantt Bars"><input type="checkbox" id="sw-gtxt" checked> Labels</label>
