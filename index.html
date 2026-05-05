@@ -111,18 +111,33 @@
       <button class="tb tb-tab" id="tab-month" onclick="setZoom('month')">Month</button>
     </div>
     <button class="tb today" onclick="scrollToday()">Today</button>
-    <button class="tb" onclick="expandAll()">Expand All</button>
-    <button class="tb" onclick="collapseAll()">Collapse All</button>
-    <button class="tb" onclick="autoFitAll()">Auto-fit</button>
+    <!-- Compact Display Actions (Icon Group) -->
+    <div class="tb-group">
+      <button class="tb tb-tab" onclick="autoFitAll()" title="Auto-fit Columns" style="font-size: 14px;"><i class="fas fa-arrows-left-right-to-line"></i></button>
+      <button class="tb tb-tab" onclick="expandAll()" title="Expand All" style="font-size: 14px;"><i class="fas fa-angle-double-down"></i></button>
+      <button class="tb tb-tab" onclick="collapseAll()" title="Collapse All" style="font-size: 14px;"><i class="fas fa-angle-double-up"></i></button>
+    </div>
+
     <div class="tb-sep"></div>
-    <button class="tb" onclick="exportCSV()">CSV</button>
-    <button class="tb" onclick="exportPNG()">PNG</button>
-    <button class="tb" onclick="exportPDF()">PDF</button>
+
+    <!-- Consolidated Export Actions -->
+    <select class="tb-filter" title="Export project" style="width: 110px;" onchange="const v=this.value; if(v==='csv')exportCSV(); else if(v==='png')exportPNG(); else if(v==='pdf')exportPDF(); this.value='';">
+      <option value="" disabled selected>📥 Export...</option>
+      <option value="csv">CSV Document</option>
+      <option value="png">PNG Image</option>
+      <option value="pdf">PDF Report</option>
+    </select>
+
     <div class="tb-sep"></div>
-    <label class="sw-opt"><input type="checkbox" id="sw-gtxt" checked> Labels</label>
+    <label class="sw-opt" title="Toggle Text on Gantt Bars"><input type="checkbox" id="sw-gtxt" checked> Labels</label>
     <div class="tb-sep"></div>
-    <button class="tb" onclick="saveBaseline()">Baseline</button>
-    <button class="tb" onclick="compareBaseline()">Compare</button>
+
+    <!-- Consolidated Baseline Actions -->
+    <select class="tb-filter" title="Baseline actions" style="width: 125px;" onchange="const v=this.value; if(v==='save')saveBaseline(); else if(v==='cmp')compareBaseline(); this.value='';">
+      <option value="" disabled selected>📸 Baseline...</option>
+      <option value="save">Save Baseline</option>
+      <option value="cmp">Compare...</option>
+    </select>
     <div class="tb-sep"></div>
     <span id="sync-status">—</span>
   </div>
