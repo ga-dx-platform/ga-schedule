@@ -458,6 +458,7 @@
         <button class="set-tab" onclick="switchSetTab('status',this)">Status Colors</button>
         <button class="set-tab" onclick="switchSetTab('calendar',this)">Calendar</button>
         <button class="set-tab" onclick="switchSetTab('category',this)">Categories</button>
+        <button class="set-tab" onclick="switchSetTab('columns',this)">Columns</button>
       </div>
     </div>
     <div style="padding:16px 20px;min-height:220px;max-height:58vh;overflow-y:auto">
@@ -545,6 +546,21 @@
         <table class="set-table">
           <thead><tr><th>Category Name</th><th style="width:70px">Color</th><th style="width:40px"></th></tr></thead>
           <tbody id="category-settings-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Columns -->
+      <div id="set-columns" class="set-pane">
+        <p class="set-desc">Check to show/hide columns. Set custom width in pixels.</p>
+        <table class="set-table">
+          <thead>
+            <tr>
+              <th style="width:50px;text-align:center">Show</th>
+              <th>Column Name</th>
+              <th style="width:100px">Width (px)</th>
+            </tr>
+          </thead>
+          <tbody id="columns-settings-body"></tbody>
         </table>
       </div>
 

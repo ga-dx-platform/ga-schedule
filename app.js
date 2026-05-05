@@ -9,7 +9,7 @@ async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(
 // === STATE ===
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[],categories:[{name:'General',color:'#5B21B6'},{name:'Develop',color:'#059669'},{name:'Test',color:'#10B981'},{name:'Meeting',color:'#D97706'}]}
 const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
-let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],colHidden:new Array(11).fill(false),searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
 let isSS=false,dragTaskId=null
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -311,6 +311,23 @@ function populateCategoryDropdowns(){
     filterSel.innerHTML=`<option value="">All Category</option>`+cats.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('')
     if(cur&&cats.some(c=>c.name===cur))filterSel.value=cur
   }
+}
+
+function renderColumnSettings(){
+  const tbody=document.getElementById('columns-settings-body')
+  if(!tbody)return
+  if(!state.colHidden)state.colHidden=new Array(11).fill(false)
+  const colNames=['#','Expand/Collapse','Task Name','Start','End','Assignee','Days','%','Status','Category','Actions']
+  const lockedVis=[2]
+  tbody.innerHTML=colNames.map((name,i)=>{
+    if(i===1)return''
+    const isLocked=lockedVis.includes(i)
+    return`<tr>
+      <td style="text-align:center"><input type="checkbox" class="col-vis-chk" data-idx="${i}" ${!state.colHidden[i]?'checked':''} ${isLocked?'disabled':''}></td>
+      <td style="font-size:13px;color:var(--txt2);${isLocked?'opacity:0.6':''}">${name}</td>
+      <td><input type="number" class="col-width-inp finput" data-idx="${i}" value="${state.colWidths[i]}" style="width:100%;height:26px;padding:0 6px;text-align:right;"></td>
+    </tr>`
+  }).join('')
 }
 
 function renderCategorySettingsList(){
@@ -1721,6 +1738,7 @@ function openSettings(){
   document.getElementById('set-hol-col').value=s.holCol||'#fef08a'
   renderHolidayList()
   renderCategorySettingsList()
+  renderColumnSettings()
   switchSetTab('appearance',document.querySelector('.set-tab'))
   openModalBackdrop('settings-modal-bd','#settings-modal .set-tab.active')
 }
@@ -1873,6 +1891,16 @@ function applySettings(){
   r.style.setProperty('--holiday-color',s.holCol)
   localStorage.setItem('gaScheduleSettings',JSON.stringify(s))
   invalidateCalendarCache()
+  // Column visibility & widths
+  document.querySelectorAll('#columns-settings-body tr').forEach(row=>{
+    const chk=row.querySelector('.col-vis-chk'),inp=row.querySelector('.col-width-inp')
+    if(chk&&inp){
+      const idx=parseInt(chk.dataset.idx)
+      state.colHidden[idx]=!chk.checked
+      state.colWidths[idx]=Math.max(20,parseInt(inp.value)||50)
+    }
+  })
+  applyColumnWidths()
   populateCategoryDropdowns()
   closeSettings();render();toast('✅ Settings applied')
 }
@@ -2684,10 +2712,20 @@ document.getElementById('sw-gtxt').addEventListener('change',function(){
 
 // === COLUMN RESIZE ===
 function applyColumnWidths(){
-  // Single CSS-variable write propagates to every .trow and #col-hdr simultaneously
-  // via var(--col-grid) — no per-row DOM loop needed.
-  const tpl=state.colWidths.map(w=>w+'px').join(' ')
-  document.documentElement.style.setProperty('--col-grid',tpl)
+  if(!state.colHidden)state.colHidden=new Array(11).fill(false)
+  const tpl=[]
+  let css=''
+  for(let i=0;i<11;i++){
+    if(state.colHidden[i]){
+      css+=`#col-hdr > *:nth-child(${i+1}), .trow > *:nth-child(${i+1}) { display: none !important; }\n`
+    }else{
+      tpl.push(state.colWidths[i]+'px')
+    }
+  }
+  document.documentElement.style.setProperty('--col-grid',tpl.join(' '))
+  let styleEl=document.getElementById('col-hidden-styles')
+  if(!styleEl){styleEl=document.createElement('style');styleEl.id='col-hidden-styles';document.head.appendChild(styleEl)}
+  styleEl.innerHTML=css
   // Clear any stale inline override on the header (inline beats CSS vars)
   const hdr=document.getElementById('col-hdr')
   if(hdr)hdr.style.gridTemplateColumns=''
