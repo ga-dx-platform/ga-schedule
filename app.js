@@ -1871,20 +1871,31 @@ async function saveSimpleDep(){
 function renderDepTable(){
   const tbody=document.getElementById('dep-list-body');if(!tbody)return
   const taskMap=new Map(state.tasks.map(t=>[t.id,t]))
+  tbody.innerHTML=''
   if(!state.deps.length){
-    tbody.innerHTML=`<tr><td colspan="4" style="padding:14px;text-align:center;color:var(--txt3);font-size:12px">No links in this project</td></tr>`
+    tbody.innerHTML=`<tr><td colspan="5" style="padding:14px;text-align:center;color:var(--txt3);font-size:12px">No links in this project</td></tr>`
     return
   }
-  tbody.innerHTML=state.deps.map(d=>{
+  state.deps.forEach(d=>{
     const fn=esc((taskMap.get(d.from_task_id)||{name:'—'}).name)
     const tn=esc((taskMap.get(d.to_task_id)||{name:'—'}).name)
-    return `<tr style="border-bottom:1px solid var(--bdr)">
-      <td style="padding:6px 10px;font-size:12px;color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fn}</td>
-      <td style="padding:6px 10px;font-family:var(--mono);font-size:10px;font-weight:600;color:#3B00FF">${d.dep_type}${d.lag_days?` +${d.lag_days}d`:''}</td>
-      <td style="padding:6px 10px;font-size:12px;color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tn}</td>
-      <td style="padding:6px 10px;text-align:center"><button class="act del" onclick="confirmDeleteDep('${d.id}')" title="Delete link">🗑</button></td>
-    </tr>`
-  }).join('')
+    const tr=document.createElement('tr')
+    tr.style.borderBottom='1px solid var(--bdr)'
+    tr.innerHTML=`
+      <td style="padding:6px 10px;font-size:12px;color:var(--txt2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${fn}">${fn}</td>
+      <td style="padding:4px 6px">
+        <select class="finput" style="width:60px;height:24px;padding:0 4px;font-size:11px" onchange="updateDependencyInline('${d.id}','dep_type',this.value)">
+          <option value="FS" ${d.dep_type==='FS'?'selected':''}>FS</option>
+          <option value="SS" ${d.dep_type==='SS'?'selected':''}>SS</option>
+        </select>
+      </td>
+      <td style="padding:6px 10px;font-size:12px;color:var(--txt2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${tn}">${tn}</td>
+      <td style="padding:4px 6px">
+        <input type="number" class="finput" style="width:50px;height:24px;padding:0;text-align:center;font-size:11px" value="${d.lag_days||0}" onchange="updateDependencyInline('${d.id}','lag_days',parseInt(this.value)||0)">
+      </td>
+      <td style="padding:6px 10px;text-align:center"><button class="act del" onclick="confirmDeleteDep('${d.id}')" title="Delete link">🗑</button></td>`
+    tbody.appendChild(tr)
+  })
 }
 function confirmDeleteDep(id){
   showConfirm('Delete this dependency link?',async()=>{
@@ -1892,6 +1903,20 @@ function confirmDeleteDep(id){
     if(error){toast('❌ Failed to delete link');return}
     await loadDeps();render();renderDepTable();toast('🗑 Link removed')
   })
+}
+async function updateDependencyInline(depId,field,value){
+  const dep=state.deps.find(d=>d.id===depId);if(!dep)return
+  if(dep[field]===value)return
+  setSS('⟳ Updating link...')
+  const{error}=await db.from('dependencies').update({[field]:value}).eq('id',depId)
+  if(error){toast('❌ Failed to update link: '+error.message);setSS('✗ Error');return}
+  dep[field]=value
+  setSS('✓ Synced')
+  try{
+    const changed=cascadeDates(dep.from_task_id)
+    if(changed.size>0){await persistCascadedTasks(changed);await loadTasks()}
+  }catch(err){console.error('Cascade error after dep update:',err)}
+  render()
 }
 function applySettings(){
   const s=state.settings,r=document.documentElement
