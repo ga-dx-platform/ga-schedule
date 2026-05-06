@@ -573,16 +573,16 @@ function renderTaskList(){
     row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}${selectedTaskIds.has(t.id)?' is-bulk-selected':''}`
     row.dataset.id=t.id;row.dataset.taskId=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Edit task ${esc(t.name)}`)
     const nameContent=(isFastEdit&&!hasKids)
-      ?`<input type="text" class="fast-inp" value="${esc(t.name)}" onchange="patchTask('${t.id}',{name:this.value})">`
+      ?`<input type="text" class="fast-inp" value="${esc(t.name)}" onclick="event.stopPropagation()" onchange="patchTask('${t.id}',{name:this.value})">`
       :`<span class="lbl" title="Double-click to rename" onclick="event.stopPropagation();openDetailPanel('${t.id}')" ondblclick="event.stopPropagation();inlineEditName(this,'${t.id}')">${esc(t.name)}</span>`
     const startContent=(isFastEdit&&!hasKids)
-      ?`<input type="date" class="fast-inp" value="${t.start_date}" onchange="patchTask('${t.id}',{start_date:this.value})">`
+      ?`<input type="date" class="fast-inp" value="${t.start_date}" onclick="event.stopPropagation()" onchange="patchTask('${t.id}',{start_date:this.value})">`
       :fmtS(rs)
     const durContent=(isFastEdit&&!hasKids&&t.type!=='milestone')
-      ?`<input type="number" class="fast-inp" value="${t.duration_days}" min="1" style="width:45px;text-align:center;" onchange="patchTask('${t.id}',{duration_days:parseInt(this.value)||1})">`
+      ?`<input type="number" class="fast-inp" value="${t.duration_days}" min="1" style="width:45px;text-align:center;" onclick="event.stopPropagation()" onchange="patchTask('${t.id}',{duration_days:parseInt(this.value)||1})">`
       :(t.type==='milestone'?'—':t.duration_days+'d')
     const assignContent=(isFastEdit&&!hasKids)
-      ?`<input type="text" class="fast-inp" value="${esc(t.assignee||'')}" placeholder="—" onchange="patchTask('${t.id}',{assignee:this.value})">`
+      ?`<input type="text" class="fast-inp" value="${esc(t.assignee||'')}" placeholder="—" onclick="event.stopPropagation()" onchange="patchTask('${t.id}',{assignee:this.value})">`
       :esc(t.assignee||'—')
     row.innerHTML=`
       <span class="r-num"><span class="rn-num">${ri[t.id]||''}</span><input type="checkbox" class="row-chk" data-checkid="${t.id}"${selectedTaskIds.has(t.id)?' checked':''} onclick="event.stopPropagation();toggleTaskSelection('${t.id}')"></span>
@@ -621,6 +621,7 @@ function renderTaskList(){
   qaBtn.onclick=()=>openTaskModal(null)
   tl.appendChild(qaBtn)
   tl.onclick=e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.classList.contains('fast-inp')){return}
     const exp=e.target.closest('[data-id]');if(exp&&exp.classList.contains('r-exp')){state.collapsed[exp.dataset.id]=!state.collapsed[exp.dataset.id];render();return}
     const eb=e.target.closest('[data-edit]');if(eb){openEditModal(eb.dataset.edit);return}
     const db2=e.target.closest('[data-del]');if(db2){confirmDelete(db2.dataset.del);return}
