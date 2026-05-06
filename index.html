@@ -430,7 +430,8 @@
     <div style="padding:14px 20px;background:#F9FAFB;border-bottom:1px solid var(--bdr);display:flex;gap:10px;align-items:flex-end">
       <div style="flex:1"><label class="flbl">From — Predecessor</label><select class="finput" id="ds-from" style="width:100%"></select></div>
       <div style="flex:1"><label class="flbl">To — Successor</label><select class="finput" id="ds-to" style="width:100%"></select></div>
-      <button class="mbtn save" onclick="saveSimpleDep()" style="flex-shrink:0;height:34px;padding:0 14px;font-size:12px">+ Add FS</button>
+      <div style="width:80px"><label class="flbl">Lag (Days)</label><input type="number" class="finput" id="ds-lag" value="0" style="width:100%"></div>
+      <button class="mbtn save" onclick="saveSimpleDep()" style="flex-shrink:0;height:34px;padding:0 14px;font-size:12px">+ Add Link</button>
     </div>
     <div style="padding:10px 18px 14px">
       <div class="flbl" style="margin-bottom:6px">Current Links</div>

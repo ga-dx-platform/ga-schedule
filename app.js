@@ -109,7 +109,11 @@ function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
     if(!targetTask)return
     if(targetTask.locked)return
 
-    const nextStart=nextWorkingDayAfter(sourceEnd)
+    let adjustedEnd=sourceEnd
+    const lagDays=parseInt(link.lag_days)||0
+    if(lagDays>0){adjustedEnd=addWD(sourceEnd,lagDays)}
+    else if(lagDays<0){const temp=new Date(sourceEnd);temp.setDate(temp.getDate()+lagDays);adjustedEnd=temp}
+    const nextStart=nextWorkingDayAfter(adjustedEnd)
     const nextStartIso=fmtISO(nextStart)
     const prevStart=targetTask.start_date
 
@@ -801,6 +805,7 @@ function renderGantt(RH){
       if(!isCan&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
       if(w>40&&DP>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl gb-txt';lbl.textContent=tn;bar.appendChild(lbl)}
       if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${rowTop+bbt2}px`;pl.textContent=pct+'%';row.appendChild(pl)}
+      if(!hasKids&&!isCan){const dotL=document.createElement('div');dotL.className='dep-dot left';dotL.dataset.taskId=t.id;dotL.dataset.side='start';const dotR=document.createElement('div');dotR.className='dep-dot right';dotR.dataset.taskId=t.id;dotR.dataset.side='end';bar.appendChild(dotL);bar.appendChild(dotR)}
       bar.dataset.taskId=t.id
       bar.addEventListener('mouseenter',e=>_showTaskTooltip(e,t.id))
       bar.addEventListener('mousemove',_posCalTooltip)
@@ -1858,7 +1863,8 @@ async function saveSimpleDep(){
   if(!fid||!tid){toast('⚠️ Please select both tasks');return}
   if(fid===tid){toast('⚠️ Cannot link a task to itself');return}
   if(state.deps.some(d=>d.from_task_id===fid&&d.to_task_id===tid&&d.dep_type==='FS')){toast('⚠️ This FS link already exists');return}
-  const{error}=await db.from('dependencies').insert({project_id:state.currentProjectId,from_task_id:fid,to_task_id:tid,dep_type:'FS'})
+  const lag=parseInt(document.getElementById('ds-lag').value)||0
+  const{error}=await db.from('dependencies').insert({project_id:state.currentProjectId,from_task_id:fid,to_task_id:tid,dep_type:'FS',lag_days:lag})
   if(error){toast('❌ Failed to save link: '+error.message);return}
   await loadDeps();render();renderDepTable();toast('✅ FS link added')
 }
@@ -1874,7 +1880,7 @@ function renderDepTable(){
     const tn=esc((taskMap.get(d.to_task_id)||{name:'—'}).name)
     return `<tr style="border-bottom:1px solid var(--bdr)">
       <td style="padding:6px 10px;font-size:12px;color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fn}</td>
-      <td style="padding:6px 10px;font-family:var(--mono);font-size:10px;font-weight:600;color:#3B00FF">${d.dep_type}</td>
+      <td style="padding:6px 10px;font-family:var(--mono);font-size:10px;font-weight:600;color:#3B00FF">${d.dep_type}${d.lag_days?` +${d.lag_days}d`:''}</td>
       <td style="padding:6px 10px;font-size:12px;color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tn}</td>
       <td style="padding:6px 10px;text-align:center"><button class="act del" onclick="confirmDeleteDep('${d.id}')" title="Delete link">🗑</button></td>
     </tr>`
@@ -2825,6 +2831,51 @@ document.getElementById('col-hdr').addEventListener('dblclick',e=>{
 // The real #left resize + applyColumnWidths run once on mouseup.
 const panelResizer=document.getElementById('panel-resizer')
 const leftPanel=document.getElementById('left')
+
+// === DRAG TO LINK STATE ===
+let isDraggingLink=false,linkStartDot=null,linkTempPath=null
+document.addEventListener('mousedown',e=>{
+  const dot=e.target.closest('.dep-dot');if(!dot)return
+  e.preventDefault();e.stopPropagation()
+  isDraggingLink=true;linkStartDot=dot;dot.classList.add('dragging');document.body.style.cursor='crosshair'
+  const svgCanvas=document.getElementById('links-svg')
+  if(svgCanvas){linkTempPath=document.createElementNS('http://www.w3.org/2000/svg','path');linkTempPath.setAttribute('fill','none');linkTempPath.setAttribute('stroke','#7C3AED');linkTempPath.setAttribute('stroke-width','2');linkTempPath.setAttribute('stroke-dasharray','4,4');svgCanvas.appendChild(linkTempPath)}
+})
+document.addEventListener('mousemove',e=>{
+  if(!isDraggingLink||!linkStartDot||!linkTempPath)return
+  const svgCanvas=document.getElementById('links-svg');const svgRect=svgCanvas.getBoundingClientRect()
+  const dotRect=linkStartDot.getBoundingClientRect()
+  const startX=dotRect.left+dotRect.width/2-svgRect.left,startY=dotRect.top+dotRect.height/2-svgRect.top
+  const currentX=e.clientX-svgRect.left,currentY=e.clientY-svgRect.top
+  const cp1x=startX+Math.abs(currentX-startX)*0.5,cp2x=currentX-Math.abs(currentX-startX)*0.5
+  linkTempPath.setAttribute('d',`M${startX},${startY} C${cp1x},${startY} ${cp2x},${currentY} ${currentX},${currentY}`)
+})
+document.addEventListener('mouseup',async e=>{
+  if(!isDraggingLink)return
+  isDraggingLink=false;document.body.style.cursor=''
+  if(linkStartDot)linkStartDot.classList.remove('dragging')
+  if(linkTempPath&&linkTempPath.parentNode)linkTempPath.parentNode.removeChild(linkTempPath)
+  const targetDot=e.target.closest('.dep-dot'),targetBar=e.target.closest('.gbar')
+  let toTaskId=null
+  if(targetDot&&targetDot!==linkStartDot){toTaskId=targetDot.dataset.taskId}
+  else if(targetBar&&targetBar.dataset.taskId!==linkStartDot?.dataset.taskId){toTaskId=targetBar.dataset.taskId}
+  if(toTaskId&&linkStartDot?.dataset.taskId){
+    const fromId=linkStartDot.dataset.taskId
+    const depType=linkStartDot.dataset.side==='start'?'SS':'FS'
+    if(state.deps.some(d=>d.from_task_id===fromId&&d.to_task_id===toTaskId)){toast('⚠️ Link already exists')}
+    else{
+      setSS('⟳ Linking...')
+      const{error}=await db.from('dependencies').insert({project_id:state.currentProjectId,from_task_id:fromId,to_task_id:toTaskId,dep_type:depType,lag_days:0})
+      if(error){toast('❌ Failed to link: '+error.message);setSS('✗ Error')}
+      else{
+        await loadDeps();toast('🔗 Linked successfully')
+        if(depType==='FS'){try{const changed=cascadeDates(fromId);await persistCascadedTasks(changed);await loadTasks()}catch(err){toast('❌ Cascade error')}}
+        render()
+      }
+    }
+  }
+  linkStartDot=null;linkTempPath=null
+})
 
 // Ghost splitter: a fixed vertical line that follows the cursor during drag
 const ghostSplitter=document.createElement('div')
