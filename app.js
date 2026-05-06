@@ -805,7 +805,7 @@ function renderGantt(RH){
       if(!isCan&&pct>0&&!hasKids){const fill=document.createElement('div');fill.className='gbar-fill';fill.style.width=pct+'%';bar.appendChild(fill)}
       if(w>40&&DP>=12&&!hasKids){const lbl=document.createElement('div');lbl.className='gbar-lbl gb-txt';lbl.textContent=tn;bar.appendChild(lbl)}
       if(pct>0){const pl=document.createElement('div');pl.className='gbar-pct';pl.style.cssText=`left:${x+w+3}px;top:${rowTop+bbt2}px`;pl.textContent=pct+'%';row.appendChild(pl)}
-      if(!hasKids&&!isCan){const dotL=document.createElement('div');dotL.className='dep-dot left';dotL.dataset.taskId=t.id;dotL.dataset.side='start';const dotR=document.createElement('div');dotR.className='dep-dot right';dotR.dataset.taskId=t.id;dotR.dataset.side='end';bar.appendChild(dotL);bar.appendChild(dotR)}
+      if(!hasKids&&!isCan){const dotL=document.createElement('div');dotL.className='dep-dot left';dotL.dataset.taskId=t.id;dotL.dataset.side='start';dotL.onmousedown=initDragLink;const dotR=document.createElement('div');dotR.className='dep-dot right';dotR.dataset.taskId=t.id;dotR.dataset.side='end';dotR.onmousedown=initDragLink;bar.appendChild(dotL);bar.appendChild(dotR)}
       bar.dataset.taskId=t.id
       bar.addEventListener('mouseenter',e=>_showTaskTooltip(e,t.id))
       bar.addEventListener('mousemove',_posCalTooltip)
@@ -2834,13 +2834,12 @@ const leftPanel=document.getElementById('left')
 
 // === DRAG TO LINK STATE ===
 let isDraggingLink=false,linkStartDot=null,linkTempPath=null
-document.addEventListener('mousedown',e=>{
-  const dot=e.target.closest('.dep-dot');if(!dot)return
+function initDragLink(e){
   e.preventDefault();e.stopPropagation()
-  isDraggingLink=true;linkStartDot=dot;dot.classList.add('dragging');document.body.style.cursor='crosshair'
+  isDraggingLink=true;linkStartDot=e.target;e.target.classList.add('dragging');document.body.style.cursor='crosshair'
   const svgCanvas=document.getElementById('links-svg')
   if(svgCanvas){linkTempPath=document.createElementNS('http://www.w3.org/2000/svg','path');linkTempPath.setAttribute('fill','none');linkTempPath.setAttribute('stroke','#7C3AED');linkTempPath.setAttribute('stroke-width','2');linkTempPath.setAttribute('stroke-dasharray','4,4');svgCanvas.appendChild(linkTempPath)}
-})
+}
 document.addEventListener('mousemove',e=>{
   if(!isDraggingLink||!linkStartDot||!linkTempPath)return
   const svgCanvas=document.getElementById('links-svg');const svgRect=svgCanvas.getBoundingClientRect()

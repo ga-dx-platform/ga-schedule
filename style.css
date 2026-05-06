@@ -523,7 +523,7 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 .today-vlbl{position:absolute;top:2px;font-size:var(--fs-mono);color:var(--today-col);font-family:var(--mono);font-weight:600;transform:translateX(-50%);white-space:nowrap;z-index:5}
 
 /* GANTT BARS */
-.gbar{position:absolute;border-radius:9999px;cursor:grab;overflow:hidden;display:flex;align-items:center;transition:filter var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
+.gbar{position:absolute;border-radius:9999px;cursor:grab;overflow:visible !important;display:flex;align-items:center;transition:filter var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
 .gbar:hover{filter:brightness(.92);box-shadow:var(--shadow-md)}
 /* Active Gantt-bar drag — suppresses ALL transitions so JS left/width updates are frame-perfect.
    Scoped to .gbar so the panel-resizer's existing .is-dragging rule is unaffected. */
@@ -557,11 +557,11 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 .dep-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:3;overflow:visible}
 #right.hide-gtxt .gb-txt{display:none}
 /* Dependency Connector Dots */
-.dep-dot{position:absolute;top:50%;width:10px;height:10px;background:#fff;border:2px solid var(--primary);border-radius:50%;transform:translateY(-50%);opacity:0;cursor:crosshair;z-index:20;transition:opacity 0.2s,transform 0.2s}
+.dep-dot{position:absolute;top:50%;width:12px;height:12px;background:#fff;border:2px solid var(--primary);border-radius:50%;transform:translateY(-50%);opacity:0;cursor:crosshair;z-index:9999 !important;transition:opacity 0.2s,transform 0.2s,background 0.2s;pointer-events:auto !important}
 .dep-dot:hover{transform:translateY(-50%) scale(1.3);background:var(--primary)}
 .gbar:hover .dep-dot{opacity:1}
-.dep-dot.left{left:-5px}
-.dep-dot.right{right:-5px}
+.dep-dot.left{left:-6px}
+.dep-dot.right{right:-6px}
 .dep-dot.dragging{opacity:1;background:var(--primary)}
 
 /* ============================================================
