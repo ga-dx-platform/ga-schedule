@@ -11,6 +11,23 @@ const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter',-apple-system,Bl
 const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
 let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],colHidden:new Array(11).fill(false),searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
 let isSS=false,dragTaskId=null
+let isFastEdit=false
+const ZOOM_LEVELS=['month','week','day']
+function toggleFastEdit(){
+  isFastEdit=!isFastEdit
+  const btn=document.getElementById('btn-fast-edit')
+  if(isFastEdit){btn.style.background='#FEF3C7';btn.style.color='#D97706';btn.style.borderColor='#FDE68A'}
+  else{btn.style.background='';btn.style.color='';btn.style.borderColor=''}
+  render()
+}
+function zoomIn(){
+  const idx=ZOOM_LEVELS.indexOf(state.zoomLevel)
+  if(idx<ZOOM_LEVELS.length-1){state.zoomLevel=ZOOM_LEVELS[idx+1];const lbl=document.getElementById('zoom-label');if(lbl)lbl.textContent=state.zoomLevel.toUpperCase();render()}
+}
+function zoomOut(){
+  const idx=ZOOM_LEVELS.indexOf(state.zoomLevel)
+  if(idx>0){state.zoomLevel=ZOOM_LEVELS[idx-1];const lbl=document.getElementById('zoom-label');if(lbl)lbl.textContent=state.zoomLevel.toUpperCase();render()}
+}
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
 let colRafId=null
@@ -555,20 +572,32 @@ function renderTaskList(){
     const row=document.createElement('div')
     row.className=`trow${hasKids?' is-parent':''}${state.editingTaskId===t.id?' is-selected':''}${isCan?' is-cancelled':''}${selectedTaskIds.has(t.id)?' is-bulk-selected':''}`
     row.dataset.id=t.id;row.dataset.taskId=t.id;row.dataset.parentId=t.parent_id||'';row.draggable=true;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Edit task ${esc(t.name)}`)
+    const nameContent=(isFastEdit&&!hasKids)
+      ?`<input type="text" class="fast-inp" value="${esc(t.name)}" onchange="patchTask('${t.id}',{name:this.value})">`
+      :`<span class="lbl" title="Double-click to rename" onclick="event.stopPropagation();openDetailPanel('${t.id}')" ondblclick="event.stopPropagation();inlineEditName(this,'${t.id}')">${esc(t.name)}</span>`
+    const startContent=(isFastEdit&&!hasKids)
+      ?`<input type="date" class="fast-inp" value="${t.start_date}" onchange="patchTask('${t.id}',{start_date:this.value})">`
+      :fmtS(rs)
+    const durContent=(isFastEdit&&!hasKids&&t.type!=='milestone')
+      ?`<input type="number" class="fast-inp" value="${t.duration_days}" min="1" style="width:45px;text-align:center;" onchange="patchTask('${t.id}',{duration_days:parseInt(this.value)||1})">`
+      :(t.type==='milestone'?'—':t.duration_days+'d')
+    const assignContent=(isFastEdit&&!hasKids)
+      ?`<input type="text" class="fast-inp" value="${esc(t.assignee||'')}" placeholder="—" onchange="patchTask('${t.id}',{assignee:this.value})">`
+      :esc(t.assignee||'—')
     row.innerHTML=`
       <span class="r-num"><span class="rn-num">${ri[t.id]||''}</span><input type="checkbox" class="row-chk" data-checkid="${t.id}"${selectedTaskIds.has(t.id)?' checked':''} onclick="event.stopPropagation();toggleTaskSelection('${t.id}')"></span>
       <span class="r-exp" data-id="${t.id}">${hasKids?(state.collapsed[t.id]?'▶':'▼'):''}</span>
       <span class="r-name ${hasKids?'parent':'child'}${isCan?' cancelled':''}" style="padding-left:${level*12+2}px">
         <span class="drag-handle" title="Drag to reorder">⠿</span>
         ${t.type==='milestone'?'<span class="ms-icon">◆</span>':''}
-        <span class="lbl" title="Double-click to rename" onclick="event.stopPropagation();openDetailPanel('${t.id}')" ondblclick="event.stopPropagation();inlineEditName(this,'${t.id}')">${esc(t.name)}</span>
+        ${nameContent}
         ${t.locked?'<span class="lock-ind" title="Locked task" aria-label="Locked task">🔒</span>':''}
         ${preds.length?`<span class="dep-count" title="Predecessors: rows ${preds.join(', ')}">${preds.join(',')}</span>`:''}
       </span>
-      <span class="r-date">${fmtS(rs)}</span>
+      <span class="r-date">${startContent}</span>
       <span class="r-date">${t.type==='milestone'?'—':fmtS(e)}</span>
-      <span class="r-date">${esc(t.assignee||'—')}</span>
-      <span class="r-dur">${t.type==='milestone'?'—':t.duration_days+'d'}</span>
+      <span class="r-date">${assignContent}</span>
+      <span class="r-dur">${durContent}</span>
       <span class="r-pct${hasKids?' par':''}${!hasKids?' pct-editable':''}" style="color:${pct===100?'var(--green)':pct>0?'#3B00FF':'var(--txt3)'}">
         <span${!hasKids?` ondblclick="inlineEditPct(this,'${t.id}')" onclick="event.stopPropagation()" title="Double-click to edit"`:''}>${pct}%</span>
         ${hasKids?`<span class="pbar"><span class="pbar-fill" style="width:${pct}%"></span></span>`:''}
@@ -2245,7 +2274,7 @@ async function bulkChangeStatus(newStatus){
 // === TOOLBAR ACTIONS ===
 function setZoom(level){
   state.zoomLevel=level
-  ;['day','week','month'].forEach(m=>document.getElementById('tab-'+m).classList.toggle('active',m===level))
+  const lbl=document.getElementById('zoom-label');if(lbl)lbl.textContent=level.toUpperCase()
   render()
 }
 // Suppress all CSS transitions during JS-driven layout mutations so nothing slides.
@@ -3169,6 +3198,7 @@ async function init(){
     await ensureAuth()
     await Promise.all([loadProjects(),loadHolidays()])
     initSS();applyGanttSettings();render();populateCategoryDropdowns()
+    const zl=document.getElementById('zoom-label');if(zl)zl.textContent=(state.zoomLevel||'day').toUpperCase()
     triggerAutoFitOnNextPaint()
     if(state.projects.length===1)selectProject(state.projects[0].id)
     else if(state.projects.length>1)openProjModal()

@@ -131,10 +131,16 @@
     <button class="tb save" onclick="saveAll()">Save</button>
     <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>Clear</button>
     <div class="tb-sep"></div>
-    <div class="tb-group">
-      <button class="tb tb-tab active" id="tab-day" onclick="setZoom('day')">Day</button>
-      <button class="tb tb-tab" id="tab-week" onclick="setZoom('week')">Week</button>
-      <button class="tb tb-tab" id="tab-month" onclick="setZoom('month')">Month</button>
+    <!-- Fast Edit Toggle -->
+    <button class="tb" id="btn-fast-edit" onclick="toggleFastEdit()" title="Toggle Fast Edit Mode (Spreadsheet style)">
+      <i class="fas fa-bolt" style="color: #D97706; margin-right: 4px;"></i> Fast Edit
+    </button>
+    <div class="tb-sep"></div>
+    <!-- Compact Zoom Controls -->
+    <div class="tb-group" style="align-items: center; background: var(--bg-surface);">
+      <button class="tb tb-tab" onclick="zoomOut()" title="Zoom Out" style="padding: 0 10px; font-size: 13px;"><i class="fas fa-search-minus"></i></button>
+      <span id="zoom-label" style="font-size: 10px; padding: 0 6px; color: var(--txt3); font-weight: 700; text-transform: uppercase; width: 45px; text-align: center;">DAY</span>
+      <button class="tb tb-tab" onclick="zoomIn()" title="Zoom In" style="padding: 0 10px; font-size: 13px;"><i class="fas fa-search-plus"></i></button>
     </div>
     <button class="tb today" onclick="scrollToday()">Today</button>
     <div class="tb-sep"></div>

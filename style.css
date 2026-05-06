@@ -1192,3 +1192,10 @@ html.no-transitions *::after {
 .tl-tip-note{font-size:11px;color:var(--txt2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .tl-tip-date{display:block;font-size:9px;color:var(--txt3);font-family:var(--mono);margin-top:3px}
 .tl-tip-empty{font-size:11px;color:var(--txt3);font-style:italic}
+
+/* === FAST EDIT INPUTS === */
+.fast-inp{width:100%;height:24px;border:1px dashed transparent;background:transparent;font-family:var(--font);font-size:inherit;color:var(--txt);border-radius:4px;padding:0 4px;transition:all .2s var(--ease)}
+.fast-inp:hover{border-color:rgba(124,58,237,.4);background:rgba(255,255,255,.6)}
+.fast-inp:focus{border:1.5px solid var(--primary);background:#fff;outline:none;box-shadow:var(--primary-glow)}
+input[type="date"].fast-inp{padding:0;font-family:var(--mono);font-size:10.5px}
+input[type="number"].fast-inp::-webkit-inner-spin-button{opacity:1}
