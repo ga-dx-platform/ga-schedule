@@ -64,6 +64,10 @@
     <button class="nav-btn primary" onclick="openAddModal()">+ Add Task</button>
   </div>
   <div id="toolbar">
+    <button class="tb" id="btn-fast-edit" onclick="toggleFastEdit()" title="Toggle Fast Edit Mode (Spreadsheet style)">
+      <i class="fas fa-bolt" style="color: #D97706; margin-right: 4px;"></i> Fast Edit
+    </button>
+    <div class="tb-sep"></div>
     <input type="text" id="search-box" class="tb-input" placeholder="Search tasks..." oninput="handleSearch(this.value)">
     <div class="tb-sep"></div>
     <!-- Compact Popover Filter -->
@@ -130,11 +134,6 @@
     <div class="tb-sep"></div>
     <button class="tb save" onclick="saveAll()">Save</button>
     <button class="tb danger" id="btn-clear" onclick="clearProject()" disabled>Clear</button>
-    <div class="tb-sep"></div>
-    <!-- Fast Edit Toggle -->
-    <button class="tb" id="btn-fast-edit" onclick="toggleFastEdit()" title="Toggle Fast Edit Mode (Spreadsheet style)">
-      <i class="fas fa-bolt" style="color: #D97706; margin-right: 4px;"></i> Fast Edit
-    </button>
     <div class="tb-sep"></div>
     <!-- Compact Zoom Controls -->
     <div class="tb-group" style="align-items: center; background: var(--bg-surface);">
