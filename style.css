@@ -77,6 +77,48 @@
   --holiday-color:#FFFBEB;
 }
 
+/* === DARK MODE OVERRIDES === */
+body.dark-mode {
+    --bg-body: #0B1120;
+    --bg-surface: #1E293B;
+    --txt: #F8FAFC;
+    --txt2: #94A3B8;
+    --txt3: #64748B;
+    --bdr: #334155;
+    --bg-hov: #334155;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark Mode Specific Tweaks */
+body.dark-mode .fast-inp { color: #F8FAFC; }
+body.dark-mode .fast-inp:focus { background: #0B1120; }
+body.dark-mode .tb, body.dark-mode .tb-tab, body.dark-mode .finput, body.dark-mode .filter-container select {
+    background: #1E293B;
+    color: #F8FAFC;
+    border-color: #334155;
+}
+body.dark-mode .tb:hover { background: #334155; }
+body.dark-mode .tb.active { background: var(--primary); color: white; }
+
+/* Override Glassmorphism Headers for Dark Mode */
+body.dark-mode #col-hdr,
+body.dark-mode #gantt-hdr {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+body.dark-mode .gantt-header-row,
+body.dark-mode .gantt-month-row,
+body.dark-mode .gantt-day-row,
+body.dark-mode .g-month-row,
+body.dark-mode .g-day-row {
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+body.dark-mode .set-pane { background: #1E293B; }
+
 /* === RESET === */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}

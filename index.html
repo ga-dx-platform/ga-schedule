@@ -144,6 +144,11 @@
     <button class="tb today" onclick="scrollToday()">Today</button>
     <div class="tb-sep"></div>
 
+    <button class="tb" id="btn-dark-mode" onclick="toggleDarkMode()" title="Toggle Dark Mode" style="width: 32px; justify-content: center;">
+      <i class="fas fa-moon"></i>
+    </button>
+    <div class="tb-sep"></div>
+
     <!-- Consolidated Data & Export Actions -->
     <select class="tb-filter" title="Data & Export" style="width: 140px;" onchange="const v=this.value; if(v==='csv')exportCSV(); else if(v==='png')exportPNG(); else if(v==='pdf')exportPDF(); else if(v==='exp_json')exportJSON(); else if(v==='imp_json')document.getElementById('import-json-input').click(); else if(v==='imp_csv')document.getElementById('import-csv-input').click(); this.value='';">
       <option value="" disabled selected>💽 Data &amp; Export</option>

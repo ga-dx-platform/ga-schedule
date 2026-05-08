@@ -3267,9 +3267,35 @@ document.getElementById('app-sidebar').addEventListener('mouseleave', () => {
   }
 });
 
+// === DARK MODE LOGIC ===
+function toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('gaScheduleTheme', isDark ? 'dark' : 'light');
+    updateDarkModeIcon(isDark);
+    render();
+}
+
+function updateDarkModeIcon(isDark) {
+    const btn = document.getElementById('btn-dark-mode');
+    if(btn) {
+        btn.innerHTML = isDark
+            ? '<i class="fas fa-sun" style="color: #FBBF24;"></i>'
+            : '<i class="fas fa-moon" style="color: #64748B;"></i>';
+    }
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('gaScheduleTheme');
+    const isDark = savedTheme === 'dark';
+    if(isDark) {
+        document.body.classList.add('dark-mode');
+    }
+    updateDarkModeIcon(isDark);
+}
+
 // === INIT ===
 async function init(){
-  loadSettings();showL()
+  initTheme();loadSettings();showL()
   try{
     await ensureAuth()
     await Promise.all([loadProjects(),loadHolidays()])
