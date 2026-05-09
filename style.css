@@ -119,6 +119,56 @@ body.dark-mode .g-day-row {
 
 body.dark-mode .set-pane { background: #1E293B; }
 
+/* === DARK MODE: DEEP GANTT CHART OVERRIDES === */
+
+/* 1. Force the Gantt Canvas Background */
+body.dark-mode #right-pane,
+body.dark-mode #gantt-scroll,
+body.dark-mode .gantt-container {
+    background-color: var(--bg-body) !important;
+}
+
+/* 2. Override Inline Settings for Weekends & Grid Lines */
+body.dark-mode .g-day-col,
+body.dark-mode .g-month-col {
+    border-right-color: var(--bdr) !important;
+}
+
+/* Aggressively target inline background colors (Weekends/Holidays) */
+body.dark-mode .g-day-col[style*="background"] {
+    background-color: rgba(255, 255, 255, 0.04) !important; /* Subtle dark overlay for weekends */
+}
+
+/* 3. Timeline Header Row Borders & Text */
+body.dark-mode .gantt-header-row,
+body.dark-mode .gantt-month-row,
+body.dark-mode .gantt-day-row,
+body.dark-mode .g-month-row,
+body.dark-mode .g-day-row {
+    border-bottom-color: var(--bdr) !important;
+}
+body.dark-mode .g-month-col {
+    color: var(--txt) !important;
+}
+body.dark-mode .g-day-col {
+    color: var(--txt2) !important;
+}
+
+/* 4. Row Bottom Borders */
+body.dark-mode .trow,
+body.dark-mode .grow {
+    border-bottom-color: var(--bdr) !important;
+}
+
+/* 5. Bottom Status Bar */
+body.dark-mode #status-bar,
+body.dark-mode .status-bar,
+body.dark-mode footer {
+    background-color: var(--bg-surface) !important;
+    border-top-color: var(--bdr) !important;
+    color: var(--txt2) !important;
+}
+
 /* === RESET === */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
