@@ -1298,3 +1298,40 @@ html.no-transitions *::after {
 .fast-inp:focus{border:1.5px solid var(--primary);background:#fff;outline:none;box-shadow:var(--primary-glow)}
 input[type="date"].fast-inp{padding:0;font-family:var(--mono);font-size:10.5px}
 input[type="number"].fast-inp::-webkit-inner-spin-button{opacity:1}
+
+/* =========================================
+   DARK MODE: ABSOLUTE GANTT OVERRIDES
+   ========================================= */
+html body.dark-mode #right-pane,
+html body.dark-mode #gantt-scroll,
+html body.dark-mode .gantt-container,
+html body.dark-mode .g-grid,
+html body.dark-mode .trow,
+html body.dark-mode .grow {
+    background: var(--bg-body) !important;
+    background-color: var(--bg-body) !important;
+}
+
+html body.dark-mode .g-day-col,
+html body.dark-mode .g-month-col {
+    background: transparent !important;
+    background-color: transparent !important;
+    border-right: 1px solid var(--bdr) !important;
+}
+
+html body.dark-mode .g-day-col[style*="background"] {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+html body.dark-mode .g-month-row,
+html body.dark-mode .g-day-row,
+html body.dark-mode .gantt-header-row {
+    border-bottom: 1px solid var(--bdr) !important;
+}
+
+html body.dark-mode .status-bar,
+html body.dark-mode #status-bar {
+    background: var(--bg-surface) !important;
+    border-top: 1px solid var(--bdr) !important;
+    color: var(--txt2) !important;
+}

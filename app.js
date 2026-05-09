@@ -1951,6 +1951,11 @@ function applySettings(){
   s.weekendDays=Array.from(document.getElementById('set-weekends-group').querySelectorAll('input:checked')).map(cb=>parseInt(cb.value))
   s.holCol=document.getElementById('set-hol-col').value
   r.style.setProperty('--holiday-color',s.holCol)
+  if(document.body.classList.contains('dark-mode')){
+    r.style.setProperty('--weekend-bg-color','rgba(255,255,255,0.04)')
+    r.style.setProperty('--grid-line-color','#334155')
+    r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)')
+  }
   localStorage.setItem('gaScheduleSettings',JSON.stringify(s))
   invalidateCalendarCache()
   // Column visibility & widths
@@ -1980,6 +1985,11 @@ function loadSettings(){
   if(s.wkndTxt)r.style.setProperty('--weekend-text-color',s.wkndTxt)
   if(s.gridLineCol)r.style.setProperty('--grid-line-color',s.gridLineCol)
   if(s.holCol)r.style.setProperty('--holiday-color',s.holCol)
+  if(document.body.classList.contains('dark-mode')){
+    r.style.setProperty('--weekend-bg-color','rgba(255,255,255,0.04)')
+    r.style.setProperty('--grid-line-color','#334155')
+    r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)')
+  }
   const savedSkipWeekends=localStorage.getItem('gaScheduleSkipWeekends')
   if(savedSkipWeekends!==null){
     try{state.skipWeekends=!!JSON.parse(savedSkipWeekends)}catch{state.skipWeekends=false}
@@ -3272,6 +3282,16 @@ function toggleDarkMode() {
     const isDark = document.body.classList.toggle('dark-mode');
     localStorage.setItem('gaScheduleTheme', isDark ? 'dark' : 'light');
     updateDarkModeIcon(isDark);
+    const r=document.documentElement,s=state.settings;
+    if(isDark){
+        r.style.setProperty('--weekend-bg-color','rgba(255,255,255,0.04)')
+        r.style.setProperty('--grid-line-color','#334155')
+        r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)')
+    }else{
+        r.style.setProperty('--weekend-bg-color',s.wkndBg||'#FEF2F2')
+        r.style.setProperty('--grid-line-color',s.gridLineCol||'#F3F4F6')
+        r.style.setProperty('--holiday-color',s.holCol||'#FFFBEB')
+    }
     render();
 }
 
