@@ -3282,16 +3282,7 @@ function toggleDarkMode() {
     const isDark = document.body.classList.toggle('dark-mode');
     localStorage.setItem('gaScheduleTheme', isDark ? 'dark' : 'light');
     updateDarkModeIcon(isDark);
-    const r=document.documentElement,s=state.settings;
-    if(isDark){
-        r.style.setProperty('--weekend-bg-color','rgba(255,255,255,0.04)')
-        r.style.setProperty('--grid-line-color','#334155')
-        r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)')
-    }else{
-        r.style.setProperty('--weekend-bg-color',s.wkndBg||'#FEF2F2')
-        r.style.setProperty('--grid-line-color',s.gridLineCol||'#F3F4F6')
-        r.style.setProperty('--holiday-color',s.holCol||'#FFFBEB')
-    }
+    applyThemeVars(isDark);
     render();
 }
 
@@ -3304,12 +3295,24 @@ function updateDarkModeIcon(isDark) {
     }
 }
 
+function applyThemeVars(isDark) {
+    const r = document.documentElement, s = state.settings || {};
+    if (isDark) {
+        r.style.setProperty('--weekend-bg-color', 'rgba(255,255,255,0.04)');
+        r.style.setProperty('--grid-line-color', '#334155');
+        r.style.setProperty('--holiday-color', 'rgba(250,204,21,0.15)');
+    } else {
+        r.style.setProperty('--weekend-bg-color', s.wkndBg || '#FEF2F2');
+        r.style.setProperty('--grid-line-color', s.gridLineCol || '#F3F4F6');
+        r.style.setProperty('--holiday-color', s.holCol || '#FFFBEB');
+    }
+}
+
 function initTheme() {
     const savedTheme = localStorage.getItem('gaScheduleTheme');
     const isDark = savedTheme === 'dark';
-    if(isDark) {
-        document.body.classList.add('dark-mode');
-    }
+    if (isDark) document.body.classList.add('dark-mode');
+    applyThemeVars(isDark);
     updateDarkModeIcon(isDark);
 }
 

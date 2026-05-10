@@ -80,15 +80,26 @@
 /* === DARK MODE OVERRIDES === */
 body.dark-mode {
     --bg-body: #0B1120;
+    --bg-app: #0B1120;
+    --bg-page: #0B1120;
     --bg-surface: #1E293B;
+    --bg-hov: #334155;
+    --glass: rgba(15, 23, 42, 0.85);
+    --glass-hi: rgba(15, 23, 42, 0.97);
+    --gbdr: rgba(51, 65, 85, 0.97);
+    --nav-bg: #1E293B;
+    --bg-nav: #1E293B;
     --txt: #F8FAFC;
     --txt2: #94A3B8;
     --txt3: #64748B;
     --bdr: #334155;
-    --bg-hov: #334155;
+    --bdr-mid: #475569;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --weekend-bg-color: rgba(255, 255, 255, 0.04);
+    --grid-line-color: #334155;
+    --holiday-color: rgba(250, 204, 21, 0.15);
 }
 
 /* Dark Mode Specific Tweaks */
@@ -102,72 +113,64 @@ body.dark-mode .tb, body.dark-mode .tb-tab, body.dark-mode .finput, body.dark-mo
 body.dark-mode .tb:hover { background: #334155; }
 body.dark-mode .tb.active { background: var(--primary); color: white; }
 
-/* Override Glassmorphism Headers for Dark Mode */
+/* Headers */
 body.dark-mode #col-hdr,
 body.dark-mode #gantt-hdr {
-  background: rgba(30, 41, 59, 0.85) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
-}
-
-body.dark-mode .gantt-header-row,
-body.dark-mode .gantt-month-row,
-body.dark-mode .gantt-day-row,
-body.dark-mode .g-month-row,
-body.dark-mode .g-day-row {
+  background: rgba(15, 23, 42, 0.9) !important;
   border-bottom: 1px solid rgba(255,255,255,0.05) !important;
 }
 
 body.dark-mode .set-pane { background: #1E293B; }
 
-/* === DARK MODE: DEEP GANTT CHART OVERRIDES === */
+/* === DARK MODE: GANTT CHART OVERRIDES (correct selectors) === */
 
-/* 1. Force the Gantt Canvas Background */
-body.dark-mode #right-pane,
-body.dark-mode #gantt-scroll,
-body.dark-mode .gantt-container {
-    background-color: var(--bg-body) !important;
-}
+/* Main containers */
+body.dark-mode #main { background: var(--bg-body) !important; }
+body.dark-mode #right,
+body.dark-mode #gantt-wrap,
+body.dark-mode #gantt-hdr,
+body.dark-mode #gantt-body { background: var(--bg-body) !important; }
 
-/* 2. Override Inline Settings for Weekends & Grid Lines */
-body.dark-mode .g-day-col,
-body.dark-mode .g-month-col {
-    border-right-color: var(--bdr) !important;
-}
+/* Row backgrounds */
+body.dark-mode .g-row { background: var(--bg-body) !important; }
 
-/* Aggressively target inline background colors (Weekends/Holidays) */
-body.dark-mode .g-day-col[style*="background"] {
-    background-color: rgba(255, 255, 255, 0.04) !important; /* Subtle dark overlay for weekends */
-}
-
-/* 3. Timeline Header Row Borders & Text */
-body.dark-mode .gantt-header-row,
-body.dark-mode .gantt-month-row,
-body.dark-mode .gantt-day-row,
+/* Header rows */
 body.dark-mode .g-month-row,
-body.dark-mode .g-day-row {
-    border-bottom-color: var(--bdr) !important;
-}
-body.dark-mode .g-month-col {
-    color: var(--txt) !important;
-}
-body.dark-mode .g-day-col {
-    color: var(--txt2) !important;
-}
+body.dark-mode .g-day-row { border-bottom: 1px solid var(--bdr) !important; }
 
-/* 4. Row Bottom Borders */
-body.dark-mode .trow,
-body.dark-mode .grow {
-    border-bottom-color: var(--bdr) !important;
-}
+/* Header cell text */
+body.dark-mode .g-month { color: var(--txt2) !important; }
+body.dark-mode .g-day { color: var(--txt3) !important; }
 
-/* 5. Bottom Status Bar */
+/* Weekend & holiday overlays */
+body.dark-mode .g-wknd { background: rgba(255, 255, 255, 0.03) !important; }
+body.dark-mode .g-hol { background: rgba(250, 204, 21, 0.08) !important; }
+
+/* Status bar */
 body.dark-mode #status-bar,
-body.dark-mode .status-bar,
-body.dark-mode footer {
-    background-color: var(--bg-surface) !important;
+body.dark-mode .status-bar {
+    background: var(--bg-surface) !important;
     border-top-color: var(--bdr) !important;
     color: var(--txt2) !important;
 }
+
+/* App shell */
+body.dark-mode #app-canvas-wrapper {
+    background: #1E293B !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+}
+body.dark-mode #app-sidebar {
+    background: #1E293B !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+}
+body.dark-mode #navbar {
+    background: transparent !important;
+    border-bottom-color: rgba(255,255,255,0.06) !important;
+}
+body.dark-mode #proj-name { color: var(--txt) !important; }
+body.dark-mode .nav-sub { color: var(--txt3) !important; }
+body.dark-mode .nav-sep { background: var(--bdr) !important; }
+body.dark-mode .nav-icon { background: rgba(124,58,237,0.2) !important; }
 
 /* === RESET === */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -431,7 +434,7 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 .sw-opt input[type=checkbox]{accent-color:var(--primary);cursor:pointer;width:13px;height:13px;flex-shrink:0}
 
 /* === MAIN AREA — pure canvas; views handle their own island margins === */
-#main{display:flex;flex:1;overflow:hidden;padding:0;gap:0;background:#F1F5F9}
+#main{display:flex;flex:1;overflow:hidden;padding:0;gap:0;background:var(--bg-app)}
 
 /* ============================================================
    LEFT PANEL — Task list
@@ -1300,37 +1303,30 @@ input[type="date"].fast-inp{padding:0;font-family:var(--mono);font-size:10.5px}
 input[type="number"].fast-inp::-webkit-inner-spin-button{opacity:1}
 
 /* =========================================
-   DARK MODE: ABSOLUTE GANTT OVERRIDES
+   DARK MODE: HIGH-SPECIFICITY GANTT OVERRIDES
    ========================================= */
-html body.dark-mode #right-pane,
-html body.dark-mode #gantt-scroll,
-html body.dark-mode .gantt-container,
-html body.dark-mode .g-grid,
-html body.dark-mode .trow,
-html body.dark-mode .grow {
+html body.dark-mode #right,
+html body.dark-mode #gantt-wrap,
+html body.dark-mode #gantt-hdr,
+html body.dark-mode #gantt-body,
+html body.dark-mode .g-row {
     background: var(--bg-body) !important;
     background-color: var(--bg-body) !important;
 }
 
-html body.dark-mode .g-day-col,
-html body.dark-mode .g-month-col {
-    background: transparent !important;
-    background-color: transparent !important;
-    border-right: 1px solid var(--bdr) !important;
-}
-
-html body.dark-mode .g-day-col[style*="background"] {
-    background-color: rgba(255, 255, 255, 0.04) !important;
-}
-
 html body.dark-mode .g-month-row,
-html body.dark-mode .g-day-row,
-html body.dark-mode .gantt-header-row {
+html body.dark-mode .g-day-row {
     border-bottom: 1px solid var(--bdr) !important;
 }
 
-html body.dark-mode .status-bar,
-html body.dark-mode #status-bar {
+html body.dark-mode .g-month { color: var(--txt2) !important; }
+html body.dark-mode .g-day { color: var(--txt3) !important; }
+
+html body.dark-mode .g-wknd { background: rgba(255,255,255,0.03) !important; }
+html body.dark-mode .g-hol  { background: rgba(250,204,21,0.08) !important; }
+
+html body.dark-mode #status-bar,
+html body.dark-mode .status-bar {
     background: var(--bg-surface) !important;
     border-top: 1px solid var(--bdr) !important;
     color: var(--txt2) !important;

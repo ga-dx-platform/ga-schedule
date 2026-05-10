@@ -17,7 +17,9 @@
       "Bash(node --check app.js)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\" -Recurse -Depth 2)",
       "Bash(Select-Object -Property FullName, PSIsContainer)",
-      "Bash(Format-Table -AutoSize)"
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\" -Recurse -File | Select-Object -First 50 | ForEach-Object { $_.FullName })",
+      "PowerShell($file = \"c:\\\\Users\\\\micky\\\\Project\\\\ga-schedule\\\\app.js\"; \\(Get-Content $file | Measure-Object -Line\\).Lines)"
     ]
   }
 }
