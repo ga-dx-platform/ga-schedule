@@ -154,6 +154,26 @@ body.dark-mode .status-bar {
     color: var(--txt2) !important;
 }
 
+/* Task rows in dark mode */
+body.dark-mode .trow { border-bottom-color: var(--bdr) !important; }
+body.dark-mode .trow:hover { background: rgba(124,58,237,0.06) !important; }
+body.dark-mode .trow.is-parent { background: rgba(124,58,237,0.1) !important; }
+body.dark-mode .trow.is-parent:hover { background: rgba(124,58,237,0.15) !important; }
+body.dark-mode .trow.hover-sync,
+body.dark-mode .g-row.hover-sync { background-color: rgba(124,58,237,0.05) !important; }
+body.dark-mode .trow.is-selected { background: rgba(124,58,237,0.2) !important; }
+body.dark-mode .trow.is-bulk-selected { background: rgba(124,58,237,0.15) !important; }
+body.dark-mode .trow.is-bulk-selected:hover { background: rgba(124,58,237,0.2) !important; }
+body.dark-mode .pbar { background: #334155 !important; }
+
+/* Status badges in dark mode */
+body.dark-mode .s-done { background: rgba(5,150,105,0.2) !important; color: #34D399 !important; }
+body.dark-mode .s-prog { background: rgba(124,58,237,0.2) !important; color: #A78BFA !important; }
+body.dark-mode .s-none { background: rgba(71,85,105,0.3) !important; color: #94A3B8 !important; }
+body.dark-mode .s-cancel { background: rgba(220,38,38,0.2) !important; color: #F87171 !important; }
+body.dark-mode .s-hold { background: rgba(146,64,14,0.25) !important; color: #FCD34D !important; }
+body.dark-mode .s-delay { background: rgba(194,65,12,0.2) !important; color: #FB923C !important; }
+
 /* App shell */
 body.dark-mode #app-canvas-wrapper {
     background: #1E293B !important;
@@ -637,7 +657,7 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 .gbar.baseline-late{outline:1.5px solid rgba(220,38,38,.8);outline-offset:1px}
 .gbar.locked-bar{cursor:not-allowed!important;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.22) 0 6px,rgba(0,0,0,.08) 6px 12px)}
 .gbar.locked-bar::before,.gbar.locked-bar::after{cursor:not-allowed!important}
-.gbar-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.28)}
+.gbar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:9999px;background:rgba(255,255,255,.28)}
 .gbar-lbl{position:relative;font-size:var(--fs-mono);color:#fff;padding:0 6px;white-space:nowrap;overflow:hidden;z-index:1;font-weight:500}
 .gbar-pct{position:absolute;font-size:var(--fs-mono);color:var(--txt3);white-space:nowrap;font-family:var(--mono)}
 .gb-general{background:var(--child-task-color);box-shadow:0 2px 8px rgba(124,58,237,.22)}

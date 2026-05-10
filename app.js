@@ -864,7 +864,8 @@ function renderLinks(){
     else arrow.setAttribute('points',`${x2},${y2} ${x2+6},${y2-3} ${x2+6},${y2+3}`)
     arrow.setAttribute('fill',color);arrow.setAttribute('opacity','.6')
     const lx=(x1+x2)/2,ly=(y1+y2)/2-5
-    const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill','white');bg.setAttribute('opacity','.9')
+    const isDarkMode=document.body.classList.contains('dark-mode')
+    const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('x',lx-7);bg.setAttribute('y',ly-7);bg.setAttribute('width','14');bg.setAttribute('height','10');bg.setAttribute('rx','2');bg.setAttribute('fill',isDarkMode?'#1E293B':'white');bg.setAttribute('opacity','.9')
     const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','8');lbl.setAttribute('fill',color);lbl.setAttribute('font-family','DM Mono');lbl.setAttribute('font-weight','600');lbl.textContent=dep.dep_type
     svgCanvas.appendChild(path);svgCanvas.appendChild(arrow);svgCanvas.appendChild(bg);svgCanvas.appendChild(lbl)
   })
