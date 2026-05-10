@@ -239,8 +239,9 @@ html.dark-mode-early #view-dashboard {
     background: #1E293B !important;
 }
 
-/* Modals in dark mode */
+/* Modals in dark mode — all modal containers */
 body.dark-mode .modal-content,
+body.dark-mode #task-modal,
 body.dark-mode #proj-modal,
 body.dark-mode #confirm-modal,
 body.dark-mode #settings-modal,
@@ -252,8 +253,25 @@ body.dark-mode #dep-unified-modal {
 }
 body.dark-mode .modal-bd,
 body.dark-mode .modal-overlay {
-    background: rgba(0, 0, 0, 0.6) !important;
+    background: rgba(0, 0, 0, 0.65) !important;
 }
+
+/* Modal inner components */
+body.dark-mode .m-hdr {
+    background: #1E293B !important;
+    border-bottom-color: var(--bdr) !important;
+}
+body.dark-mode .m-title { color: var(--txt) !important; }
+body.dark-mode .m-close { color: var(--txt2) !important; }
+body.dark-mode .m-close:hover { background: var(--bg-hov) !important; color: var(--txt) !important; }
+body.dark-mode .m-footer {
+    background: #0F172A !important;
+    border-top-color: var(--bdr) !important;
+}
+body.dark-mode .mbtn.cancel:hover { background: var(--bg-hov) !important; }
+body.dark-mode .finput:focus { background: #0F172A !important; }
+body.dark-mode .dep-item { background: #0F172A !important; }
+body.dark-mode .set-table th { background: #0F172A !important; }
 
 /* === RESET === */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
