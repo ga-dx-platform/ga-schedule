@@ -174,6 +174,41 @@ body.dark-mode .s-cancel { background: rgba(220,38,38,0.2) !important; color: #F
 body.dark-mode .s-hold { background: rgba(146,64,14,0.25) !important; color: #FCD34D !important; }
 body.dark-mode .s-delay { background: rgba(194,65,12,0.2) !important; color: #FB923C !important; }
 
+/* View containers (white island cards → dark) */
+body.dark-mode #view-gantt,
+body.dark-mode #view-kanban,
+body.dark-mode #view-calendar,
+body.dark-mode #view-dashboard {
+    background: var(--bg-surface) !important;
+    border-color: var(--bdr) !important;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3), 0 4px 6px -2px rgba(0,0,0,0.2) !important;
+}
+
+/* Kanban columns & cards */
+body.dark-mode .kb-col {
+    background: #0F172A !important;
+    border-color: var(--bdr) !important;
+}
+body.dark-mode .kb-card,
+body.dark-mode .kb-card-main {
+    background: var(--bg-surface) !important;
+    border-color: var(--bdr) !important;
+}
+body.dark-mode .kb-card-main { border-color: rgba(124,58,237,0.3) !important; }
+body.dark-mode .kb-pbar-wrap { background: #334155 !important; }
+body.dark-mode .kb-empty { background: rgba(255,255,255,0.02) !important; }
+
+/* Dashboard hardcoded colors */
+body.dark-mode .dash-chart-badge { background: #334155 !important; color: var(--txt2) !important; }
+body.dark-mode .dash-tl-row { border-bottom-color: var(--bdr) !important; }
+body.dark-mode .dash-tl-bar-wrap { background: #334155 !important; }
+body.dark-mode .ctx-menu-item:hover { background-color: var(--bg-hov) !important; }
+body.dark-mode .ctx-menu-item:focus-visible { background-color: var(--bg-hov) !important; }
+body.dark-mode .ctx-menu-item.ctx-danger:hover { background-color: rgba(220,38,38,0.15) !important; }
+
+/* Calendar */
+body.dark-mode .cal-dow { background: #0F172A !important; }
+
 /* App shell */
 body.dark-mode #app-canvas-wrapper {
     background: #1E293B !important;
