@@ -11,6 +11,20 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <link rel="stylesheet" href="style.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script>
+(function(){
+  if(localStorage.getItem('gaScheduleTheme')==='dark'){
+    document.documentElement.classList.add('dark-mode-early');
+    document.addEventListener('DOMContentLoaded',function(){
+      document.body.classList.add('dark-mode');
+      var r=document.documentElement;
+      r.style.setProperty('--weekend-bg-color','rgba(255,255,255,0.04)');
+      r.style.setProperty('--grid-line-color','#334155');
+      r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)');
+    });
+  }
+})();
+</script>
 </head>
 <body>
 <nav id="app-sidebar" class="sidebar collapsed">

@@ -227,6 +227,34 @@ body.dark-mode .nav-sub { color: var(--txt3) !important; }
 body.dark-mode .nav-sep { background: var(--bdr) !important; }
 body.dark-mode .nav-icon { background: rgba(124,58,237,0.2) !important; }
 
+/* FOUC prevention: applied by inline script before DOMContentLoaded */
+html.dark-mode-early body,
+html.dark-mode-early #app-canvas-wrapper,
+html.dark-mode-early #app-sidebar,
+html.dark-mode-early #main,
+html.dark-mode-early #view-gantt,
+html.dark-mode-early #view-kanban,
+html.dark-mode-early #view-calendar,
+html.dark-mode-early #view-dashboard {
+    background: #1E293B !important;
+}
+
+/* Modals in dark mode */
+body.dark-mode .modal-content,
+body.dark-mode #proj-modal,
+body.dark-mode #confirm-modal,
+body.dark-mode #settings-modal,
+body.dark-mode #dep-modal,
+body.dark-mode #dep-unified-modal {
+    background: #1E293B !important;
+    border-color: var(--bdr) !important;
+    color: var(--txt) !important;
+}
+body.dark-mode .modal-bd,
+body.dark-mode .modal-overlay {
+    background: rgba(0, 0, 0, 0.6) !important;
+}
+
 /* === RESET === */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
