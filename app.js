@@ -1715,9 +1715,9 @@ function renderPendingLogFiles(){
     return `<span class="tl-attach-chip tl-attach-chip--pending">${icon} ${esc(f.name)}<button type="button" class="tl-attach-x" onclick="removePendingLogFile(${i})" title="เอาออก">✕</button></span>`
   }).join('')
 }
-async function uploadLogAttachments(logId){
+async function uploadFilesToLog(logId,files){
   const out=[]
-  for(const f of pendingLogFiles){
+  for(const f of files){
     const safe=f.name.replace(/[^\w.\-]+/g,'_').slice(-80)
     const path=`${state.currentProjectId}/${logId}/${crypto.randomUUID()}_${safe}`
     const{error}=await db.storage.from(ATTACH_BUCKET).upload(path,f,{contentType:f.type||'application/octet-stream',upsert:false})
@@ -1725,6 +1725,98 @@ async function uploadLogAttachments(logId){
     out.push({path,name:f.name,type:f.type||'',size:f.size})
   }
   return out
+}
+// === INLINE LOG EDITING ===
+let editingLogId=null      // id of the log currently being edited (null = none)
+let editNote='',editPct=0  // working copies so a re-render doesn't lose typing
+let editAttachments=[]     // existing attachments kept during this edit
+let editOrigAttachments=[] // snapshot to diff for storage cleanup on save
+let pendingEditFiles=[]    // new files to upload when the edit is saved
+function _findLog(logId){
+  for(const tid in state.taskLogs){
+    const f=state.taskLogs[tid].find(l=>l.id===logId)
+    if(f)return f
+  }
+  return null
+}
+function startEditLog(logId){
+  const l=_findLog(logId)
+  if(!l)return
+  editingLogId=logId
+  editNote=l.note||''
+  editPct=l.progress_pct||0
+  editOrigAttachments=[...(l.attachments||[])]
+  editAttachments=[...(l.attachments||[])]
+  pendingEditFiles=[]
+  renderTaskLogPane(state.editingTaskId)
+}
+function _captureEditFields(){
+  const nt=document.getElementById('tl-edit-note')
+  const pc=document.getElementById('tl-edit-pct')
+  if(nt)editNote=nt.value
+  if(pc)editPct=Math.min(100,Math.max(0,parseInt(pc.value)||0))
+}
+function cancelEditLog(){
+  editingLogId=null;editNote='';editPct=0;editAttachments=[];editOrigAttachments=[];pendingEditFiles=[]
+  renderTaskLogPane(state.editingTaskId)
+}
+function removeEditAttachment(i){_captureEditFields();editAttachments.splice(i,1);renderTaskLogPane(state.editingTaskId)}
+function removePendingEditFile(i){_captureEditFields();pendingEditFiles.splice(i,1);renderTaskLogPane(state.editingTaskId)}
+function onEditFilesSelected(input){
+  _captureEditFields()
+  for(const f of Array.from(input.files||[])){
+    if(f.size>ATTACH_MAX_BYTES){toast(`⚠️ ${f.name} ใหญ่เกิน 25MB`);continue}
+    pendingEditFiles.push(f)
+  }
+  input.value=''
+  renderTaskLogPane(state.editingTaskId)
+}
+async function saveEditLog(){
+  const l=_findLog(editingLogId)
+  if(!l)return
+  _captureEditFields()
+  if(!editNote.trim()&&!editAttachments.length&&!pendingEditFiles.length){toast('⚠️ ต้องมีบันทึกหรือไฟล์แนบอย่างน้อย 1 อย่าง');return}
+  const btn=document.getElementById('tl-edit-save')
+  if(btn)btn.disabled=true
+  try{
+    const newAtts=pendingEditFiles.length?await uploadFilesToLog(l.id,pendingEditFiles):[]
+    const finalAtts=[...editAttachments,...newAtts]
+    const{error}=await db.from('task_logs').update({note:editNote.trim(),progress_pct:editPct,attachments:finalAtts}).eq('id',l.id)
+    if(error)throw error
+    // remove files the user dropped during this edit
+    const removed=editOrigAttachments.filter(o=>!editAttachments.some(k=>k.path===o.path)).map(a=>a.path).filter(Boolean)
+    if(removed.length)await db.storage.from(ATTACH_BUCKET).remove(removed)
+    l.note=editNote.trim();l.progress_pct=editPct;l.attachments=finalAtts
+    editingLogId=null;pendingEditFiles=[];editAttachments=[];editOrigAttachments=[]
+    renderTaskLogPane(state.editingTaskId)
+    toast('✅ แก้ไขบันทึกแล้ว')
+  }catch(err){
+    if(btn)btn.disabled=false
+    toast('❌ แก้ไขไม่สำเร็จ: '+(err.message||err))
+  }
+}
+function _renderLogEditForm(l){
+  const chips=editAttachments.map((a,i)=>{
+    const icon=(a.type||'').startsWith('image/')?'🖼️':'📄'
+    return `<span class="tl-attach-chip tl-attach-chip--pending">${icon} ${esc(a.name)}<button type="button" class="tl-attach-x" onclick="removeEditAttachment(${i})" title="เอาออก">✕</button></span>`
+  }).concat(pendingEditFiles.map((f,i)=>{
+    const icon=(f.type||'').startsWith('image/')?'🖼️':'📄'
+    return `<span class="tl-attach-chip tl-attach-chip--pending">＋ ${icon} ${esc(f.name)}<button type="button" class="tl-attach-x" onclick="removePendingEditFile(${i})" title="เอาออก">✕</button></span>`
+  })).join('')
+  return `<div class="tl-log-entry tl-log-entry--editing">
+    <textarea id="tl-edit-note" class="finput tl-textarea" rows="3">${esc(editNote)}</textarea>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <label class="flbl" style="margin:0;white-space:nowrap">Progress %</label>
+      <input type="number" id="tl-edit-pct" class="finput" style="width:65px" min="0" max="100" value="${editPct}">
+    </div>
+    ${chips?`<div class="tl-log-atts" style="margin-top:8px">${chips}</div>`:''}
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <input type="file" id="tl-edit-file-input" accept="image/*,application/pdf" multiple style="display:none" onchange="onEditFilesSelected(this)">
+      <button class="mbtn" type="button" onclick="document.getElementById('tl-edit-file-input').click()">📎 แนบเพิ่ม</button>
+      <button class="mbtn save" id="tl-edit-save" type="button" onclick="saveEditLog()">บันทึก</button>
+      <button class="mbtn" type="button" onclick="cancelEditLog()">ยกเลิก</button>
+    </div>
+  </div>`
 }
 async function openLogAttachment(path){
   // open the tab synchronously (inside the click) so the popup blocker allows
@@ -1751,6 +1843,7 @@ function renderTaskLogPane(taskId){
     const[y,m]=key.split('-')
     const hdr=`${EN_MON[parseInt(m,10)-1]} ${y}`
     const rows=groups[key].map(l=>{
+      if(l.id===editingLogId)return _renderLogEditForm(l)
       const d=new Date(l.logged_at)
       const ds=`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
       const atts=l.attachments||[]
@@ -1763,7 +1856,8 @@ function renderTaskLogPane(taskId){
           <span class="tl-log-pct">${l.progress_pct}%</span>
           <span class="tl-log-date">${ds}</span>
           ${l.logged_by?`<span style="font-size:11px;color:var(--txt3)">${esc(l.logged_by)}</span>`:''}
-          <button class="tl-log-del" onclick="deleteTaskLog('${l.id}')" title="ลบ">✕</button>
+          <button class="tl-log-edit" style="margin-left:auto" onclick="startEditLog('${l.id}')" title="แก้ไข">✎</button>
+          <button class="tl-log-del" style="margin-left:0" onclick="deleteTaskLog('${l.id}')" title="ลบ">✕</button>
         </div>
         ${l.note?`<div class="tl-log-note">${esc(l.note)}</div>`:''}
         ${attHtml}
@@ -1800,7 +1894,7 @@ async function addTaskLog(){
   if(pendingLogFiles.length){
     if(btn)btn.textContent='⟳ อัปโหลด...'
     try{
-      const attachments=await uploadLogAttachments(data.id)
+      const attachments=await uploadFilesToLog(data.id,pendingLogFiles)
       if(attachments.length){
         const{error:upErr}=await db.from('task_logs').update({attachments}).eq('id',data.id)
         if(upErr)throw upErr
@@ -1844,6 +1938,7 @@ function closeTaskModal(){
   closeModalBackdrop('task-modal-bd')
   state.editingTaskId=null
   pendingLogFiles=[]
+  editingLogId=null;pendingEditFiles=[];editAttachments=[];editOrigAttachments=[]
   renderPendingLogFiles()
   render()
 }

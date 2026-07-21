@@ -316,5 +316,9 @@ create policy "task_logs_select" on public.task_logs for select
 create policy "task_logs_insert" on public.task_logs for insert
   with check (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()));
 
+create policy "task_logs_update" on public.task_logs for update
+  using (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()))
+  with check (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()));
+
 create policy "task_logs_delete" on public.task_logs for delete
   using (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()));

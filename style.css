@@ -1395,6 +1395,10 @@ html.no-transitions *::after {
 body.dark-mode .tl-attach-chip:hover{background:#334155}
 .tl-log-del{margin-left:auto;width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--txt3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;transition:color .1s,background .1s}
 .tl-log-del:hover{color:var(--red);background:#FEE2E2}
+.tl-log-edit{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--txt3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;transition:color .1s,background .1s}
+.tl-log-edit:hover{color:var(--primary);background:#EEF2FF}
+.tl-log-entry--editing{background:var(--bg-surface)}
+body.dark-mode .tl-log-edit:hover{background:#334155}
 .tl-log-empty{padding:24px 14px;text-align:center;font-size:13px;color:var(--txt3)}
 .tl-add-form{padding:14px 0 0}
 .tl-textarea{resize:vertical;min-height:64px;font-family:var(--font)}

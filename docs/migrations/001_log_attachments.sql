@@ -7,6 +7,14 @@
 alter table public.task_logs
   add column if not exists attachments jsonb not null default '[]'::jsonb;
 
+-- 1b. Allow editing a progress log (note / progress / attachments). The
+--     original task_logs policies only covered select/insert/delete, so without
+--     this an UPDATE (used when editing a log or attaching files) is blocked.
+drop policy if exists "task_logs_update" on public.task_logs;
+create policy "task_logs_update" on public.task_logs for update
+  using (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()))
+  with check (exists (select 1 from public.projects p where p.id = task_logs.project_id and p.created_by = auth.uid()));
+
 -- 2. Private Storage bucket that holds the actual files.
 insert into storage.buckets (id, name, public)
 values ('task-attachments', 'task-attachments', false)
