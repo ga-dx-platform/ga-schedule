@@ -406,10 +406,13 @@
       <div class="tl-add-form">
         <label class="flbl">เพิ่มบันทึกความคืบหน้า</label>
         <textarea id="tl-note" class="finput tl-textarea" rows="3" placeholder="บรรยายความคืบหน้า ปัญหา หรือ step ต่อไป..."></textarea>
+        <div id="tl-pending-files" class="tl-pending" style="display:none"></div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
           <label class="flbl" style="margin:0;white-space:nowrap">Progress %</label>
           <input type="range" id="tl-pct-slide" min="0" max="100" style="flex:1;accent-color:var(--primary)" oninput="document.getElementById('tl-pct-num').value=this.value">
           <input type="number" id="tl-pct-num" class="finput" style="width:65px" min="0" max="100" oninput="document.getElementById('tl-pct-slide').value=this.value">
+          <input type="file" id="tl-file-input" accept="image/*,application/pdf" multiple style="display:none" onchange="onLogFilesSelected(this)">
+          <button class="mbtn" type="button" style="flex-shrink:0" onclick="document.getElementById('tl-file-input').click()" title="แนบรูปหรือ PDF">📎 แนบไฟล์</button>
           <button class="mbtn save" style="flex-shrink:0" onclick="addTaskLog()">+ บันทึก</button>
         </div>
       </div>
