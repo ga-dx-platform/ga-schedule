@@ -1787,13 +1787,16 @@ async function saveEditLog(){
     const{data:upRow,error}=await db.from('task_logs').update({note:editNote.trim(),progress_pct:editPct,attachments:finalAtts}).eq('id',l.id).select('id,attachments').single()
     if(error)throw error
     if(!upRow)throw new Error('row not updated')
-    // remove files the user dropped during this edit
+    // which existing files were dropped (compute before clearing edit state)
     const removed=editOrigAttachments.filter(o=>!editAttachments.some(k=>k.path===o.path)).map(a=>a.path).filter(Boolean)
-    if(removed.length)await db.storage.from(ATTACH_BUCKET).remove(removed)
+    // DB row is the source of truth: commit to local state + UI right away
     l.note=editNote.trim();l.progress_pct=editPct;l.attachments=upRow.attachments||finalAtts
     editingLogId=null;pendingEditFiles=[];editAttachments=[];editOrigAttachments=[]
     renderTaskLogPane(state.editingTaskId)
     toast('✅ แก้ไขบันทึกแล้ว')
+    // best-effort storage cleanup — a lingering file byte must not block or
+    // reverse the removal the user already made
+    if(removed.length)db.storage.from(ATTACH_BUCKET).remove(removed).catch(()=>{})
   }catch(err){
     // don't leave freshly-uploaded files orphaned if the row update failed
     if(newAtts.length)await db.storage.from(ATTACH_BUCKET).remove(newAtts.map(a=>a.path)).catch(()=>{})
@@ -1933,7 +1936,7 @@ function deleteTaskLog(logId){
     const {error}=await db.from('task_logs').delete().eq('id',logId)
     if(error){toast('❌ ลบไม่สำเร็จ: '+error.message);return}
     const paths=atts.map(a=>a.path).filter(Boolean)
-    if(paths.length)await db.storage.from(ATTACH_BUCKET).remove(paths)
+    if(paths.length)db.storage.from(ATTACH_BUCKET).remove(paths).catch(()=>{}) // best-effort
     for(const tid in state.taskLogs){
       state.taskLogs[tid]=state.taskLogs[tid].filter(l=>l.id!==logId)
     }
