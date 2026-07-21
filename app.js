@@ -1289,7 +1289,7 @@ function renderDashboard(){
         ${log.note?`<div class="dlc-entry-note">${esc(log.note)}</div>`:''}
         ${(log.attachments||[]).length?`<div class="tl-log-atts">${(log.attachments||[]).map(a=>{
           const icon=(a.type||'').startsWith('image/')?'🖼️':'📄'
-          return `<button type="button" class="tl-attach-chip" onclick="openLogAttachment('${a.path}')" title="${esc(a.name)}">${icon} ${esc(a.name)}</button>`
+          return `<button type="button" class="tl-attach-chip" onclick="openLogAttachment('${a.path}')" title="${esc(a.name)}"><span class="tl-attach-name">${icon} ${esc(a.name)}</span></button>`
         }).join('')}</div>`:''}
       </div>`
     }).join('')
@@ -1712,7 +1712,7 @@ function renderPendingLogFiles(){
   box.style.display='flex'
   box.innerHTML=pendingLogFiles.map((f,i)=>{
     const icon=(f.type||'').startsWith('image/')?'🖼️':'📄'
-    return `<span class="tl-attach-chip tl-attach-chip--pending">${icon} ${esc(f.name)}<button type="button" class="tl-attach-x" onclick="removePendingLogFile(${i})" title="เอาออก">✕</button></span>`
+    return `<span class="tl-attach-chip tl-attach-chip--pending"><span class="tl-attach-name">${icon} ${esc(f.name)}</span><button type="button" class="tl-attach-x" onclick="removePendingLogFile(${i})" title="เอาออก">✕</button></span>`
   }).join('')
 }
 async function uploadFilesToLog(logId,files){
@@ -1807,10 +1807,10 @@ async function saveEditLog(){
 function _renderLogEditForm(l){
   const chips=editAttachments.map((a,i)=>{
     const icon=(a.type||'').startsWith('image/')?'🖼️':'📄'
-    return `<span class="tl-attach-chip tl-attach-chip--pending">${icon} ${esc(a.name)}<button type="button" class="tl-attach-x" onclick="removeEditAttachment(${i})" title="เอาออก">✕</button></span>`
+    return `<span class="tl-attach-chip tl-attach-chip--pending"><span class="tl-attach-name">${icon} ${esc(a.name)}</span><button type="button" class="tl-attach-x" onclick="removeEditAttachment(${i})" title="เอาออก">✕</button></span>`
   }).concat(pendingEditFiles.map((f,i)=>{
     const icon=(f.type||'').startsWith('image/')?'🖼️':'📄'
-    return `<span class="tl-attach-chip tl-attach-chip--pending">＋ ${icon} ${esc(f.name)}<button type="button" class="tl-attach-x" onclick="removePendingEditFile(${i})" title="เอาออก">✕</button></span>`
+    return `<span class="tl-attach-chip tl-attach-chip--pending"><span class="tl-attach-name">＋ ${icon} ${esc(f.name)}</span><button type="button" class="tl-attach-x" onclick="removePendingEditFile(${i})" title="เอาออก">✕</button></span>`
   })).join('')
   return `<div class="tl-log-entry tl-log-entry--editing">
     <textarea id="tl-edit-note" class="finput tl-textarea" rows="3">${esc(editNote)}</textarea>
@@ -1858,7 +1858,7 @@ function renderTaskLogPane(taskId){
       const atts=l.attachments||[]
       const attHtml=atts.length?`<div class="tl-log-atts">${atts.map(a=>{
         const icon=(a.type||'').startsWith('image/')?'🖼️':'📄'
-        return `<button type="button" class="tl-attach-chip" onclick="openLogAttachment('${a.path}')" title="${esc(a.name)}">${icon} ${esc(a.name)}</button>`
+        return `<button type="button" class="tl-attach-chip" onclick="openLogAttachment('${a.path}')" title="${esc(a.name)}"><span class="tl-attach-name">${icon} ${esc(a.name)}</span></button>`
       }).join('')}</div>`:''
       return `<div class="tl-log-entry">
         <div class="tl-log-meta">
