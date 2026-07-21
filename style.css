@@ -1387,10 +1387,11 @@ html.no-transitions *::after {
 .tl-log-note{font-size:13px;color:var(--txt);line-height:1.5;white-space:pre-wrap}
 .tl-log-atts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .tl-pending{flex-wrap:wrap;gap:6px;margin-top:8px}
-.tl-attach-chip{display:inline-flex;align-items:center;gap:4px;max-width:220px;padding:3px 9px;font-size:11px;font-family:var(--font);color:var(--primary);background:var(--bg-surface);border:1px solid var(--bdr);border-radius:99px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .1s,border-color .1s}
+.tl-attach-chip{display:inline-flex;align-items:center;gap:4px;max-width:240px;padding:3px 9px;font-size:11px;font-family:var(--font);color:var(--primary);background:var(--bg-surface);border:1px solid var(--bdr);border-radius:99px;cursor:pointer;transition:background .1s,border-color .1s}
 .tl-attach-chip:hover{background:#EEF2FF;border-color:var(--primary)}
 .tl-attach-chip--pending{cursor:default;color:var(--txt2)}
-.tl-attach-x{border:none;background:none;cursor:pointer;color:var(--txt3);font-size:11px;padding:0 0 0 2px;line-height:1}
+.tl-attach-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tl-attach-x{border:none;background:none;cursor:pointer;color:var(--txt3);font-size:12px;padding:0 0 0 2px;line-height:1;flex-shrink:0}
 .tl-attach-x:hover{color:var(--red)}
 body.dark-mode .tl-attach-chip:hover{background:#334155}
 .tl-log-del{margin-left:auto;width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--txt3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;transition:color .1s,background .1s}
