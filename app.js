@@ -773,6 +773,21 @@ function renderGantt(RH){
       d2.setDate(d2.getDate()+1)
     }
   }
+  // Month divider lines + alternating month bands (so it's clear which month each bar falls in)
+  {
+    let dcur=new Date(min),segStart=0,segMonth=dcur.getMonth(),bandIdx=0
+    const flushMonth=(endIdx)=>{
+      const band=document.createElement('div');band.className='g-mband'+(bandIdx%2?' alt':'')
+      band.style.cssText=`left:${segStart*DP}px;width:${(endIdx-segStart)*DP}px`;bfrag.appendChild(band)
+      if(endIdx<totalDays){const ln=document.createElement('div');ln.className='g-mline';ln.style.left=(endIdx*DP)+'px';bfrag.appendChild(ln)}
+    }
+    for(let i=1;i<totalDays;i++){
+      dcur.setDate(dcur.getDate()+1)
+      if(dcur.getMonth()!==segMonth){flushMonth(i);segStart=i;segMonth=dcur.getMonth();bandIdx++}
+    }
+    flushMonth(totalDays)
+  }
+
   const tx=dBetween(min,today)*DP
   if(tx>=0&&tx<=W){
     const tv=document.createElement('div');tv.className='today-vline';tv.style.left=tx+'px';bfrag.appendChild(tv)

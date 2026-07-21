@@ -713,6 +713,9 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
 .ctx-menu-item.ctx-danger:hover{background-color:#FEF2F2}
 .ctx-menu-item:focus-visible{outline:2px solid var(--primary);outline-offset:1px;background-color:#F1F5F9}
 .ctx-menu-item.ctx-danger:focus-visible{background-color:#FEF2F2}
+.g-mband{position:absolute;top:0;bottom:0;pointer-events:none}
+.g-mband.alt{background:var(--month-band-color,rgba(100,116,139,.05))}
+.g-mline{position:absolute;top:0;bottom:0;width:1px;background:var(--month-line-color,rgba(100,116,139,.38));pointer-events:none}
 .g-wknd{position:absolute;top:0;bottom:0;background:var(--weekend-bg-color)!important;pointer-events:none}
 .g-hol{position:absolute;top:0;bottom:0;background:var(--holiday-color);pointer-events:none;opacity:.6}
 .today-vline{position:absolute;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,transparent,var(--today-col),transparent);opacity:.7;z-index:4;pointer-events:none}
@@ -1424,6 +1427,8 @@ html body.dark-mode .g-month { color: var(--txt2) !important; }
 html body.dark-mode .g-day { color: var(--txt3) !important; }
 
 html body.dark-mode .g-wknd { background: rgba(255,255,255,0.03) !important; }
+html body.dark-mode .g-mband.alt { background: rgba(148,163,184,.07); }
+html body.dark-mode .g-mline { background: rgba(148,163,184,.3); }
 html body.dark-mode .g-hol  { background: rgba(250,204,21,0.08) !important; }
 
 html body.dark-mode #status-bar,
