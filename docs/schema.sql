@@ -296,8 +296,11 @@ create table public.task_logs (
   note          text not null default '',
   progress_pct  integer not null default 0 check (progress_pct between 0 and 100),
   logged_by     text,
+  attachments   jsonb not null default '[]'::jsonb,
   logged_at     timestamptz not null default now()
 );
+-- attachments: array of {path,name,type,size} referencing files in the
+-- 'task-attachments' Storage bucket. See docs/migrations/001_log_attachments.sql.
 
 comment on table public.task_logs is 'Timestamped progress notes per task';
 comment on column public.task_logs.project_id is 'Denormalized for RLS join performance';

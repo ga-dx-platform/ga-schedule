@@ -1287,6 +1287,10 @@ function renderDashboard(){
           ${log.logged_by?`<span class="dlc-entry-by">${esc(log.logged_by)}</span>`:''}
         </div>
         ${log.note?`<div class="dlc-entry-note">${esc(log.note)}</div>`:''}
+        ${(log.attachments||[]).length?`<div class="tl-log-atts">${(log.attachments||[]).map(a=>{
+          const icon=(a.type||'').startsWith('image/')?'🖼️':'📄'
+          return `<button type="button" class="tl-attach-chip" onclick="openLogAttachment('${a.path}')" title="${esc(a.name)}">${icon} ${esc(a.name)}</button>`
+        }).join('')}</div>`:''}
       </div>`
     }).join('')
     return`<div class="dlc">
@@ -1688,6 +1692,49 @@ function switchTaskModalTab(tab,el){
   document.getElementById('tm-pane-'+tab).classList.add('active')
   if(tab==='log')renderTaskLogPane(state.editingTaskId)
 }
+// === PROGRESS-LOG ATTACHMENTS (Supabase Storage) ===
+const ATTACH_BUCKET='task-attachments'
+const ATTACH_MAX_BYTES=25*1024*1024 // 25 MB per file
+let pendingLogFiles=[] // files picked but not yet saved with a log
+function onLogFilesSelected(input){
+  for(const f of Array.from(input.files||[])){
+    if(f.size>ATTACH_MAX_BYTES){toast(`⚠️ ${f.name} ใหญ่เกิน 25MB`);continue}
+    pendingLogFiles.push(f)
+  }
+  input.value='' // allow re-picking the same file
+  renderPendingLogFiles()
+}
+function removePendingLogFile(i){pendingLogFiles.splice(i,1);renderPendingLogFiles()}
+function renderPendingLogFiles(){
+  const box=document.getElementById('tl-pending-files')
+  if(!box)return
+  if(!pendingLogFiles.length){box.style.display='none';box.innerHTML='';return}
+  box.style.display='flex'
+  box.innerHTML=pendingLogFiles.map((f,i)=>{
+    const icon=(f.type||'').startsWith('image/')?'🖼️':'📄'
+    return `<span class="tl-attach-chip tl-attach-chip--pending">${icon} ${esc(f.name)}<button type="button" class="tl-attach-x" onclick="removePendingLogFile(${i})" title="เอาออก">✕</button></span>`
+  }).join('')
+}
+async function uploadLogAttachments(logId){
+  const out=[]
+  for(const f of pendingLogFiles){
+    const safe=f.name.replace(/[^\w.\-]+/g,'_').slice(-80)
+    const path=`${state.currentProjectId}/${logId}/${crypto.randomUUID()}_${safe}`
+    const{error}=await db.storage.from(ATTACH_BUCKET).upload(path,f,{contentType:f.type||'application/octet-stream',upsert:false})
+    if(error)throw new Error(error.message)
+    out.push({path,name:f.name,type:f.type||'',size:f.size})
+  }
+  return out
+}
+async function openLogAttachment(path){
+  // open the tab synchronously (inside the click) so the popup blocker allows
+  // it, then point it at the signed URL once we have one
+  const w=window.open('about:blank','_blank')
+  const{data,error}=await db.storage.from(ATTACH_BUCKET).createSignedUrl(path,120)
+  if(error||!data?.signedUrl){if(w)w.close();toast('❌ เปิดไฟล์ไม่สำเร็จ: '+(error?.message||''));return}
+  if(w)w.location.href=data.signedUrl
+  else window.open(data.signedUrl,'_blank','noopener')
+}
 function renderTaskLogPane(taskId){
   const list=document.getElementById('tl-log-list')
   if(!list)return
@@ -1706,6 +1753,11 @@ function renderTaskLogPane(taskId){
     const rows=groups[key].map(l=>{
       const d=new Date(l.logged_at)
       const ds=`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+      const atts=l.attachments||[]
+      const attHtml=atts.length?`<div class="tl-log-atts">${atts.map(a=>{
+        const icon=(a.type||'').startsWith('image/')?'🖼️':'📄'
+        return `<button type="button" class="tl-attach-chip" onclick="openLogAttachment('${a.path}')" title="${esc(a.name)}">${icon} ${esc(a.name)}</button>`
+      }).join('')}</div>`:''
       return `<div class="tl-log-entry">
         <div class="tl-log-meta">
           <span class="tl-log-pct">${l.progress_pct}%</span>
@@ -1713,7 +1765,8 @@ function renderTaskLogPane(taskId){
           ${l.logged_by?`<span style="font-size:11px;color:var(--txt3)">${esc(l.logged_by)}</span>`:''}
           <button class="tl-log-del" onclick="deleteTaskLog('${l.id}')" title="ลบ">✕</button>
         </div>
-        <div class="tl-log-note">${esc(l.note||'')}</div>
+        ${l.note?`<div class="tl-log-note">${esc(l.note)}</div>`:''}
+        ${attHtml}
       </div>`
     }).join('')
     return `<div class="tl-month-group"><div class="tl-month-hdr">${hdr}</div>${rows}</div>`
@@ -1729,7 +1782,7 @@ function _updateLogBadge(taskId){
 async function addTaskLog(){
   if(!state.editingTaskId||!state.currentProjectId)return
   const note=document.getElementById('tl-note').value.trim()
-  if(!note){toast('⚠️ กรุณากรอกบันทึก');return}
+  if(!note&&!pendingLogFiles.length){toast('⚠️ กรุณากรอกบันทึกหรือแนบไฟล์');return}
   const pct=Math.min(100,Math.max(0,parseInt(document.getElementById('tl-pct-num').value)||0))
   const t=state.tasks.find(x=>x.id===state.editingTaskId)
   const btn=document.querySelector('#tm-pane-log .mbtn.save')
@@ -1741,19 +1794,44 @@ async function addTaskLog(){
     progress_pct:pct,
     logged_by:t?.assignee||''
   }).select().single()
-  if(btn)btn.disabled=false
-  if(error){toast('❌ บันทึกไม่สำเร็จ: '+error.message);return}
+  if(error){if(btn)btn.disabled=false;toast('❌ บันทึกไม่สำเร็จ: '+error.message);return}
+  // upload attachments now that the log row (and its id) exists
+  data.attachments=[]
+  if(pendingLogFiles.length){
+    if(btn)btn.textContent='⟳ อัปโหลด...'
+    try{
+      const attachments=await uploadLogAttachments(data.id)
+      if(attachments.length){
+        const{error:upErr}=await db.from('task_logs').update({attachments}).eq('id',data.id)
+        if(upErr)throw upErr
+        data.attachments=attachments
+      }
+    }catch(err){
+      toast('⚠️ บันทึกแล้ว แต่แนบไฟล์ไม่สำเร็จ: '+err.message)
+    }
+  }
+  if(btn){btn.disabled=false;btn.textContent='+ บันทึก'}
   if(!state.taskLogs[state.editingTaskId])state.taskLogs[state.editingTaskId]=[]
   state.taskLogs[state.editingTaskId].unshift(data)
   document.getElementById('tl-note').value=''
+  pendingLogFiles=[]
+  renderPendingLogFiles()
   renderTaskLogPane(state.editingTaskId)
   _updateLogBadge(state.editingTaskId)
   toast('✅ บันทึกเรียบร้อย')
 }
 function deleteTaskLog(logId){
   showConfirm('ลบบันทึกนี้?',async()=>{
+    // grab attachment paths before we drop the row from state
+    let atts=[]
+    for(const tid in state.taskLogs){
+      const found=state.taskLogs[tid].find(l=>l.id===logId)
+      if(found){atts=found.attachments||[];break}
+    }
     const {error}=await db.from('task_logs').delete().eq('id',logId)
     if(error){toast('❌ ลบไม่สำเร็จ: '+error.message);return}
+    const paths=atts.map(a=>a.path).filter(Boolean)
+    if(paths.length)await db.storage.from(ATTACH_BUCKET).remove(paths)
     for(const tid in state.taskLogs){
       state.taskLogs[tid]=state.taskLogs[tid].filter(l=>l.id!==logId)
     }
@@ -1765,6 +1843,8 @@ function deleteTaskLog(logId){
 function closeTaskModal(){
   closeModalBackdrop('task-modal-bd')
   state.editingTaskId=null
+  pendingLogFiles=[]
+  renderPendingLogFiles()
   render()
 }
 function showConfirm(message,callback){
