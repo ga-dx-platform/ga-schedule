@@ -1778,21 +1778,27 @@ async function saveEditLog(){
   if(!editNote.trim()&&!editAttachments.length&&!pendingEditFiles.length){toast('⚠️ ต้องมีบันทึกหรือไฟล์แนบอย่างน้อย 1 อย่าง');return}
   const btn=document.getElementById('tl-edit-save')
   if(btn)btn.disabled=true
+  let newAtts=[]
   try{
-    const newAtts=pendingEditFiles.length?await uploadFilesToLog(l.id,pendingEditFiles):[]
+    newAtts=pendingEditFiles.length?await uploadFilesToLog(l.id,pendingEditFiles):[]
     const finalAtts=[...editAttachments,...newAtts]
-    const{error}=await db.from('task_logs').update({note:editNote.trim(),progress_pct:editPct,attachments:finalAtts}).eq('id',l.id)
+    // .select().single() surfaces an RLS block (0 rows) as a real error instead
+    // of silently discarding the edit
+    const{data:upRow,error}=await db.from('task_logs').update({note:editNote.trim(),progress_pct:editPct,attachments:finalAtts}).eq('id',l.id).select('id,attachments').single()
     if(error)throw error
+    if(!upRow)throw new Error('row not updated')
     // remove files the user dropped during this edit
     const removed=editOrigAttachments.filter(o=>!editAttachments.some(k=>k.path===o.path)).map(a=>a.path).filter(Boolean)
     if(removed.length)await db.storage.from(ATTACH_BUCKET).remove(removed)
-    l.note=editNote.trim();l.progress_pct=editPct;l.attachments=finalAtts
+    l.note=editNote.trim();l.progress_pct=editPct;l.attachments=upRow.attachments||finalAtts
     editingLogId=null;pendingEditFiles=[];editAttachments=[];editOrigAttachments=[]
     renderTaskLogPane(state.editingTaskId)
     toast('✅ แก้ไขบันทึกแล้ว')
   }catch(err){
+    // don't leave freshly-uploaded files orphaned if the row update failed
+    if(newAtts.length)await db.storage.from(ATTACH_BUCKET).remove(newAtts.map(a=>a.path)).catch(()=>{})
     if(btn)btn.disabled=false
-    toast('❌ แก้ไขไม่สำเร็จ: '+(err.message||err))
+    toast('❌ แก้ไขไม่สำเร็จ: '+(err.message||err)+' (ต้อง re-run migration 001)')
   }
 }
 function _renderLogEditForm(l){
@@ -1893,15 +1899,17 @@ async function addTaskLog(){
   data.attachments=[]
   if(pendingLogFiles.length){
     if(btn)btn.textContent='⟳ อัปโหลด...'
+    let uploaded=[]
     try{
-      const attachments=await uploadFilesToLog(data.id,pendingLogFiles)
-      if(attachments.length){
-        const{error:upErr}=await db.from('task_logs').update({attachments}).eq('id',data.id)
-        if(upErr)throw upErr
-        data.attachments=attachments
-      }
+      uploaded=await uploadFilesToLog(data.id,pendingLogFiles)
+      // .select().single() forces a real error if RLS blocks the write (0 rows)
+      // instead of silently persisting nothing and losing the files on reload
+      const{data:upRow,error:upErr}=await db.from('task_logs').update({attachments:uploaded}).eq('id',data.id).select('id,attachments').single()
+      if(upErr)throw upErr
+      data.attachments=upRow?.attachments||uploaded
     }catch(err){
-      toast('⚠️ บันทึกแล้ว แต่แนบไฟล์ไม่สำเร็จ: '+err.message)
+      if(uploaded.length)await db.storage.from(ATTACH_BUCKET).remove(uploaded.map(a=>a.path)).catch(()=>{})
+      toast('❌ แนบไฟล์ไม่สำเร็จ: '+(err.message||err)+' (ต้อง re-run migration 001)')
     }
   }
   if(btn){btn.disabled=false;btn.textContent='+ บันทึก'}
