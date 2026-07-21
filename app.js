@@ -55,19 +55,32 @@ const fmtS=d=>{const s=fmtISO(d);return`${s.slice(8,10)}/${s.slice(5,7)}/${s.sli
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
 // === CALENDAR & WORKING-DAY LOGIC ===
+// Advance by n units from date. Used by dependency cascade only, so it follows
+// skipWeekends: OFF counts plain calendar days, ON counts working days (weekends
+// and holidays don't consume a unit).
 function addWD(date,n){
   if(n<=1)return new Date(date)
-  let d=new Date(date),c=1
+  const d=new Date(date)
+  if(!state.skipWeekends){
+    d.setDate(d.getDate()+(n-1))
+    return d
+  }
+  let c=1
   while(c<n){
     d.setDate(d.getDate()+1)
     if(!isNonWorkingDay(d))c++
   }
   return d
 }
+// A task's own end is ALWAYS calendar-based (duration_days counted straight,
+// weekends included) so bars and manual drag land exactly where the user puts
+// them. skipWeekends only governs dependency cascade, never a task's own span.
 function taskEnd(t){
   const start=pd(t.start_date)
   const dur=Math.max(1,parseInt(t.duration_days)||1)
-  return addWD(start,dur)
+  const end=new Date(start)
+  end.setDate(end.getDate()+(dur-1))
+  return end
 }
 
 function getHolidaySet(){
@@ -2021,12 +2034,9 @@ function calcTaskEndDate(){
   const s=document.getElementById('t-start').value
   const d=parseInt(document.getElementById('t-duration').value)||0
   if(!s||d<1){document.getElementById('t-end').value='';return}
-  let end=new Date(pd(s))
-  if(state.skipWeekends){
-    end=addWD(pd(s),d)
-  }else{
-    end.setDate(end.getDate()+(d-1))
-  }
+  // Matches taskEnd(): a task's own end is always calendar-based.
+  const end=new Date(pd(s))
+  end.setDate(end.getDate()+(d-1))
   document.getElementById('t-end').value=fmtISO(end)
 }
 
