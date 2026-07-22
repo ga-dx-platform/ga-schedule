@@ -71,6 +71,16 @@
 </nav>
 <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
 <div id="loading"><div class="loader"></div><p>Loading GA Schedule...</p></div>
+<div id="login-gate" class="hidden" aria-label="Sign in">
+  <div class="lg-card">
+    <div class="lg-logo">GA Schedule</div>
+    <p class="lg-sub">เข้าสู่ระบบเพื่อใช้งาน</p>
+    <input type="email" id="gate-email-input" placeholder="you@example.com" autocomplete="email">
+    <button id="gate-btn" onclick="gateSignIn()">ส่งลิงก์เข้าสู่ระบบ</button>
+    <p id="gate-msg" class="lg-msg"></p>
+    <p class="lg-hint">ระบบจะส่งลิงก์ (magic link) ไปที่อีเมล ไม่มีรหัสผ่าน</p>
+  </div>
+</div>
 <div id="toast"></div>
 <main id="app-canvas-wrapper">
   <div id="navbar">

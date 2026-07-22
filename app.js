@@ -7,18 +7,27 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 // Currently-signed-in user (anonymous or email). Kept so the account UI and the
 // data-reload-on-identity-change logic don't need an async round-trip each time.
 let currentUser=null,currentUserId=null
-async function ensureAuth(){
-  let session=(await db.auth.getSession()).data.session
-  if(!session){
-    // Brand-new visitor: sign in anonymously so the app always works. The user
-    // can later "claim" this anonymous account with an email (see accountEmailSubmit).
-    const{error}=await db.auth.signInAnonymously()
-    if(error)console.warn('Auth:',error.message)
-    session=(await db.auth.getSession()).data.session
-  }
-  currentUser=session?.user||null
-  currentUserId=currentUser?.id||null
-  return session
+// The editing app requires an email login. A visitor who is not signed in (or is
+// only anonymous) gets the login gate instead of a usable empty app.
+function isSignedIn(){return !!(currentUser&&!currentUser.is_anonymous)}
+function showLoginGate(){
+  hideL()
+  const g=document.getElementById('login-gate');if(g)g.classList.remove('hidden')
+  const inp=document.getElementById('gate-email-input');if(inp)setTimeout(()=>inp.focus(),50)
+}
+function hideLoginGate(){
+  const g=document.getElementById('login-gate');if(g)g.classList.add('hidden')
+}
+async function gateSignIn(){
+  const inp=document.getElementById('gate-email-input')
+  const email=(inp?.value||'').trim()
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('⚠️ กรอกอีเมลให้ถูกต้อง');return}
+  const btn=document.getElementById('gate-btn');if(btn)btn.disabled=true
+  const{error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.origin+window.location.pathname}})
+  if(btn)btn.disabled=false
+  if(error){toast('❌ '+error.message);return}
+  const msg=document.getElementById('gate-msg')
+  if(msg)msg.textContent=`ส่งลิงก์เข้าสู่ระบบไปที่ ${email} แล้ว — เปิดเมลแล้วกดลิงก์เพื่อเข้าใช้งาน`
 }
 // Reflect the current identity in the sidebar + account modal.
 function updateAuthUI(user){
@@ -99,13 +108,9 @@ function initAuthListener(){
     if(event==='INITIAL_SESSION'){currentUser=u;currentUserId=uid;updateAuthUI(u);return}
     currentUser=u
     updateAuthUI(u)
-    if(uid!==currentUserId){
-      currentUserId=uid
-      // Fresh identity → drop the old project's data and reload the list.
-      state.currentProjectId=null;state.tasks=[];state.deps=[];state.baselines=[];state.taskLogs={};state.comparedBaseline=null
-      document.getElementById('proj-name').textContent='— Select Project —'
-      loadProjects().then(()=>render())
-    }
+    // Identity changed (sign-in via magic link, or sign-out): reload for a clean
+    // boot — init() then either shows the app or the login gate as appropriate.
+    if(uid!==currentUserId){currentUserId=uid;location.reload()}
   })
 }
 // === READ-ONLY SHARE (Tier 1) ===
@@ -3690,6 +3695,7 @@ document.getElementById('settings-modal-bd').onclick=e=>{if(e.target===e.current
 document.getElementById('dep-unified-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeDependencyModal()}
 document.getElementById('account-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeAccountModal()}
 document.getElementById('account-email-input')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();accountEmailSubmit()}})
+document.getElementById('gate-email-input')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();gateSignIn()}})
 
 document.getElementById('confirm-btn').addEventListener('click',()=>{
   if(confirmCallback)confirmCallback()
@@ -3869,11 +3875,16 @@ async function init(){
   // Viewer link? Skip normal auth/data load and render the project read-only.
   const _shareToken=new URLSearchParams(location.search).get('share')
   if(_shareToken){return initShareMode(_shareToken)}
+  // Read the current session WITHOUT signing in anonymously — the editing app
+  // requires an email login; anonymous/no session gets the login gate.
+  const session=(await db.auth.getSession()).data.session
+  currentUser=session?.user||null
+  currentUserId=currentUser?.id||null
+  initAuthListener()
+  if(!isSignedIn()){showLoginGate();return}
+  updateAuthUI(currentUser)
   showL()
   try{
-    await ensureAuth()
-    updateAuthUI(currentUser)
-    initAuthListener()
     await Promise.all([loadProjects(),loadHolidays()])
     initSS();applyGanttSettings();render();populateCategoryDropdowns()
     const zl=document.getElementById('zoom-label');if(zl)zl.textContent=(state.zoomLevel||'day').toUpperCase()
