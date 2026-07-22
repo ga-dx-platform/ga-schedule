@@ -4,7 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GA Schedule</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&family=Noto+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -496,7 +498,7 @@
       <div id="set-appearance" class="set-pane active">
         <p class="set-desc">Visual presentation settings for the application.</p>
         <table class="set-table">
-          <tr><td style="width:38%">Font Family</td><td><select id="set-font" class="finput"><option value="'Inter',-apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,sans-serif">Inter (Default)</option><option value="'Noto Sans Thai',sans-serif">Noto Sans Thai</option><option value="system-ui,sans-serif">System Default</option><option value="'Sarabun',sans-serif">Sarabun</option><option value="'IBM Plex Sans Thai',sans-serif">IBM Plex Sans Thai</option></select></td></tr>
+          <tr><td style="width:38%">Font Family</td><td><select id="set-font" class="finput"><option value="'Inter','Noto Sans Thai',-apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,sans-serif">Inter (Default)</option><option value="'Noto Sans Thai',sans-serif">Noto Sans Thai</option><option value="system-ui,'Noto Sans Thai',sans-serif">System Default</option><option value="'Sarabun','Noto Sans Thai',sans-serif">Sarabun</option><option value="'IBM Plex Sans Thai','Noto Sans Thai',sans-serif">IBM Plex Sans Thai</option></select></td></tr>
           <tr><td>Date Display Format</td><td><select id="set-date-fmt" class="finput"><option value="DD/MM/YYYY">DD/MM/YYYY (Default)</option><option value="YYYY-MM-DD">YYYY-MM-DD</option><option value="MM/DD/YYYY">MM/DD/YYYY</option></select></td></tr>
         </table>
       </div>
