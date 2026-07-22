@@ -167,6 +167,12 @@
       <span id="zoom-label" style="font-size: 10px; padding: 0 6px; color: var(--txt3); font-weight: 700; text-transform: uppercase; width: 45px; text-align: center;">DAY</span>
       <button class="tb tb-tab" onclick="zoomIn()" title="Zoom In" style="padding: 0 10px; font-size: 13px;"><i class="fas fa-search-plus"></i></button>
     </div>
+    <!-- Month-view length control (only visible when zoom = MONTH) -->
+    <div class="tb-group" id="month-scale-ctl" style="display: none; align-items: center; gap: 4px; background: var(--bg-surface);">
+      <button class="tb tb-tab" onclick="stepMonthScale(-1)" title="ย่อความยาว (Month view)" style="padding: 0 10px; font-size: 13px;"><i class="fas fa-minus"></i></button>
+      <input type="range" id="month-scale" min="50" max="400" step="25" value="100" oninput="setMonthScale(this.value)" title="ปรับความยาว Month view (100% = เต็มพื้นที่)" style="width: 90px; accent-color: var(--accent, #4F46E5);">
+      <button class="tb tb-tab" onclick="stepMonthScale(1)" title="ยืดความยาว (Month view)" style="padding: 0 10px; font-size: 13px;"><i class="fas fa-plus"></i></button>
+    </div>
     <button class="tb today" onclick="scrollToday()">Today</button>
     <div class="tb-sep"></div>
 
