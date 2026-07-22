@@ -1,3 +1,20 @@
+// ============================================================================
+// GA Schedule — application logic (single file, no build step; see docs/AGENT.md)
+//
+// Section map (search for the "// === NAME ===" banners to jump):
+//   CONFIG & CONSTANTS · AUTH · READ-ONLY SHARE (Tier 1) · STATE
+//   DISPLAY MAPS · DATE & FORMAT HELPERS · CALENDAR & WORKING-DAY LOGIC
+//   STATE MANAGEMENT (cascade, render cache, WBS, filters)
+//   API / DATABASE (Supabase load*) · UI RENDERING (render, task list, gantt, links)
+//   VIEW SWITCHING · KANBAN · CALENDAR · DASHBOARD · SCROLL SYNC
+//   MODAL: PROJECTS / TASKS / SETTINGS / DEPENDENCIES
+//   PROGRESS-LOG ATTACHMENTS · INLINE LOG EDITING · PER-PROJECT SETTINGS
+//   TASK CRUD · INLINE EDITING · TASK DETAIL PANEL · UNDO/REDO · BULK OPERATIONS
+//   TOOLBAR ACTIONS · EXPORT (CSV/PNG/PDF/JSON, import) · UI HELPERS
+//   COLUMN RESIZE · PANEL SPLITTER · DRAG TO LINK · EVENT LISTENERS
+//   DARK MODE · INIT
+// ============================================================================
+
 // === CONFIG & CONSTANTS ===
 const SUPABASE_URL='https://ucentmuxtabrgqgpywts.supabase.co'
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZW50bXV4dGFicmdxZ3B5d3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM4NjQsImV4cCI6MjA5Mjg3OTg2NH0.BGTAPlKksj2ackf6QPHyfQkDuN35S1qoa0zr91kInRQ'
@@ -265,9 +282,6 @@ function nextWorkingDayAfter(date){
   const d=new Date(date)
   do{d.setDate(d.getDate()+1)}while(isNonWorkingDay(d))
   return d
-}
-function calcTaskEndFromStart(startDate,duration){
-  return addWD(new Date(startDate),Math.max(1,parseInt(duration)||1))
 }
 // === STATE MANAGEMENT ===
 function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
@@ -1113,6 +1127,9 @@ function switchView(name){
 
 // === KANBAN ===
 function renderKanban(){
+  // Rebuild the cache here on purpose: the kanban drop handler calls renderKanban()
+  // directly (not through render()) after mutating a task's status/progress, so the
+  // memoized pctCache/childMap must be refreshed or the moved card shows a stale %.
   renderCache=buildRenderCache()
   const cm=renderCache.childMap,tb=renderCache.taskById
   const container=document.getElementById('view-kanban')
@@ -2857,11 +2874,6 @@ async function bulkChangeStatus(newStatus){
 }
 
 // === TOOLBAR ACTIONS ===
-function setZoom(level){
-  state.zoomLevel=level
-  const lbl=document.getElementById('zoom-label');if(lbl)lbl.textContent=level.toUpperCase()
-  render()
-}
 // Suppress all CSS transitions during JS-driven layout mutations so nothing slides.
 function disableTransitions(){document.documentElement.classList.add('no-transitions')}
 function enableTransitions(){requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('no-transitions')))}
