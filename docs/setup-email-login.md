@@ -28,18 +28,27 @@ after clicking the magic link), so the correct data appears automatically.
 
 ## Supabase Dashboard configuration (one time)
 
-1. **Authentication → Providers → Email**: make sure it is **enabled**
-   (magic-link / OTP works through this provider; no password needed).
-2. **Authentication → Providers → Anonymous sign-ins**: keep **enabled**
-   (the app relies on it as the fallback).
-3. **Authentication → URL Configuration**:
-   - **Site URL**: the deployed app URL, e.g.
-     `https://ga-dx-platform.github.io/ga-schedule/`
-   - **Redirect URLs**: add the same URL (and `http://localhost:3000` for local
-     testing). The magic link redirects here; unlisted URLs are rejected.
-4. *(Optional but recommended)* **Authentication → Emails / SMTP**: the built-in
-   email sender is rate-limited (a few messages per hour). For reliable delivery
-   configure custom SMTP. For a single user the default is usually fine.
+ทำใน **เว็บ Supabase Dashboard** (supabase.com → เข้าโปรเจกต์) ไม่ใช่ในโค้ด
+
+**ศัพท์:** *Magic link* = ลิงก์เข้าระบบที่ส่งไปทางอีเมล คลิกแล้วเข้าเลย ไม่ต้องมีรหัสผ่าน ·
+*Site URL* = ที่อยู่เว็บแอปจริง · *Redirect URLs* = URL ที่อนุญาตให้ลิงก์เด้งกลับมาได้ ·
+*SMTP* = ระบบส่งอีเมล
+
+**1. เปิดล็อกอินด้วยอีเมล**
+- ซ้ายมือ → **Authentication** (ไอคอนกุญแจ/โล่) → เมนูย่อย **Sign In / Providers**
+- แถว **Email** → เปิดเป็น **Enabled** และให้แน่ใจว่า **Email OTP / Magic Link** เปิดอยู่
+
+**2. เช็คว่า Anonymous ยังเปิด**
+- หน้าเดียวกัน แถว **Anonymous Sign-Ins** → ต้อง **Enabled** (แอปใช้เป็น fallback ห้ามปิด)
+
+**3. ใส่ URL ของเว็บ (สำคัญสุด — พลาดตรงนี้ลิงก์จะกดไม่ได้)**
+- **Authentication → URL Configuration**
+- **Site URL**: ที่อยู่เว็บแอป เช่น `https://ga-dx-platform.github.io/ga-schedule/`
+- **Redirect URLs** → **Add URL** ใส่ URL เดียวกัน (และ `http://localhost:3000` ถ้าจะเทสในเครื่อง) → **Save**
+- ไม่รู้ URL เว็บ? ไปที่ repo บน GitHub → **Settings → Pages** จะโชว์ *"Your site is live at ..."*
+
+**4. SMTP — ข้ามได้** ตัวส่งเมลในตัวของ Supabase ใช้ได้เลย (จำกัดไม่กี่ฉบับ/ชม.) พอสำหรับผู้ใช้คนเดียว
+ค่อยตั้ง custom SMTP ทีหลังถ้าจะแจกหลายคน
 
 ---
 

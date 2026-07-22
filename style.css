@@ -1460,3 +1460,40 @@ html body.dark-mode .status-bar {
     border-top: 1px solid var(--bdr) !important;
     color: var(--txt2) !important;
 }
+
+/* ============================================================
+   READ-ONLY SHARE MODE (Tier 1) — viewer opened ?share=<token>
+   Hide every editing affordance; the JS also blocks the actions.
+   ============================================================ */
+body.share-mode #app-sidebar,
+body.share-mode .orb,
+body.share-mode .nav-btn.primary,
+body.share-mode #btn-fast-edit,
+body.share-mode #btn-undo,
+body.share-mode #btn-redo,
+body.share-mode #btn-link,
+body.share-mode .tb.save,
+body.share-mode .tb.danger,
+body.share-mode #bulk-bar,
+body.share-mode .quick-add-btn,
+body.share-mode .trow .acts,
+body.share-mode .trow .drag-handle,
+body.share-mode .trow .row-chk,
+body.share-mode .dep-dot,
+body.share-mode .dp-edit-btn,
+body.share-mode .dp-log-add-btn,
+body.share-mode .tl-log-edit,
+body.share-mode .tl-log-del,
+body.share-mode .hdr-chk {
+  display: none !important;
+}
+/* The two consolidated <select> dropdowns (Data & Export incl. Share, and
+   Baseline) — hide by title so viewers can't import/mutate. */
+body.share-mode select[title="Data & Export"],
+body.share-mode select[title="Baseline actions"] {
+  display: none !important;
+}
+/* Bars/rows are still clickable to open the read-only detail panel, but show a
+   default cursor (no grab affordance). */
+body.share-mode .gbar { cursor: pointer !important; }
+body.share-mode #proj-name { cursor: default !important; }
