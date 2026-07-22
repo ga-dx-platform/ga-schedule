@@ -12,22 +12,19 @@
 -- ⚠️ ORDER MATTERS — do these first, or you will lock yourself out:
 --   1. Sign in to the app once with your email (Account modal) so a row exists
 --      in auth.users for you.
---   2. Put that email in :owner_email below.
---   3. Then run this whole script.
+--   2. In step 2 below, replace the email with the SAME email you signed in with.
+--   3. Then run this whole script in the Supabase SQL Editor.
 -- If anything goes wrong you are never truly locked out: you can always fix data
 -- from this same SQL editor (it runs as a privileged role, bypassing RLS).
-
--- ── 0. Set the owner email here ──────────────────────────────
---    (the account all existing projects should belong to)
-\set owner_email 'REPLACE_ME@example.com'
 
 -- ── 1. New projects auto-fill created_by with the inserter ───
 --    so the app's insert({name}) keeps working without code changes.
 alter table public.projects alter column created_by set default auth.uid();
 
 -- ── 2. Backfill existing rows (created_by is currently null) ──
+--    👇 THIS IS THE ONLY LINE YOU EDIT — put your login email here:
 update public.projects
-set created_by = (select id from auth.users where email = :'owner_email')
+set created_by = (select id from auth.users where email = 'mickyzek@gmail.com')
 where created_by is null;
 
 -- Fail loudly if the email was not found (nothing got assigned).

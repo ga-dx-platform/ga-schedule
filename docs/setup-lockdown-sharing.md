@@ -13,7 +13,8 @@ Two related changes:
    with your email, and confirm the magic link. See `setup-email-login.md`.
    (Migration 004 assigns all existing projects to this account.)
 2. **Run migration 004** — `docs/migrations/004_lockdown_rls.sql` in the Supabase
-   SQL Editor. **Edit the `owner_email` line** to your email before running.
+   SQL Editor. **Edit exactly one line** (marked `👇 THIS IS THE ONLY LINE YOU
+   EDIT`) — put the same email you signed in with — then run the whole script.
    - After this: the app shows your data only when you are signed in. Other
      devices/people who are **not** signed in see an empty app.
 3. **Run migration 005** — `docs/migrations/005_readonly_share.sql`. Adds the
