@@ -115,18 +115,36 @@ function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
   const sourceTask=state.tasks.find(t=>t.id===taskId)
   if(!sourceTask)return changedMap
 
+  const sourceStart=pd(sourceTask.start_date)
   const sourceEnd=taskEnd(sourceTask)
-  const links=state.deps.filter(link=>link.from_task_id===taskId&&(link.dep_type||'FS')==='FS')
+  // Cascade FS (Finish-to-Start) and SS (Start-to-Start) links — the two types
+  // the UI can create. FF/SF are not cascaded.
+  const links=state.deps.filter(link=>{
+    if(link.from_task_id!==taskId)return false
+    const dt=link.dep_type||'FS'
+    return dt==='FS'||dt==='SS'
+  })
   links.forEach(link=>{
     const targetTask=state.tasks.find(t=>t.id===link.to_task_id)
     if(!targetTask)return
     if(targetTask.locked)return
 
-    let adjustedEnd=sourceEnd
+    const dt=link.dep_type||'FS'
     const lagDays=parseInt(link.lag_days)||0
-    if(lagDays>0){adjustedEnd=addWD(sourceEnd,lagDays)}
-    else if(lagDays<0){const temp=new Date(sourceEnd);temp.setDate(temp.getDate()+lagDays);adjustedEnd=temp}
-    const nextStart=nextWorkingDayAfter(adjustedEnd)
+    let nextStart
+    if(dt==='SS'){
+      // Successor starts together with the predecessor, offset by lag.
+      // lag 0 = same start (kept exactly, even on a non-working day).
+      if(lagDays>0)nextStart=addWD(sourceStart,lagDays+1)
+      else if(lagDays<0){const temp=new Date(sourceStart);temp.setDate(temp.getDate()+lagDays);nextStart=temp}
+      else nextStart=new Date(sourceStart)
+    }else{
+      // FS: successor starts the working day after the predecessor finishes (+lag).
+      let adjustedEnd=sourceEnd
+      if(lagDays>0){adjustedEnd=addWD(sourceEnd,lagDays)}
+      else if(lagDays<0){const temp=new Date(sourceEnd);temp.setDate(temp.getDate()+lagDays);adjustedEnd=temp}
+      nextStart=nextWorkingDayAfter(adjustedEnd)
+    }
     const nextStartIso=fmtISO(nextStart)
     const prevStart=targetTask.start_date
 
@@ -3257,7 +3275,8 @@ document.addEventListener('mouseup',async e=>{
       if(error){toast('❌ Failed to link: '+error.message);setSS('✗ Error')}
       else{
         await loadDeps();toast('🔗 Linked successfully')
-        if(depType==='FS'){try{const changed=cascadeDates(fromId);await persistCascadedTasks(changed);await loadTasks()}catch(err){toast('❌ Cascade error')}}
+        // Both FS and SS cascade; snap the successor to the new constraint.
+        try{const changed=cascadeDates(fromId);await persistCascadedTasks(changed);await loadTasks()}catch(err){toast('❌ Cascade error')}
         render()
       }
     }
