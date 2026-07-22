@@ -1408,7 +1408,7 @@ function renderDashboard(){
   if(_chartAssignee){_chartAssignee.destroy();_chartAssignee=null}
   if(!window.Chart)return
 
-  const fontFamily=state.settings.fontFamily||"'Noto Sans Thai',sans-serif"
+  const fontFamily=withThaiFallback(state.settings.fontFamily)
   Chart.defaults.font.family=fontFamily
   Chart.defaults.font.size=11
   Chart.defaults.color='#64748b'
@@ -2141,12 +2141,23 @@ async function updateDependencyInline(depId,field,value){
   }catch(err){console.error('Cascade error after dep update:',err)}
   render()
 }
+// Guarantee Thai glyphs always have a font. Neither Inter/Nunito nor most
+// Latin stacks carry Thai, so we insert 'Noto Sans Thai' *before* the trailing
+// generic family (sans-serif/serif/...). Placing it after the generic would be
+// useless — the browser resolves Thai via the generic before ever reaching it.
+// Applied on every font apply so older saved settings get the fallback too.
+function withThaiFallback(stack){
+  if(!stack)return "'Noto Sans Thai',sans-serif"
+  if(/noto\s*sans\s*thai/i.test(stack))return stack
+  const generic=/,?\s*(sans-serif|serif|monospace|ui-monospace|system-ui)\s*$/i
+  return generic.test(stack)?stack.replace(generic,",'Noto Sans Thai',$1"):stack+",'Noto Sans Thai',sans-serif"
+}
 function applySettings(){
   const s=state.settings,r=document.documentElement
   // Appearance
   s.fontFamily=document.getElementById('set-font').value
   s.dateFmt=document.getElementById('set-date-fmt').value
-  document.body.style.fontFamily=s.fontFamily
+  document.body.style.fontFamily=withThaiFallback(s.fontFamily)
   // Theme
   s.navBg=document.getElementById('set-nav-bg').value
   s.parentColor=document.getElementById('set-parent-color').value
@@ -2199,7 +2210,7 @@ function loadSettings(){
   let d;try{d=JSON.parse(saved)}catch{return}
   Object.assign(state.settings,d)
   const r=document.documentElement,s=state.settings
-  if(s.fontFamily)document.body.style.fontFamily=s.fontFamily
+  if(s.fontFamily)document.body.style.fontFamily=withThaiFallback(s.fontFamily)
   if(s.navBg)r.style.setProperty('--nav-bg',s.navBg)
   if(s.parentColor)r.style.setProperty('--parent-task-color',s.parentColor)
   if(s.childColor)r.style.setProperty('--child-task-color',s.childColor)
