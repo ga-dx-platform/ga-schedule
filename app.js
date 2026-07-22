@@ -2398,9 +2398,26 @@ let _detailPanelId=null
 function openDetailPanel(id){
   const t=state.tasks.find(x=>x.id===id);if(!t)return
   _detailPanelId=id
+  switchDetailTab('details')
   _renderDetailPanel(t)
   document.getElementById('detail-panel').classList.add('open')
   document.getElementById('detail-panel').setAttribute('aria-hidden','false')
+}
+function switchDetailTab(tab,el){
+  document.querySelectorAll('.dp-tab').forEach(b=>b.classList.remove('active'))
+  document.querySelectorAll('.dp-pane').forEach(p=>p.classList.remove('active'))
+  const btn=el||document.getElementById('dp-tab-'+tab)
+  if(btn)btn.classList.add('active')
+  const pane=document.getElementById('dp-pane-'+tab)
+  if(pane)pane.classList.add('active')
+  if(tab==='log'&&_detailPanelId)renderDetailLogPane(_detailPanelId)
+}
+function addLogFromPanel(){
+  const id=_detailPanelId;closeDetailPanel()
+  if(!id)return
+  openEditModal(id)
+  const logTab=document.getElementById('tm-tab-log')
+  if(logTab)switchTaskModalTab('log',logTab)
 }
 function closeDetailPanel(){
   const p=document.getElementById('detail-panel');if(!p)return
@@ -2445,6 +2462,51 @@ function _renderDetailPanel(t){
     }).join('')
     depsSection.style.display=''
   } else depsSection.style.display='none'
+  _updateDetailLogBadge(t.id)
+}
+function _updateDetailLogBadge(taskId){
+  const badge=document.getElementById('dp-log-badge')
+  if(!badge)return
+  const n=(state.taskLogs[taskId]||[]).length
+  badge.textContent=n
+  badge.style.display=n?'inline':'none'
+}
+// Read-only progress-log view rendered inside the detail panel
+function renderDetailLogPane(taskId){
+  const list=document.getElementById('dp-log-list')
+  if(!list)return
+  const logs=(state.taskLogs[taskId]||[])
+  if(!logs.length){list.innerHTML='<div class="tl-log-empty">ยังไม่มีบันทึก</div>';return}
+  const EN_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const groups={}
+  logs.forEach(l=>{
+    const key=l.logged_at.slice(0,7)
+    if(!groups[key])groups[key]=[]
+    groups[key].push(l)
+  })
+  list.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(key=>{
+    const[y,m]=key.split('-')
+    const hdr=`${EN_MON[parseInt(m,10)-1]} ${y}`
+    const rows=groups[key].map(l=>{
+      const d=new Date(l.logged_at)
+      const ds=`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+      const atts=l.attachments||[]
+      const attHtml=atts.length?`<div class="tl-log-atts">${atts.map(a=>{
+        const icon=(a.type||'').startsWith('image/')?'🖼️':'📄'
+        return `<button type="button" class="tl-attach-chip" onclick="openLogAttachment('${a.path}')" title="${esc(a.name)}"><span class="tl-attach-name">${icon} ${esc(a.name)}</span></button>`
+      }).join('')}</div>`:''
+      return `<div class="tl-log-entry">
+        <div class="tl-log-meta">
+          <span class="tl-log-pct">${l.progress_pct}%</span>
+          <span class="tl-log-date">${ds}</span>
+          ${l.logged_by?`<span style="font-size:11px;color:var(--txt3)">${esc(l.logged_by)}</span>`:''}
+        </div>
+        ${l.note?`<div class="tl-log-note">${esc(l.note)}</div>`:''}
+        ${attHtml}
+      </div>`
+    }).join('')
+    return `<div class="tl-month-group"><div class="tl-month-hdr">${hdr}</div>${rows}</div>`
+  }).join('')
 }
 
 // === UNDO / REDO ===
