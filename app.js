@@ -1578,6 +1578,8 @@ function renderSidebarProjects() {
 async function selectProject(id){
   state.currentProjectId=id;state.comparedBaseline=null
   selectedTaskIds.clear();closeDetailPanel()
+  // Load this project's own saved settings (look, calendar, categories…).
+  loadSettings();applyGanttSettings();populateCategoryDropdowns()
   const p=state.projects.find(x=>x.id===id);document.getElementById('proj-name').textContent=p?.name||'—'
   document.getElementById('btn-link').disabled=false;document.getElementById('btn-clear').disabled=false
   closeProjModal();showL();await loadTasks();await loadDeps();await loadBaselines();await loadTaskLogs();hideL();render();triggerAutoFitOnNextPaint();renderSidebarProjects()
@@ -2023,9 +2025,9 @@ function buildStatusSettingsBody(){
   }).join('')
 }
 function resetDefaults(){
-  state.settings=Object.assign({},DEFAULT_SETTINGS,{holidays:[...DEFAULT_SETTINGS.holidays],statusOverrides:JSON.parse(JSON.stringify(DEFAULT_SETTINGS.statusOverrides))})
+  state.settings=freshDefaultSettings()
   state.skipWeekends=false
-  localStorage.setItem('gaScheduleSkipWeekends',JSON.stringify(state.skipWeekends))
+  persistSkipWeekends()
   invalidateCalendarCache()
   openSettings()
   toast('↺ Reset to defaults')
@@ -2062,7 +2064,7 @@ function closeSettings(){
 }
 function toggleSkipWeekends(checked){
   state.skipWeekends=!!checked
-  localStorage.setItem('gaScheduleSkipWeekends',JSON.stringify(state.skipWeekends))
+  persistSkipWeekends()
   if(document.getElementById('task-modal-bd').classList.contains('show'))calcTaskEndDate()
   render()
 }
@@ -2152,6 +2154,47 @@ function withThaiFallback(stack){
   const generic=/,?\s*(sans-serif|serif|monospace|ui-monospace|system-ui)\s*$/i
   return generic.test(stack)?stack.replace(generic,",'Noto Sans Thai',$1"):stack+",'Noto Sans Thai',sans-serif"
 }
+// === PER-PROJECT SETTINGS PERSISTENCE ===
+// Settings are stored per project so each project keeps its own look/calendar.
+// The legacy global keys double as a "default template" that projects without
+// their own saved settings inherit (and that older installs migrate from).
+const SETTINGS_GLOBAL_KEY='gaScheduleSettings'
+const SKIPWK_GLOBAL_KEY='gaScheduleSkipWeekends'
+function projSettingsKey(pid){return pid?`${SETTINGS_GLOBAL_KEY}:${pid}`:SETTINGS_GLOBAL_KEY}
+function projSkipWeekendsKey(pid){return pid?`${SKIPWK_GLOBAL_KEY}:${pid}`:SKIPWK_GLOBAL_KEY}
+function freshDefaultSettings(){return JSON.parse(JSON.stringify(DEFAULT_SETTINGS))}
+function persistSettings(){
+  const pid=state.currentProjectId
+  const payload=JSON.stringify(state.settings)
+  localStorage.setItem(projSettingsKey(pid),payload)
+  // Keep the global copy in sync as the default template new projects inherit.
+  if(pid)localStorage.setItem(SETTINGS_GLOBAL_KEY,payload)
+}
+function persistSkipWeekends(){
+  const pid=state.currentProjectId
+  const payload=JSON.stringify(state.skipWeekends)
+  localStorage.setItem(projSkipWeekendsKey(pid),payload)
+  if(pid)localStorage.setItem(SKIPWK_GLOBAL_KEY,payload)
+}
+// Push the current settings object onto the page's CSS variables. Kept separate
+// from loadSettings() so a project switch can re-apply the incoming look.
+function applySettingsToDOM(){
+  const r=document.documentElement,s=state.settings
+  if(s.fontFamily)document.body.style.fontFamily=withThaiFallback(s.fontFamily)
+  r.style.setProperty('--nav-bg',s.navBg)
+  r.style.setProperty('--parent-task-color',s.parentColor)
+  r.style.setProperty('--child-task-color',s.childColor)
+  r.style.setProperty('--today-col',s.todayCol)
+  r.style.setProperty('--weekend-bg-color',s.wkndBg)
+  r.style.setProperty('--weekend-text-color',s.wkndTxt)
+  r.style.setProperty('--grid-line-color',s.gridLineCol)
+  r.style.setProperty('--holiday-color',s.holCol)
+  if(document.body.classList.contains('dark-mode')){
+    r.style.setProperty('--weekend-bg-color','rgba(255,255,255,0.04)')
+    r.style.setProperty('--grid-line-color','#334155')
+    r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)')
+  }
+}
 function applySettings(){
   const s=state.settings,r=document.documentElement
   // Appearance
@@ -2190,7 +2233,7 @@ function applySettings(){
     r.style.setProperty('--grid-line-color','#334155')
     r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)')
   }
-  localStorage.setItem('gaScheduleSettings',JSON.stringify(s))
+  persistSettings()
   invalidateCalendarCache()
   // Column visibility & widths
   document.querySelectorAll('#columns-settings-body tr').forEach(row=>{
@@ -2205,29 +2248,27 @@ function applySettings(){
   populateCategoryDropdowns()
   closeSettings();render();toast('✅ Settings applied')
 }
+// Load settings for the currently-selected project (or the global template
+// before any project is chosen). Call this again on every project switch so the
+// look/calendar follows the project. Falls back to the global template so a
+// project without its own saved settings inherits the last-applied look.
 function loadSettings(){
-  const saved=localStorage.getItem('gaScheduleSettings');if(!saved)return
-  let d;try{d=JSON.parse(saved)}catch{return}
-  Object.assign(state.settings,d)
-  const r=document.documentElement,s=state.settings
-  if(s.fontFamily)document.body.style.fontFamily=withThaiFallback(s.fontFamily)
-  if(s.navBg)r.style.setProperty('--nav-bg',s.navBg)
-  if(s.parentColor)r.style.setProperty('--parent-task-color',s.parentColor)
-  if(s.childColor)r.style.setProperty('--child-task-color',s.childColor)
-  if(s.todayCol)r.style.setProperty('--today-col',s.todayCol)
-  if(s.wkndBg)r.style.setProperty('--weekend-bg-color',s.wkndBg)
-  if(s.wkndTxt)r.style.setProperty('--weekend-text-color',s.wkndTxt)
-  if(s.gridLineCol)r.style.setProperty('--grid-line-color',s.gridLineCol)
-  if(s.holCol)r.style.setProperty('--holiday-color',s.holCol)
-  if(document.body.classList.contains('dark-mode')){
-    r.style.setProperty('--weekend-bg-color','rgba(255,255,255,0.04)')
-    r.style.setProperty('--grid-line-color','#334155')
-    r.style.setProperty('--holiday-color','rgba(250,204,21,0.15)')
-  }
-  const savedSkipWeekends=localStorage.getItem('gaScheduleSkipWeekends')
+  const pid=state.currentProjectId
+  let saved=localStorage.getItem(projSettingsKey(pid))
+  if(saved===null&&pid)saved=localStorage.getItem(SETTINGS_GLOBAL_KEY)
+  // Start from a fresh default clone so keys from a previously-selected project
+  // can't leak into this one when switching between projects.
+  state.settings=freshDefaultSettings()
+  if(saved){let d;try{d=JSON.parse(saved)}catch{d=null};if(d&&typeof d==='object')Object.assign(state.settings,d)}
+  applySettingsToDOM()
+  // skipWeekends is also per-project (with the same global fallback).
+  let savedSkipWeekends=localStorage.getItem(projSkipWeekendsKey(pid))
+  if(savedSkipWeekends===null&&pid)savedSkipWeekends=localStorage.getItem(SKIPWK_GLOBAL_KEY)
+  state.skipWeekends=false
   if(savedSkipWeekends!==null){
     try{state.skipWeekends=!!JSON.parse(savedSkipWeekends)}catch{state.skipWeekends=false}
   }
+  invalidateCalendarCache()
 }
 function populateParentSel(sel){
   const s=document.getElementById('t-parent');if(!s)return
@@ -3081,11 +3122,14 @@ function closeTopModal(){
 function applyGanttSettings(){
   const right=document.getElementById('right')
   if(right)right.classList.toggle('hide-gtxt',!state.settings.showTextOnBars)
+  const sw=document.getElementById('sw-gtxt')
+  if(sw)sw.checked=!!state.settings.showTextOnBars
 }
 
 document.getElementById('sw-gtxt').addEventListener('change',function(){
   state.settings.showTextOnBars=this.checked
   applyGanttSettings()
+  persistSettings()
 })
 
 // === COLUMN RESIZE ===
