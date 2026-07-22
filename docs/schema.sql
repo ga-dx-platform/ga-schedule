@@ -45,8 +45,9 @@ create policy "Users can delete their own projects"
 -- TASKS
 -- ============================================================
 create type public.task_type as enum ('task', 'milestone', 'parent');
-create type public.task_status as enum ('Not Started', 'In Progress', 'Completed', 'Cancelled');
-create type public.task_category as enum ('General', 'Develop', 'Test', 'Meeting');
+create type public.task_status as enum ('Not Started', 'In Progress', 'Completed', 'Cancelled', 'On Hold', 'Delayed');
+-- category is stored as free text: the app lets users add custom categories in
+-- Settings, so it is intentionally NOT an enum.
 
 create table public.tasks (
   id              uuid primary key default uuid_generate_v4(),
@@ -54,13 +55,14 @@ create table public.tasks (
   parent_id       uuid references public.tasks(id) on delete cascade,  -- null = root level
   name            text not null,
   type            public.task_type default 'task',
-  category        public.task_category default 'General',
+  category        text default 'General',   -- free text; user-defined categories allowed
   status          public.task_status default 'Not Started',
   start_date      date not null default current_date,
   duration_days   integer not null default 1 check (duration_days >= 1),
   progress_pct    integer not null default 0 check (progress_pct between 0 and 100),
   assignee        text,
   notes           text,
+  locked          boolean default false, -- lock task from cascade / drag / delete
   sort_order      integer default 0,    -- for drag-and-drop reorder
   is_collapsed    boolean default false, -- client hint for collapsed parent
   created_at      timestamptz default now(),

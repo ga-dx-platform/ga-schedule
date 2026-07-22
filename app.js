@@ -115,18 +115,36 @@ function cascadeDates(taskId,changedMap=new Map(),visited=new Set()){
   const sourceTask=state.tasks.find(t=>t.id===taskId)
   if(!sourceTask)return changedMap
 
+  const sourceStart=pd(sourceTask.start_date)
   const sourceEnd=taskEnd(sourceTask)
-  const links=state.deps.filter(link=>link.from_task_id===taskId&&(link.dep_type||'FS')==='FS')
+  // Cascade FS (Finish-to-Start) and SS (Start-to-Start) links — the two types
+  // the UI can create. FF/SF are not cascaded.
+  const links=state.deps.filter(link=>{
+    if(link.from_task_id!==taskId)return false
+    const dt=link.dep_type||'FS'
+    return dt==='FS'||dt==='SS'
+  })
   links.forEach(link=>{
     const targetTask=state.tasks.find(t=>t.id===link.to_task_id)
     if(!targetTask)return
     if(targetTask.locked)return
 
-    let adjustedEnd=sourceEnd
+    const dt=link.dep_type||'FS'
     const lagDays=parseInt(link.lag_days)||0
-    if(lagDays>0){adjustedEnd=addWD(sourceEnd,lagDays)}
-    else if(lagDays<0){const temp=new Date(sourceEnd);temp.setDate(temp.getDate()+lagDays);adjustedEnd=temp}
-    const nextStart=nextWorkingDayAfter(adjustedEnd)
+    let nextStart
+    if(dt==='SS'){
+      // Successor starts together with the predecessor, offset by lag.
+      // lag 0 = same start (kept exactly, even on a non-working day).
+      if(lagDays>0)nextStart=addWD(sourceStart,lagDays+1)
+      else if(lagDays<0){const temp=new Date(sourceStart);temp.setDate(temp.getDate()+lagDays);nextStart=temp}
+      else nextStart=new Date(sourceStart)
+    }else{
+      // FS: successor starts the working day after the predecessor finishes (+lag).
+      let adjustedEnd=sourceEnd
+      if(lagDays>0){adjustedEnd=addWD(sourceEnd,lagDays)}
+      else if(lagDays<0){const temp=new Date(sourceEnd);temp.setDate(temp.getDate()+lagDays);adjustedEnd=temp}
+      nextStart=nextWorkingDayAfter(adjustedEnd)
+    }
     const nextStartIso=fmtISO(nextStart)
     const prevStart=targetTask.start_date
 
@@ -470,7 +488,8 @@ async function loadTasks(){
   setSS('✓ Synced')
 }
 async function loadHolidays(){
-  const{data,error}=await db.from('thai_holidays').select('date').eq('year',new Date().getFullYear())
+  const y=new Date().getFullYear()
+  const{data,error}=await db.from('thai_holidays').select('date').in('year',[y,y+1])
   if(error){console.warn('Failed to load holidays:',error.message);return}
   state.holidays=data||[]
   invalidateCalendarCache()
@@ -704,6 +723,9 @@ function renderGantt(RH){
   const bMap=new Map((state.comparedBaseline?.tasks||[]).map(t=>[t.id,t]))
   const totalDays=dBetween(min,max)+1
   const W=totalDays*DP,today=new Date()
+  // Merged holiday set (DB thai_holidays + per-project settings.holidays) —
+  // same source isNonWorkingDay() uses, so the Gantt highlight matches cascade.
+  const{holidaySet:_hset}=getHolidaySet()
 
   const gh=document.getElementById('gantt-hdr');gh.innerHTML='';gh.style.width=W+'px'
   const mr=document.createElement('div');mr.className='g-month-row'
@@ -720,7 +742,7 @@ function renderGantt(RH){
       cpx+=DP
       const wd=state.settings.weekendDays||[0,6]
       const isWE=wd.includes(cur.getDay()),isTd=cur.toDateString()===today.toDateString()
-      const isHol=(state.settings.holidays||[]).some(h=>h.date===fmtISO(cur))
+      const isHol=_hset.has(fmtISO(cur))
       const dc=document.createElement('div');dc.className='g-day';dc.style.width=DP+'px';dc.textContent=cur.getDate()
       if(isWE||isHol)dc.classList.add('weekend')
       if(isTd)dc.classList.add('today-d')
@@ -780,7 +802,7 @@ function renderGantt(RH){
     const d2=new Date(min)
     for(let i=0;i<totalDays;i++){
       const isWknd2=wd2.includes(d2.getDay())
-      const isHol2=!isWknd2&&(state.settings.holidays||[]).some(h=>h.date===fmtISO(d2))
+      const isHol2=!isWknd2&&_hset.has(fmtISO(d2))
       if(isWknd2){const bg=document.createElement('div');bg.className='g-wknd';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
       else if(isHol2){const bg=document.createElement('div');bg.className='g-hol';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
       d2.setDate(d2.getDate()+1)
@@ -2317,7 +2339,7 @@ async function saveTask(){
   else if(pct>0)status='In Progress'
   else status='Not Started'
   const locked=document.getElementById('t-locked').checked
-  const payload={project_id:state.currentProjectId,parent_id:document.getElementById('t-parent').value||null,name,type:document.getElementById('t-type').value,category:document.getElementById('t-category').value,start_date:document.getElementById('t-start').value,duration_days:parseInt(document.getElementById('t-duration').value)||1,progress_pct:pct,status,assignee:document.getElementById('t-assignee').value||null,locked,sort_order:state.editingTaskId?undefined:state.tasks.length}
+  const payload={project_id:state.currentProjectId,parent_id:document.getElementById('t-parent').value||null,name,type:document.getElementById('t-type').value,category:document.getElementById('t-category').value,start_date:document.getElementById('t-start').value,duration_days:parseInt(document.getElementById('t-duration').value)||1,progress_pct:pct,status,assignee:document.getElementById('t-assignee').value||null,locked,sort_order:state.editingTaskId?undefined:(state.tasks.length+1)*10}
   setSS('⟳ Saving...')
   if(state.editingTaskId){
     const original=state.tasks.find(t=>t.id===state.editingTaskId)
@@ -2499,7 +2521,7 @@ function _renderDetailPanel(t){
       const otherId=d.to_task_id===t.id?d.from_task_id:d.to_task_id
       const dir=d.to_task_id===t.id?'← from':'→ to'
       const other=state.tasks.find(x=>x.id===otherId)
-      return`<div class="dp-dep-item">${dir} <span>${esc(other?.name||'—')}</span><span class="dep-type">${d.type||'FS'}</span></div>`
+      return`<div class="dp-dep-item">${dir} <span>${esc(other?.name||'—')}</span><span class="dep-type">${d.dep_type||'FS'}</span></div>`
     }).join('')
     depsSection.style.display=''
   } else depsSection.style.display='none'
@@ -2791,7 +2813,7 @@ function exportCSV(){
     rows.push([wbs[t.id]||'', t.name, t.type, t.category, fmt(rs), fmt(re), t.duration_days+'d', t.progress_pct+'%', STATUS_LABELS[t.status]||t.status, t.assignee||'']);
   });
 
-  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = 'ga-schedule.csv';
@@ -3253,7 +3275,8 @@ document.addEventListener('mouseup',async e=>{
       if(error){toast('❌ Failed to link: '+error.message);setSS('✗ Error')}
       else{
         await loadDeps();toast('🔗 Linked successfully')
-        if(depType==='FS'){try{const changed=cascadeDates(fromId);await persistCascadedTasks(changed);await loadTasks()}catch(err){toast('❌ Cascade error')}}
+        // Both FS and SS cascade; snap the successor to the new constraint.
+        try{const changed=cascadeDates(fromId);await persistCascadedTasks(changed);await loadTasks()}catch(err){toast('❌ Cascade error')}
         render()
       }
     }
