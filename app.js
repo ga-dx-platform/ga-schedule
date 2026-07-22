@@ -1616,24 +1616,32 @@ async function compareBaseline(){
 }
 
 // === MODAL: TASKS ===
+function _lockField(el,locked){
+  el.disabled=locked
+  el.style.backgroundColor=locked?'#f8fafc':''
+  el.style.color=locked?'var(--txt3)':''
+  el.style.pointerEvents=locked?'none':''
+}
 function applyTaskModalGuards(taskId){
   const typeEl=document.getElementById('t-type')
   const startEl=document.getElementById('t-start')
   const durationEl=document.getElementById('t-duration')
+  const endEl=document.getElementById('t-end')
   const progressSlideEl=document.getElementById('t-progress-slide')
   const progressNumEl=document.getElementById('t-progress-num')
   const parentLocked=!!taskId&&state.tasks.some(c=>c.parent_id===taskId)
   const isMilestone=typeEl.value==='milestone'
-  const lockDateProgress=parentLocked||isMilestone
-  ;[startEl,progressSlideEl,progressNumEl].forEach(el=>{
-    el.disabled=lockDateProgress
-    el.style.backgroundColor=lockDateProgress?'#f8fafc':''
-  })
-  if(isMilestone){
-    durationEl.value=1
-  }
-  durationEl.disabled=lockDateProgress
-  durationEl.style.backgroundColor=lockDateProgress?'#f8fafc':''
+  // Progress: no meaning for a parent (derived) or a milestone (a point in time).
+  const lockProgress=parentLocked||isMilestone
+  ;[progressSlideEl,progressNumEl].forEach(el=>_lockField(el,lockProgress))
+  // Start date stays editable for milestones (that date IS the milestone);
+  // only a parent's start is locked because it's derived from its children.
+  _lockField(startEl,parentLocked)
+  // Duration/End span: fixed to 1 day for a milestone, derived for a parent.
+  if(isMilestone)durationEl.value=1
+  const lockSpan=parentLocked||isMilestone
+  _lockField(durationEl,lockSpan)
+  _lockField(endEl,lockSpan)
   calcTaskEndDate()
 }
 
@@ -2224,6 +2232,19 @@ function calcTaskEndDate(){
   const end=new Date(pd(s))
   end.setDate(end.getDate()+(d-1))
   document.getElementById('t-end').value=fmtISO(end)
+}
+// Reverse of calcTaskEndDate(): pick an End Date and the duration is derived.
+function calcTaskDurationFromEnd(){
+  const s=document.getElementById('t-start').value
+  const e=document.getElementById('t-end').value
+  if(!s||!e){calcTaskEndDate();return}
+  const days=Math.round((pd(e)-pd(s))/86400000)+1
+  if(days<1){
+    toast('⚠️ End date must be on or after the start date')
+    calcTaskEndDate() // revert End to match current duration
+    return
+  }
+  document.getElementById('t-duration').value=days
 }
 
 // === TASK CRUD ===
@@ -3466,7 +3487,7 @@ document.getElementById('ctx-delete')?.addEventListener('click',()=>{
   if(taskId)confirmDelete(taskId)
 })
 
-;['t-name','t-parent','t-type','t-category','t-start','t-duration','t-assignee','t-progress-num','f-delayed','f-onhold','f-cancelled','t-locked'].forEach(id=>{
+;['t-name','t-parent','t-type','t-category','t-start','t-duration','t-end','t-assignee','t-progress-num','f-delayed','f-onhold','f-cancelled','t-locked'].forEach(id=>{
   const el=document.getElementById(id)
   if(el){
     el.addEventListener('input',markDirty)
