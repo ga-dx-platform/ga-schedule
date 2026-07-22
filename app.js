@@ -2317,7 +2317,7 @@ async function saveTask(){
   else if(pct>0)status='In Progress'
   else status='Not Started'
   const locked=document.getElementById('t-locked').checked
-  const payload={project_id:state.currentProjectId,parent_id:document.getElementById('t-parent').value||null,name,type:document.getElementById('t-type').value,category:document.getElementById('t-category').value,start_date:document.getElementById('t-start').value,duration_days:parseInt(document.getElementById('t-duration').value)||1,progress_pct:pct,status,assignee:document.getElementById('t-assignee').value||null,locked,sort_order:state.editingTaskId?undefined:state.tasks.length}
+  const payload={project_id:state.currentProjectId,parent_id:document.getElementById('t-parent').value||null,name,type:document.getElementById('t-type').value,category:document.getElementById('t-category').value,start_date:document.getElementById('t-start').value,duration_days:parseInt(document.getElementById('t-duration').value)||1,progress_pct:pct,status,assignee:document.getElementById('t-assignee').value||null,locked,sort_order:state.editingTaskId?undefined:(state.tasks.length+1)*10}
   setSS('⟳ Saving...')
   if(state.editingTaskId){
     const original=state.tasks.find(t=>t.id===state.editingTaskId)
@@ -2499,7 +2499,7 @@ function _renderDetailPanel(t){
       const otherId=d.to_task_id===t.id?d.from_task_id:d.to_task_id
       const dir=d.to_task_id===t.id?'← from':'→ to'
       const other=state.tasks.find(x=>x.id===otherId)
-      return`<div class="dp-dep-item">${dir} <span>${esc(other?.name||'—')}</span><span class="dep-type">${d.type||'FS'}</span></div>`
+      return`<div class="dp-dep-item">${dir} <span>${esc(other?.name||'—')}</span><span class="dep-type">${d.dep_type||'FS'}</span></div>`
     }).join('')
     depsSection.style.display=''
   } else depsSection.style.display='none'
@@ -2791,7 +2791,7 @@ function exportCSV(){
     rows.push([wbs[t.id]||'', t.name, t.type, t.category, fmt(rs), fmt(re), t.duration_days+'d', t.progress_pct+'%', STATUS_LABELS[t.status]||t.status, t.assignee||'']);
   });
 
-  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = 'ga-schedule.csv';
