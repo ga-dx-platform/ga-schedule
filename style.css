@@ -1497,3 +1497,24 @@ body.share-mode select[title="Baseline actions"] {
    default cursor (no grab affordance). */
 body.share-mode .gbar { cursor: pointer !important; }
 body.share-mode #proj-name { cursor: default !important; }
+
+/* ============================================================
+   LOGIN GATE — shown when not signed in (email required)
+   ============================================================ */
+#login-gate{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#f5f7fc,#e6eaf5);padding:20px}
+#login-gate.hidden{display:none}
+#login-gate .lg-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;
+  box-shadow:0 20px 50px rgba(15,23,42,.12);padding:32px 28px;width:100%;max-width:360px;text-align:center;
+  font-family:'Inter','Noto Sans Thai',sans-serif}
+#login-gate .lg-logo{font-size:20px;font-weight:800;
+  background:linear-gradient(135deg,#00F5AA,#3B00FF);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#login-gate .lg-sub{color:#64748b;font-size:13px;margin:6px 0 20px}
+#login-gate input{width:100%;height:40px;padding:0 12px;border:1px solid #e2e8f0;border-radius:10px;
+  font-size:14px;outline:none;font-family:inherit;margin-bottom:12px;box-sizing:border-box}
+#login-gate input:focus{border-color:#3B00FF}
+#login-gate button{width:100%;height:40px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,#00F5AA,#3B00FF);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+#login-gate button:disabled{opacity:.6;cursor:default}
+#login-gate .lg-msg{color:#059669;font-size:12px;margin-top:12px;min-height:16px;line-height:1.5}
+#login-gate .lg-hint{color:#94a3b8;font-size:11px;margin-top:14px}

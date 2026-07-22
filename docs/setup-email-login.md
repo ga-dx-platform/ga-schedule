@@ -4,25 +4,25 @@ Tier 2 of the auth plan: let the owner sign in with an email so the data is tied
 to a **person**, not to one browser. After signing in, the same data is reachable
 from any device / after clearing cache.
 
-The app keeps working **without** login (anonymous sign-in is the fallback), so
-this is purely additive — nothing breaks if you never sign in.
+The editing app **requires an email login** (paired with the RLS lock-down in
+migration 004). Read-only share links (`?share=…`) are the exception — viewers
+need no account.
 
 ---
 
 ## How it works
 
-- On first visit the app still calls `signInAnonymously()` — you can use it right away.
-- The sidebar profile item (bottom-left) opens the **Account** modal.
-- While anonymous, entering an email calls `auth.updateUser({ email })`, which
-  **upgrades the current anonymous account in place**. The user id (`auth.uid()`)
-  stays the same, so every project/task you already created stays yours — no data
-  migration needed.
-- On another device, entering the same email calls `auth.signInWithOtp({ email })`
-  and signs you into that same account, so you see the same data.
-- Signing out reloads the app and drops back to a fresh anonymous session.
-
-`onAuthStateChange` reloads the project list whenever the identity changes (e.g.
-after clicking the magic link), so the correct data appears automatically.
+- If you are not signed in, the app shows a **login gate** instead of a usable
+  empty app. Enter your email → Supabase sends a magic link → click it → you are
+  signed in and the app loads. No password.
+- The **same email on any device** signs into the same account, so you see the
+  same data everywhere ("work anywhere").
+- The sidebar profile item (bottom-left) opens the **Account** modal to see who
+  you are signed in as and to sign out.
+- Read-only share links bypass the gate entirely (they use the anon API key +
+  SECURITY DEFINER RPCs, not a login).
+- `onAuthStateChange` reloads the page whenever you sign in or out, so the app
+  boots cleanly into the right state.
 
 ---
 
@@ -38,8 +38,10 @@ after clicking the magic link), so the correct data appears automatically.
 - ซ้ายมือ → **Authentication** (ไอคอนกุญแจ/โล่) → เมนูย่อย **Sign In / Providers**
 - แถว **Email** → เปิดเป็น **Enabled** และให้แน่ใจว่า **Email OTP / Magic Link** เปิดอยู่
 
-**2. เช็คว่า Anonymous ยังเปิด**
-- หน้าเดียวกัน แถว **Anonymous Sign-Ins** → ต้อง **Enabled** (แอปใช้เป็น fallback ห้ามปิด)
+**2. Anonymous Sign-Ins — ปิดได้แล้ว**
+- หน้าเดียวกัน แถว **Anonymous Sign-Ins** → **ปิดได้** เพื่อความปลอดภัยเพิ่ม
+  (แอปไม่ใช้ anonymous แล้ว เปลี่ยนเป็นบังคับล็อกอิน ส่วนลิงก์แชร์ใช้ anon API key + RPC ไม่ใช่ anonymous auth)
+  จะเปิดค้างไว้ก็ไม่เป็นไร เพราะไม่มีอะไรเรียกใช้
 
 **3. ใส่ URL ของเว็บ (สำคัญสุด — พลาดตรงนี้ลิงก์จะกดไม่ได้)**
 - **Authentication → URL Configuration**
@@ -52,47 +54,27 @@ after clicking the magic link), so the correct data appears automatically.
 
 ---
 
-## Migrating your existing data (do this once)
+## Claiming your existing data (do this once)
 
-Your current projects are owned by the **anonymous** user stored in the browser
-you have been using. To keep them:
+Your existing projects were created anonymously, so their `created_by` is
+currently `null`. Claim them under your email:
 
-1. Open the app **on that same browser** (the one that already shows your projects).
-2. Click the profile item → enter your email → **ส่งลิงก์**.
-3. Open the confirmation link from your inbox. Because this *upgrades* the
-   anonymous account, `auth.uid()` is unchanged and all your data stays attached.
-4. From then on, sign in with that email on any other device to see the same data.
+1. Sign in with your email at the login gate.
+2. Run **migration 004** (`docs/migrations/004_lockdown_rls.sql`, see
+   `setup-lockdown-sharing.md`). It assigns every existing project to your
+   account and locks everything to per-owner access.
 
-> ⚠️ Do **not** do the first sign-in on a fresh browser that has no data — that
-> would create/switch to an account with a different id and your original
-> (anonymous) data would not be attached to it.
+After that your data is private and reachable from any device you sign in on.
 
-### Fallback: reassign ownership by SQL
-
-If the data ever ends up "orphaned" (owned by an old anonymous id you can no
-longer sign into), reassign it in the Supabase SQL editor. Find the ids first:
-
-```sql
--- your current (email) user id
-select id, email from auth.users where email = 'you@example.com';
-
--- which anonymous id owns the orphaned projects
-select distinct created_by from public.projects;
-```
-
-Then repoint the projects (tasks/deps/etc. cascade via project_id + RLS):
-
-```sql
-update public.projects
-set created_by = '<your-email-user-id>'
-where created_by = '<old-anonymous-user-id>';
-```
+> Order matters: sign in **first** (so your `auth.users` row exists), then run
+> 004. If you run 004 before signing in, it raises an error instead of orphaning
+> data — just sign in and re-run.
 
 ---
 
 ## Notes / limits
 
-- This does **not** add multi-user sharing or viewer roles — that is the separate
-  Tier 1 (read-only share link) proposal, intentionally out of scope here.
-- RLS is unchanged (`created_by = auth.uid()`); email login just gives you a
-  stable `auth.uid()` across devices.
+- Multi-user editing / viewer roles are out of scope. Managers view via the
+  read-only share link (`setup-lockdown-sharing.md`).
+- After migration 004, RLS is per-owner (`created_by = auth.uid()`); email login
+  gives you a stable `auth.uid()` across devices.
