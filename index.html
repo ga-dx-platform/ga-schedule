@@ -252,7 +252,15 @@
       <button type="button" class="dp-close-btn" onclick="closeDetailPanel()" aria-label="Close detail panel">✕</button>
     </div>
   </div>
+  <div class="dp-tabs">
+    <button class="dp-tab active" id="dp-tab-details" onclick="switchDetailTab('details',this)">Details</button>
+    <button class="dp-tab" id="dp-tab-log" onclick="switchDetailTab('log',this)">
+      Progress Log
+      <span id="dp-log-badge" class="tm-log-badge" style="display:none">0</span>
+    </button>
+  </div>
   <div class="dp-body">
+    <div id="dp-pane-details" class="dp-pane active">
     <div class="dp-section">
       <div class="dp-row"><span class="dp-lbl">Status</span><span id="dp-status"></span></div>
       <div class="dp-row dp-progress-row">
@@ -281,6 +289,13 @@
     <div class="dp-section" id="dp-deps-section">
       <div class="dp-section-title">Dependencies</div>
       <div id="dp-deps"></div>
+    </div>
+    </div>
+    <div id="dp-pane-log" class="dp-pane">
+      <div class="dp-section">
+        <div id="dp-log-list" class="dp-log-list"></div>
+        <button type="button" class="dp-log-add-btn" onclick="addLogFromPanel()">+ เพิ่มบันทึกความคืบหน้า</button>
+      </div>
     </div>
   </div>
 </div>

@@ -508,6 +508,15 @@ body{font-family:var(--font);background:var(--primary,#7C3AED);color:var(--txt);
   transition:background var(--dur) var(--ease),color var(--dur) var(--ease);
 }
 .dp-close-btn:hover{background:#F1F5F9;color:var(--txt)}
+.dp-tabs{display:flex;gap:2px;border-bottom:1px solid var(--bdr);padding:0 12px;background:var(--bg-surface);flex-shrink:0}
+.dp-tab{position:relative;padding:9px 12px;font-size:12px;font-weight:500;color:var(--txt3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);transition:color .15s,border-color .15s;display:flex;align-items:center;gap:6px;margin-bottom:-1px}
+.dp-tab:hover{color:var(--txt)}
+.dp-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.dp-pane{display:none}
+.dp-pane.active{display:block}
+.dp-log-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--bdr);border-radius:var(--r-md);background:var(--bg-surface);overflow:hidden}
+.dp-log-add-btn{margin-top:12px;width:100%;padding:8px 12px;font-size:12px;font-weight:600;color:var(--primary);background:var(--primary-light);border:1px solid transparent;border-radius:var(--r-md);cursor:pointer;font-family:var(--font);transition:background var(--dur) var(--ease)}
+.dp-log-add-btn:hover{background:var(--primary);color:#fff}
 .dp-body{flex:1;overflow-y:auto;padding:4px 0}
 .dp-section{padding:10px 16px}
 .dp-divider{height:1px;background:var(--bdr);margin:0 16px}
