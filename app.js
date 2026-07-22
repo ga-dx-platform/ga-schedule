@@ -350,8 +350,23 @@ function getParentDates(taskId){
   children.forEach(c=>{const d=getParentDates(c.id);if(!d)return;if(!minS||d.s<minS)minS=d.s;if(!maxE||d.e>maxE)maxE=d.e})
   return{s:minS,e:maxE}
 }
+// MONTH_MIN_PX_PER_DAY: floor for month view. Short/medium projects stretch to
+// fill the Gantt panel (see getPxPerDay); long ones stay at this floor and scroll.
+const MONTH_MIN_PX_PER_DAY=3
 function getPxPerDay(){
-  if(state.zoomLevel==='month')return 3;
+  if(state.zoomLevel==='month'){
+    // Fit-to-width: stretch each day so the whole timeline fills the available
+    // Gantt panel instead of leaving empty space on the right. Never compress
+    // below the floor, so long projects keep the old 3px/day + horizontal scroll.
+    const right=document.getElementById('right')
+    const {min,max}=getMinMax()
+    if(right&&min&&max){
+      const totalDays=dBetween(min,max)+1
+      const avail=right.clientWidth
+      if(totalDays>0&&avail>0)return Math.max(MONTH_MIN_PX_PER_DAY,avail/totalDays)
+    }
+    return MONTH_MIN_PX_PER_DAY
+  }
   if(state.zoomLevel==='week')return 10;
   return 30;
 }
