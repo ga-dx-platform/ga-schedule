@@ -200,11 +200,11 @@ function toggleFastEdit(){
 }
 function zoomIn(){
   const idx=ZOOM_LEVELS.indexOf(state.zoomLevel)
-  if(idx<ZOOM_LEVELS.length-1){state.zoomLevel=ZOOM_LEVELS[idx+1];syncZoomControls();render()}
+  if(idx<ZOOM_LEVELS.length-1){state.zoomLevel=ZOOM_LEVELS[idx+1];syncZoomControls();render();persistZoom()}
 }
 function zoomOut(){
   const idx=ZOOM_LEVELS.indexOf(state.zoomLevel)
-  if(idx>0){state.zoomLevel=ZOOM_LEVELS[idx-1];syncZoomControls();render()}
+  if(idx>0){state.zoomLevel=ZOOM_LEVELS[idx-1];syncZoomControls();render();persistZoom()}
 }
 // MONTH_SCALE bounds (percent). 100% = fit the panel exactly; higher stretches
 // the month timeline longer (with horizontal scroll), lower makes it shorter.
@@ -218,7 +218,7 @@ function syncZoomControls(){
 function setMonthScale(percent){
   const p=Math.max(MONTH_SCALE_MIN,Math.min(MONTH_SCALE_MAX,parseFloat(percent)||100))
   state.monthScale=p/100
-  syncZoomControls();render()
+  syncZoomControls();render();persistZoom()
 }
 function stepMonthScale(dir){
   setMonthScale(Math.round((state.monthScale||1)*100)+dir*MONTH_SCALE_STEP)
@@ -2403,8 +2403,12 @@ function withThaiFallback(stack){
 // their own saved settings inherit (and that older installs migrate from).
 const SETTINGS_GLOBAL_KEY='gaScheduleSettings'
 const SKIPWK_GLOBAL_KEY='gaScheduleSkipWeekends'
+const COLUMNS_GLOBAL_KEY='gaScheduleColumns'
+const ZOOM_GLOBAL_KEY='gaScheduleZoom'
 function projSettingsKey(pid){return pid?`${SETTINGS_GLOBAL_KEY}:${pid}`:SETTINGS_GLOBAL_KEY}
 function projSkipWeekendsKey(pid){return pid?`${SKIPWK_GLOBAL_KEY}:${pid}`:SKIPWK_GLOBAL_KEY}
+function projColumnsKey(pid){return pid?`${COLUMNS_GLOBAL_KEY}:${pid}`:COLUMNS_GLOBAL_KEY}
+function projZoomKey(pid){return pid?`${ZOOM_GLOBAL_KEY}:${pid}`:ZOOM_GLOBAL_KEY}
 function freshDefaultSettings(){return JSON.parse(JSON.stringify(DEFAULT_SETTINGS))}
 function persistSettings(){
   const pid=state.currentProjectId
@@ -2418,6 +2422,23 @@ function persistSkipWeekends(){
   const payload=JSON.stringify(state.skipWeekends)
   localStorage.setItem(projSkipWeekendsKey(pid),payload)
   if(pid)localStorage.setItem(SKIPWK_GLOBAL_KEY,payload)
+}
+// Column visibility & widths live on top-level state (not state.settings), so they
+// need their own per-project persistence — otherwise they reset to defaults on
+// every refresh. Global key doubles as the default template for new projects.
+function persistColumns(){
+  const pid=state.currentProjectId
+  const payload=JSON.stringify({hidden:state.colHidden,widths:state.colWidths})
+  localStorage.setItem(projColumnsKey(pid),payload)
+  if(pid)localStorage.setItem(COLUMNS_GLOBAL_KEY,payload)
+}
+// Zoom/display range (zoom level + month scale) is also top-level state and needs
+// its own persistence for the same reason.
+function persistZoom(){
+  const pid=state.currentProjectId
+  const payload=JSON.stringify({zoomLevel:state.zoomLevel,zoom:state.zoom,monthScale:state.monthScale})
+  localStorage.setItem(projZoomKey(pid),payload)
+  if(pid)localStorage.setItem(ZOOM_GLOBAL_KEY,payload)
 }
 // Push the current settings object onto the page's CSS variables. Kept separate
 // from loadSettings() so a project switch can re-apply the incoming look.
@@ -2487,6 +2508,8 @@ function applySettings(){
       state.colWidths[idx]=Math.max(20,parseInt(inp.value)||50)
     }
   })
+  state.hasSavedColumns=true
+  persistColumns()
   applyColumnWidths()
   populateCategoryDropdowns()
   closeSettings();render();toast('✅ Settings applied')
@@ -2511,6 +2534,34 @@ function loadSettings(){
   if(savedSkipWeekends!==null){
     try{state.skipWeekends=!!JSON.parse(savedSkipWeekends)}catch{state.skipWeekends=false}
   }
+  // Column visibility & widths (per-project, with the global default fallback).
+  let savedColumns=localStorage.getItem(projColumnsKey(pid))
+  if(savedColumns===null&&pid)savedColumns=localStorage.getItem(COLUMNS_GLOBAL_KEY)
+  state.colHidden=new Array(11).fill(false)
+  state.colWidths=[...DEFAULT_COL_WIDTHS]
+  // Track whether the user has an explicit saved column layout. If so, we must
+  // NOT auto-fit on load — that would blow away their remembered widths.
+  state.hasSavedColumns=false
+  if(savedColumns){
+    try{
+      const c=JSON.parse(savedColumns)
+      if(c&&Array.isArray(c.hidden))for(let i=0;i<11;i++)state.colHidden[i]=!!c.hidden[i]
+      if(c&&Array.isArray(c.widths)){for(let i=0;i<11;i++)if(Number.isFinite(c.widths[i]))state.colWidths[i]=c.widths[i]}
+      state.hasSavedColumns=true
+    }catch{/* keep defaults */}
+  }
+  // Zoom / display range (per-project, with the global default fallback).
+  let savedZoom=localStorage.getItem(projZoomKey(pid))
+  if(savedZoom===null&&pid)savedZoom=localStorage.getItem(ZOOM_GLOBAL_KEY)
+  if(savedZoom){
+    try{
+      const z=JSON.parse(savedZoom)
+      if(z&&ZOOM_LEVELS.indexOf(z.zoomLevel)!==-1)state.zoomLevel=z.zoomLevel
+      if(z&&Number.isFinite(z.zoom))state.zoom=z.zoom
+      if(z&&Number.isFinite(z.monthScale))state.monthScale=z.monthScale
+    }catch{/* keep defaults */}
+  }
+  if(typeof syncZoomControls==='function')syncZoomControls()
   invalidateCalendarCache()
 }
 function populateParentSel(sel){
@@ -2914,7 +2965,7 @@ async function bulkChangeStatus(newStatus){
 function disableTransitions(){document.documentElement.classList.add('no-transitions')}
 function enableTransitions(){requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('no-transitions')))}
 
-function autoFitAll(){
+function autoFitAll(persist=true){
   disableTransitions()
   const colCount=11
   // Reset to defaults ก่อนวัด เพื่อป้องกัน Task Name (คอลัมน์ที่ขยายได้) จำค่าที่ถูกยืดค้างไว้
@@ -2949,10 +3000,19 @@ function autoFitAll(){
 
   render()
   enableTransitions()
-  toast('✅ จัดขนาดคอลัมน์อัตโนมัติสำเร็จ')
+  // Remember an explicit auto-fit so it survives refresh; the automatic on-load
+  // fit passes persist=false so untouched projects keep re-fitting as data grows.
+  if(persist){state.hasSavedColumns=true;persistColumns();toast('✅ จัดขนาดคอลัมน์อัตโนมัติสำเร็จ')}
 }
 function triggerAutoFitOnNextPaint(delay=50){
-  setTimeout(()=>{if(typeof autoFitAll==='function')autoFitAll()},delay)
+  // Respect a saved column layout: re-apply the remembered widths instead of
+  // auto-fitting (which resets them to measured defaults). Auto-fit only when the
+  // project has no saved columns yet, so first-time views still look sensible.
+  if(state.hasSavedColumns){
+    setTimeout(()=>{syncZoomControls();applyColumnWidths()},delay)
+    return
+  }
+  setTimeout(()=>{if(typeof autoFitAll==='function')autoFitAll(false)},delay)
 }
 function expandAll(){
   state.collapsed={}
@@ -3437,6 +3497,8 @@ document.addEventListener('mouseup',()=>{
   document.body.style.cursor=''
   document.body.style.userSelect=''
   document.querySelectorAll('.resizer.is-resizing').forEach(el=>el.classList.remove('is-resizing'))
+  // Remember the manually-resized column width across refresh.
+  state.hasSavedColumns=true;persistColumns()
 })
 
 document.getElementById('col-hdr').addEventListener('dblclick',e=>{
@@ -3454,6 +3516,7 @@ document.getElementById('col-hdr').addEventListener('dblclick',e=>{
   })
   state.colWidths[colIdx]=Math.min(Math.max(maxWidth+12,40),600)
   applyColumnWidths()
+  state.hasSavedColumns=true;persistColumns()
 })
 
 // === PANEL SPLITTER — ghost + rAF throttle ===
