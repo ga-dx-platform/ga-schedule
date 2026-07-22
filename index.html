@@ -166,7 +166,7 @@
     <div class="tb-sep"></div>
 
     <!-- Consolidated Data & Export Actions -->
-    <select class="tb-filter" title="Data & Export" style="width: 140px;" onchange="const v=this.value; if(v==='csv')exportCSV(); else if(v==='png')exportPNG(); else if(v==='pdf')exportPDF(); else if(v==='exp_json')exportJSON(); else if(v==='imp_json')document.getElementById('import-json-input').click(); else if(v==='imp_csv')document.getElementById('import-csv-input').click(); this.value='';">
+    <select class="tb-filter" title="Data & Export" style="width: 140px;" onchange="const v=this.value; if(v==='csv')exportCSV(); else if(v==='png')exportPNG(); else if(v==='pdf')exportPDF(); else if(v==='exp_json')exportJSON(); else if(v==='imp_json')document.getElementById('import-json-input').click(); else if(v==='imp_csv')document.getElementById('import-csv-input').click(); else if(v==='share')shareProject(); this.value='';">
       <option value="" disabled selected>💽 Data &amp; Export</option>
       <option value="imp_csv">📥 Import CSV (Excel)</option>
       <option value="imp_json">📥 Import Backup (JSON)</option>
@@ -175,6 +175,8 @@
       <option value="csv">📊 Export to CSV</option>
       <option value="png">🖼️ Export to PNG</option>
       <option value="pdf">📄 Export to PDF</option>
+      <option value="" disabled>──────────</option>
+      <option value="share">🔗 Share read-only link</option>
     </select>
     <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="importJSON(event)">
     <input type="file" id="import-csv-input" accept=".csv" style="display:none" onchange="importCSV(event)">

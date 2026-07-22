@@ -108,6 +108,56 @@ function initAuthListener(){
     }
   })
 }
+// === READ-ONLY SHARE (Tier 1) ===
+// Owner: generate (or reuse) an unguessable link that lets someone view this
+// project without an account. The token lives on projects.share_token.
+async function shareProject(){
+  if(!state.currentProjectId){toast('⚠️ เลือกโปรเจกต์ก่อน');return}
+  const p=state.projects.find(x=>x.id===state.currentProjectId)
+  let token=p?.share_token
+  if(!token){
+    token=crypto.randomUUID()
+    const{error}=await db.from('projects').update({share_token:token}).eq('id',state.currentProjectId)
+    if(error){toast('❌ สร้างลิงก์ไม่สำเร็จ: '+error.message+' (ต้อง re-run migration 005)');return}
+    if(p)p.share_token=token
+  }
+  const url=`${location.origin}${location.pathname}?share=${token}`
+  try{await navigator.clipboard.writeText(url)}catch{}
+  await customPrompt('ลิงก์ดูอย่างเดียว (คัดลอกให้แล้ว — ส่งให้หัวหน้าได้เลย):',url)
+}
+// Viewer: load one project through the read-only RPCs and render it locked.
+async function initShareMode(token){
+  shareMode=true;shareToken=token
+  document.body.classList.add('share-mode')
+  showL()
+  try{
+    const{data:proj,error}=await db.rpc('get_shared_project',{p_token:token})
+    if(error||!proj||!proj.length){
+      hideL()
+      document.body.innerHTML='<div style="padding:48px;text-align:center;font-family:sans-serif;color:#334155"><h2>ลิงก์ไม่ถูกต้องหรือถูกยกเลิกแล้ว</h2><p>กรุณาขอลิงก์ใหม่จากเจ้าของโปรเจกต์</p></div>'
+      return
+    }
+    const project=proj[0]
+    state.currentProjectId=project.id
+    const nameEl=document.getElementById('proj-name');if(nameEl)nameEl.textContent=(project.name||'—')+' · ดูอย่างเดียว'
+    const[{data:tasks},{data:deps},{data:logs}]=await Promise.all([
+      db.rpc('get_shared_tasks',{p_token:token}),
+      db.rpc('get_shared_deps',{p_token:token}),
+      db.rpc('get_shared_logs',{p_token:token})
+    ])
+    state.tasks=(tasks||[]).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0))
+    state.deps=deps||[]
+    const map={};(logs||[]).forEach(l=>{(map[l.task_id]=map[l.task_id]||[]).push(l)})
+    Object.values(map).forEach(arr=>arr.sort((a,b)=>new Date(b.logged_at)-new Date(a.logged_at)))
+    state.taskLogs=map
+    initSS();applyGanttSettings();render();populateCategoryDropdowns()
+    const zl=document.getElementById('zoom-label');if(zl)zl.textContent=(state.zoomLevel||'day').toUpperCase()
+    triggerAutoFitOnNextPaint()
+  }catch(err){
+    console.error('Share mode failed:',err)
+    toast('❌ โหลดข้อมูลไม่สำเร็จ')
+  }finally{hideL()}
+}
 
 // === STATE ===
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter','Noto Sans Thai',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[],categories:[{name:'General',color:'#5B21B6'},{name:'Develop',color:'#059669'},{name:'Test',color:'#10B981'},{name:'Meeting',color:'#D97706'}]}
@@ -115,6 +165,9 @@ const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
 let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],colHidden:new Array(11).fill(false),searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
 let isSS=false,dragTaskId=null
 let isFastEdit=false
+// Read-only share mode: set when the page is opened with ?share=<token>. In this
+// mode the viewer sees the project but every mutation entry point is blocked.
+let shareMode=false,shareToken=null
 const ZOOM_LEVELS=['month','week','day']
 function toggleFastEdit(){
   isFastEdit=!isFastEdit
@@ -800,6 +853,7 @@ function renderTaskList(){
 }
 
 async function reorderTasks(dragId,targetId,placeAfter){
+  if(shareMode)return
   const dt=state.tasks.find(t=>t.id===dragId),tt=state.tasks.find(t=>t.id===targetId)
   if(!dt||!tt||(dt.parent_id||null)!==(tt.parent_id||null))return
   const pid=tt.parent_id||null
@@ -1128,6 +1182,7 @@ function renderKanban(){
     colEl.ondragover=e=>{e.preventDefault();colEl.classList.add('drag-over-col')}
     colEl.ondragleave=e=>{if(!colEl.contains(e.relatedTarget))colEl.classList.remove('drag-over-col')}
     colEl.ondrop=async e=>{
+      if(shareMode)return
       e.preventDefault();colEl.classList.remove('drag-over-col')
       const taskId=e.dataTransfer.getData('text/plain')
       if(!taskId)return
@@ -1642,6 +1697,7 @@ function initSS(){
 
 // === MODAL: PROJECTS ===
 function openProjModal(){
+  if(shareMode)return
   renderProjList()
   openModalBackdrop('proj-modal-bd','#new-proj-name')
 }
@@ -1773,6 +1829,7 @@ function applyTaskModalGuards(taskId){
 }
 
 function openTaskModal(taskId){
+  if(shareMode)return
   if(!state.currentProjectId){openProjModal();return}
   state.editingTaskId=taskId||null
   const isEdit=!!taskId
@@ -1875,6 +1932,7 @@ function _findLog(logId){
   return null
 }
 function startEditLog(logId){
+  if(shareMode)return
   const l=_findLog(logId)
   if(!l)return
   editingLogId=logId
@@ -2018,6 +2076,7 @@ function _updateLogBadge(taskId){
   badge.style.display=n?'inline':'none'
 }
 async function addTaskLog(){
+  if(shareMode)return
   if(!state.editingTaskId||!state.currentProjectId)return
   const note=document.getElementById('tl-note').value.trim()
   if(!note&&!pendingLogFiles.length){toast('⚠️ กรุณากรอกบันทึกหรือแนบไฟล์');return}
@@ -2061,6 +2120,7 @@ async function addTaskLog(){
   toast('✅ บันทึกเรียบร้อย')
 }
 function deleteTaskLog(logId){
+  if(shareMode)return
   showConfirm('ลบบันทึกนี้?',async()=>{
     // grab attachment paths before we drop the row from state
     let atts=[]
@@ -2426,6 +2486,7 @@ function calcTaskDurationFromEnd(){
 
 // === TASK CRUD ===
 async function saveTask(){
+  if(shareMode)return
   const btn=document.getElementById('btn-save-task');if(btn)btn.disabled=true
   try{
   const name=document.getElementById('t-name').value.trim();if(!name){toast('⚠️ Please enter a task name');return}
@@ -2475,6 +2536,7 @@ async function saveTask(){
   }finally{if(btn)btn.disabled=false}
 }
 async function deleteTask(){
+  if(shareMode)return
   if(!state.editingTaskId)return;const t=state.tasks.find(x=>x.id===state.editingTaskId)
   showConfirm(`Delete "${t?.name}"? Subtasks will also be removed.`,async()=>{
     pushHistory()
@@ -2496,6 +2558,7 @@ function getDesc(id){
 
 // === INLINE EDITING ===
 async function patchTask(id,fields){
+  if(shareMode)return
   const t=state.tasks.find(x=>x.id===id);if(!t)return
   setSS('⟳ Saving...')
   const{error}=await db.from('tasks').update(fields).eq('id',id)
@@ -2506,6 +2569,7 @@ async function patchTask(id,fields){
   render()
 }
 function inlineEditPct(el,id){
+  if(shareMode)return
   const t=state.tasks.find(x=>x.id===id);if(!t)return
   const inp=document.createElement('input')
   inp.type='number';inp.min=0;inp.max=100;inp.value=t.progress_pct
@@ -2524,6 +2588,7 @@ function inlineEditPct(el,id){
   inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commit()}if(e.key==='Escape')render()}
 }
 function inlineEditName(el,id){
+  if(shareMode)return
   const t=state.tasks.find(x=>x.id===id);if(!t)return
   const inp=document.createElement('input')
   inp.type='text';inp.value=t.name||''
@@ -2540,6 +2605,7 @@ function inlineEditName(el,id){
   inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commit()}if(e.key==='Escape')render()}
 }
 function inlineEditStatus(el,id){
+  if(shareMode)return
   const t=state.tasks.find(x=>x.id===id);if(!t)return
   const STATUSES=['Not Started','In Progress','Completed','Delayed','On Hold','Cancelled']
   const sel=document.createElement('select')
@@ -3346,6 +3412,7 @@ const leftPanel=document.getElementById('left')
 // === DRAG TO LINK STATE ===
 let isDraggingLink=false,linkStartDot=null,linkTempPath=null
 function initDragLink(e){
+  if(shareMode)return
   e.preventDefault();e.stopPropagation()
   isDraggingLink=true;linkStartDot=e.target;e.target.classList.add('dragging');document.body.style.cursor='crosshair'
   const svgCanvas=document.getElementById('links-svg')
@@ -3456,6 +3523,7 @@ document.addEventListener('mouseup',()=>{
 })
 
 document.getElementById('right').addEventListener('mousedown',e=>{
+  if(shareMode)return
   if(isResizingPanel||colResize.active)return
   const bar=e.target.closest('.gbar')
   if(!bar||!bar.dataset.taskId)return
@@ -3693,7 +3761,7 @@ function hideTaskContextMenu({restore=false}={}){
   if(restore)restoreFocus()
 }
 function showTaskContextMenu(taskId,x,y){
-  if(!ctxMenu)return
+  if(shareMode||!ctxMenu)return
   currentContextMenuTaskId=taskId
   rememberFocus()
   ctxMenu.classList.remove('hidden')
@@ -3797,7 +3865,11 @@ function initTheme() {
 
 // === INIT ===
 async function init(){
-  initTheme();loadSettings();showL()
+  initTheme();loadSettings()
+  // Viewer link? Skip normal auth/data load and render the project read-only.
+  const _shareToken=new URLSearchParams(location.search).get('share')
+  if(_shareToken){return initShareMode(_shareToken)}
+  showL()
   try{
     await ensureAuth()
     updateAuthUI(currentUser)
