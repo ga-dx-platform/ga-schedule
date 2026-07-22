@@ -13,8 +13,8 @@
 
 | | |
 |--|--|
-| **Frontend** | HTML + Vanilla JS (single file) |
-| **Styling** | Tailwind CSS CDN + Custom CSS Variables |
+| **Frontend** | HTML + Vanilla JS (no framework, no build step) |
+| **Styling** | Custom CSS (`style.css`) with CSS Variables — no Tailwind |
 | **Database** | Supabase (PostgreSQL + RLS) |
 | **Auth** | Supabase Auth |
 | **Hosting** | GitHub Pages |
@@ -96,13 +96,16 @@ Push ขึ้น `main` branch → GitHub Pages deploy อัตโนมัต
 
 ```
 ga-schedule/
-├── index.html          ← entire app (HTML + CSS + JS)
+├── index.html          ← markup + <head> CDN links + DOM for views/modals
+├── style.css           ← all styling (CSS variables, light + dark themes)
+├── app.js              ← all application logic (loaded with defer)
 ├── README.md
 └── docs/
-    ├── AGENT.md        ← guide for AI agents (Codex)
-    ├── CLAUDE.md       ← guide for Claude Code
+    ├── AGENT.md        ← short guide for AI agents
+    ├── CLAUDE.md       ← detailed guide for Claude Code
     ├── design.md       ← design system & color tokens
-    └── schema.sql      ← Supabase PostgreSQL schema
+    ├── schema.sql      ← Supabase PostgreSQL schema (fresh install)
+    └── migrations/     ← incremental idempotent SQL migrations
 ```
 
 ## Related Projects
