@@ -470,7 +470,8 @@ async function loadTasks(){
   setSS('✓ Synced')
 }
 async function loadHolidays(){
-  const{data,error}=await db.from('thai_holidays').select('date').eq('year',new Date().getFullYear())
+  const y=new Date().getFullYear()
+  const{data,error}=await db.from('thai_holidays').select('date').in('year',[y,y+1])
   if(error){console.warn('Failed to load holidays:',error.message);return}
   state.holidays=data||[]
   invalidateCalendarCache()
@@ -704,6 +705,9 @@ function renderGantt(RH){
   const bMap=new Map((state.comparedBaseline?.tasks||[]).map(t=>[t.id,t]))
   const totalDays=dBetween(min,max)+1
   const W=totalDays*DP,today=new Date()
+  // Merged holiday set (DB thai_holidays + per-project settings.holidays) —
+  // same source isNonWorkingDay() uses, so the Gantt highlight matches cascade.
+  const{holidaySet:_hset}=getHolidaySet()
 
   const gh=document.getElementById('gantt-hdr');gh.innerHTML='';gh.style.width=W+'px'
   const mr=document.createElement('div');mr.className='g-month-row'
@@ -720,7 +724,7 @@ function renderGantt(RH){
       cpx+=DP
       const wd=state.settings.weekendDays||[0,6]
       const isWE=wd.includes(cur.getDay()),isTd=cur.toDateString()===today.toDateString()
-      const isHol=(state.settings.holidays||[]).some(h=>h.date===fmtISO(cur))
+      const isHol=_hset.has(fmtISO(cur))
       const dc=document.createElement('div');dc.className='g-day';dc.style.width=DP+'px';dc.textContent=cur.getDate()
       if(isWE||isHol)dc.classList.add('weekend')
       if(isTd)dc.classList.add('today-d')
@@ -780,7 +784,7 @@ function renderGantt(RH){
     const d2=new Date(min)
     for(let i=0;i<totalDays;i++){
       const isWknd2=wd2.includes(d2.getDay())
-      const isHol2=!isWknd2&&(state.settings.holidays||[]).some(h=>h.date===fmtISO(d2))
+      const isHol2=!isWknd2&&_hset.has(fmtISO(d2))
       if(isWknd2){const bg=document.createElement('div');bg.className='g-wknd';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
       else if(isHol2){const bg=document.createElement('div');bg.className='g-hol';bg.style.cssText=`left:${i*DP}px;width:${DP}px`;bfrag.appendChild(bg)}
       d2.setDate(d2.getDate()+1)
