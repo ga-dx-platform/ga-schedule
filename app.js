@@ -3,8 +3,111 @@ const SUPABASE_URL='https://ucentmuxtabrgqgpywts.supabase.co'
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZW50bXV4dGFicmdxZ3B5d3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM4NjQsImV4cCI6MjA5Mjg3OTg2NH0.BGTAPlKksj2ackf6QPHyfQkDuN35S1qoa0zr91kInRQ'
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON)
 
-// === UTILITY FUNCTIONS ===
-async function ensureAuth(){const{data:{session}}=await db.auth.getSession();if(!session){const{error}=await db.auth.signInAnonymously();if(error)console.warn('Auth:',error.message)}}
+// === AUTH ===
+// Currently-signed-in user (anonymous or email). Kept so the account UI and the
+// data-reload-on-identity-change logic don't need an async round-trip each time.
+let currentUser=null,currentUserId=null
+async function ensureAuth(){
+  let session=(await db.auth.getSession()).data.session
+  if(!session){
+    // Brand-new visitor: sign in anonymously so the app always works. The user
+    // can later "claim" this anonymous account with an email (see accountEmailSubmit).
+    const{error}=await db.auth.signInAnonymously()
+    if(error)console.warn('Auth:',error.message)
+    session=(await db.auth.getSession()).data.session
+  }
+  currentUser=session?.user||null
+  currentUserId=currentUser?.id||null
+  return session
+}
+// Reflect the current identity in the sidebar + account modal.
+function updateAuthUI(user){
+  const u=user||currentUser
+  const isAnon=!u||u.is_anonymous
+  const email=u?.email||''
+  const nameEl=document.querySelector('.profile-item .sidebar-text')
+  const avatarEl=document.querySelector('.profile-item .profile-avatar')
+  if(nameEl)nameEl.textContent=isAnon?'Guest · แตะเพื่อล็อกอิน':(email||'Signed in')
+  if(avatarEl)avatarEl.textContent=(email?email[0]:'S').toUpperCase()
+  const statusEl=document.getElementById('account-status')
+  if(statusEl){
+    const emailRow=document.getElementById('account-email-row')
+    const signedRow=document.getElementById('account-signed-row')
+    const emailShow=document.getElementById('account-current-email')
+    if(isAnon){
+      statusEl.textContent='กำลังใช้งานแบบชั่วคราว — ข้อมูลผูกกับเบราว์เซอร์นี้ ถ้าล้าง cache หรือเปลี่ยนเครื่องจะเข้าไม่ถึง'
+      if(emailRow)emailRow.style.display=''
+      if(signedRow)signedRow.style.display='none'
+    }else{
+      statusEl.textContent='เข้าสู่ระบบแล้ว — ข้อมูลใช้ได้จากทุกเครื่องที่ล็อกอินด้วยอีเมลนี้'
+      if(emailRow)emailRow.style.display='none'
+      if(signedRow)signedRow.style.display=''
+      if(emailShow)emailShow.textContent=email
+    }
+  }
+}
+async function openAccountModal(){
+  try{const{data:{user}}=await db.auth.getUser();if(user){currentUser=user;currentUserId=user.id}}catch{}
+  updateAuthUI(currentUser)
+  openModalBackdrop('account-modal-bd',currentUser&&!currentUser.is_anonymous?null:'#account-email-input')
+}
+function closeAccountModal(){closeModalBackdrop('account-modal-bd')}
+// Send a magic link. If the user is still anonymous we UPGRADE the account in
+// place (updateUser) so the uid — and therefore all existing data — is kept.
+// If the email already belongs to an account, fall back to a plain sign-in.
+async function accountEmailSubmit(){
+  const inp=document.getElementById('account-email-input')
+  const email=(inp?.value||'').trim()
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('⚠️ กรอกอีเมลให้ถูกต้อง');return}
+  const redirect=window.location.origin+window.location.pathname
+  const btn=document.getElementById('account-email-btn');if(btn)btn.disabled=true
+  try{
+    const{data:{user}}=await db.auth.getUser()
+    if(user&&user.is_anonymous){
+      const{error}=await db.auth.updateUser({email},{emailRedirectTo:redirect})
+      if(error)throw error
+      toast('📧 ส่งลิงก์ยืนยันไปที่อีเมลแล้ว เปิดลิงก์เพื่อบันทึกบัญชี (ข้อมูลเดิมถูกเก็บไว้)',4000)
+    }else{
+      const{error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:redirect}})
+      if(error)throw error
+      toast('📧 ส่งลิงก์เข้าสู่ระบบไปที่อีเมลแล้ว',4000)
+    }
+  }catch(err){
+    const msg=(err.message||'').toLowerCase()
+    if(msg.includes('already')||msg.includes('registered')||msg.includes('exists')){
+      // Email belongs to an existing account → sign into that instead. (Any
+      // throwaway anonymous data on THIS browser is not transferred.)
+      const{error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:redirect}})
+      if(error){toast('❌ '+error.message)}
+      else toast('📧 อีเมลนี้มีบัญชีอยู่แล้ว — ส่งลิงก์เข้าสู่ระบบให้แล้ว',4000)
+    }else{
+      toast('❌ '+(err.message||err))
+    }
+  }finally{if(btn)btn.disabled=false}
+}
+async function signOutAccount(){
+  await db.auth.signOut()
+  toast('ออกจากระบบแล้ว')
+  setTimeout(()=>location.reload(),400)
+}
+// React to sign-in / magic-link redirect / sign-out: when the identity changes,
+// reload projects under the new uid so the right data shows.
+function initAuthListener(){
+  db.auth.onAuthStateChange((event,session)=>{
+    const u=session?.user||null
+    const uid=u?.id||null
+    if(event==='INITIAL_SESSION'){currentUser=u;currentUserId=uid;updateAuthUI(u);return}
+    currentUser=u
+    updateAuthUI(u)
+    if(uid!==currentUserId){
+      currentUserId=uid
+      // Fresh identity → drop the old project's data and reload the list.
+      state.currentProjectId=null;state.tasks=[];state.deps=[];state.baselines=[];state.taskLogs={};state.comparedBaseline=null
+      document.getElementById('proj-name').textContent='— Select Project —'
+      loadProjects().then(()=>render())
+    }
+  })
+}
 
 // === STATE ===
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter','Noto Sans Thai',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[],categories:[{name:'General',color:'#5B21B6'},{name:'Develop',color:'#059669'},{name:'Test',color:'#10B981'},{name:'Meeting',color:'#D97706'}]}
@@ -3137,6 +3240,7 @@ function closeTopModal(){
   else if(id==='confirm-modal-bd')closeConfirmModal()
   else if(id==='settings-modal-bd')closeSettings()
   else if(id==='dep-unified-modal-bd')closeDependencyModal()
+  else if(id==='account-modal-bd')closeAccountModal()
   else closeModalBackdrop(id)
   return true
 }
@@ -3516,6 +3620,8 @@ document.getElementById('proj-modal-bd').onclick=e=>{if(e.target===e.currentTarg
 document.getElementById('confirm-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeConfirmModal()}
 document.getElementById('settings-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeSettings()}
 document.getElementById('dep-unified-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeDependencyModal()}
+document.getElementById('account-modal-bd').onclick=e=>{if(e.target===e.currentTarget)closeAccountModal()}
+document.getElementById('account-email-input')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();accountEmailSubmit()}})
 
 document.getElementById('confirm-btn').addEventListener('click',()=>{
   if(confirmCallback)confirmCallback()
@@ -3694,6 +3800,8 @@ async function init(){
   initTheme();loadSettings();showL()
   try{
     await ensureAuth()
+    updateAuthUI(currentUser)
+    initAuthListener()
     await Promise.all([loadProjects(),loadHolidays()])
     initSS();applyGanttSettings();render();populateCategoryDropdowns()
     const zl=document.getElementById('zoom-label');if(zl)zl.textContent=(state.zoomLevel||'day').toUpperCase()

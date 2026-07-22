@@ -63,7 +63,7 @@
             <i class="fas fa-cog sidebar-icon"></i>
             <span class="sidebar-text">Settings</span>
         </div>
-        <div class="sidebar-item profile-item">
+        <div class="sidebar-item profile-item" onclick="openAccountModal()" title="Account / Sign in">
             <div class="profile-avatar">S</div>
             <span class="sidebar-text">Sekson N.</span>
         </div>
@@ -629,6 +629,28 @@
     <div class="m-footer" style="justify-content:center;gap:12px">
       <button class="mbtn cancel" onclick="closeConfirmModal()">Cancel</button>
       <button class="mbtn del-m" id="confirm-btn" style="margin-right:0">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNT MODAL -->
+<div class="modal-bd" id="account-modal-bd" aria-hidden="true">
+  <div id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" style="max-width:420px">
+    <div class="m-hdr"><span class="m-title" id="account-title">บัญชีผู้ใช้</span><button class="m-close" onclick="closeAccountModal()" aria-label="Close">×</button></div>
+    <div style="padding:18px 20px">
+      <p id="account-status" class="set-desc" style="margin-bottom:16px"></p>
+      <div id="account-email-row">
+        <label class="flbl" for="account-email-input">อีเมลสำหรับเข้าสู่ระบบ</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input type="email" id="account-email-input" class="finput" style="flex:1" placeholder="you@example.com" autocomplete="email">
+          <button class="mbtn save" id="account-email-btn" style="flex-shrink:0;padding:0 14px" onclick="accountEmailSubmit()">ส่งลิงก์</button>
+        </div>
+        <p class="set-desc" style="margin-top:10px;font-size:11px;line-height:1.5">ระบบจะส่งลิงก์เข้าสู่ระบบไปที่อีเมล (magic link) ไม่มีรหัสผ่าน — เมื่อยืนยันแล้วจะใช้ข้อมูลชุดนี้ได้จากทุกเครื่อง ข้อมูลที่มีอยู่ตอนนี้จะถูกเก็บไว้</p>
+      </div>
+      <div id="account-signed-row" style="display:none">
+        <div class="dp-row" style="margin-bottom:14px"><span class="dp-lbl">อีเมล</span><span id="account-current-email" class="dp-val"></span></div>
+        <button class="mbtn del-m" onclick="signOutAccount()">ออกจากระบบ</button>
+      </div>
     </div>
   </div>
 </div>
