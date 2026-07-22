@@ -184,7 +184,7 @@ async function initShareMode(token){
 // === STATE ===
 const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter','Noto Sans Thai',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[],categories:[{name:'General',color:'#5B21B6'},{name:'Develop',color:'#059669'},{name:'Test',color:'#10B981'},{name:'Meeting',color:'#D97706'}]}
 const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
-let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],colHidden:new Array(11).fill(false),searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth()}
+let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],colHidden:new Array(11).fill(false),searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth(),monthScale:1}
 let isSS=false,dragTaskId=null
 let isFastEdit=false
 // Read-only share mode: set when the page is opened with ?share=<token>. In this
@@ -200,11 +200,28 @@ function toggleFastEdit(){
 }
 function zoomIn(){
   const idx=ZOOM_LEVELS.indexOf(state.zoomLevel)
-  if(idx<ZOOM_LEVELS.length-1){state.zoomLevel=ZOOM_LEVELS[idx+1];const lbl=document.getElementById('zoom-label');if(lbl)lbl.textContent=state.zoomLevel.toUpperCase();render()}
+  if(idx<ZOOM_LEVELS.length-1){state.zoomLevel=ZOOM_LEVELS[idx+1];syncZoomControls();render()}
 }
 function zoomOut(){
   const idx=ZOOM_LEVELS.indexOf(state.zoomLevel)
-  if(idx>0){state.zoomLevel=ZOOM_LEVELS[idx-1];const lbl=document.getElementById('zoom-label');if(lbl)lbl.textContent=state.zoomLevel.toUpperCase();render()}
+  if(idx>0){state.zoomLevel=ZOOM_LEVELS[idx-1];syncZoomControls();render()}
+}
+// MONTH_SCALE bounds (percent). 100% = fit the panel exactly; higher stretches
+// the month timeline longer (with horizontal scroll), lower makes it shorter.
+const MONTH_SCALE_MIN=50,MONTH_SCALE_MAX=400,MONTH_SCALE_STEP=25
+// Keeps the zoom label and the month-only scale control in sync with state.
+function syncZoomControls(){
+  const lbl=document.getElementById('zoom-label');if(lbl)lbl.textContent=(state.zoomLevel||'day').toUpperCase()
+  const ctl=document.getElementById('month-scale-ctl');if(ctl)ctl.style.display=(state.zoomLevel==='month')?'flex':'none'
+  const sl=document.getElementById('month-scale');if(sl)sl.value=Math.round((state.monthScale||1)*100)
+}
+function setMonthScale(percent){
+  const p=Math.max(MONTH_SCALE_MIN,Math.min(MONTH_SCALE_MAX,parseFloat(percent)||100))
+  state.monthScale=p/100
+  syncZoomControls();render()
+}
+function stepMonthScale(dir){
+  setMonthScale(Math.round((state.monthScale||1)*100)+dir*MONTH_SCALE_STEP)
 }
 let isDraggingBar=false,dragMode=null,dragBarStartX=0,dragBarOrigStart=null,dragBarOrigDur=0,dragBarOrigLeft=0,dragBarOrigWidth=0,dragBarTaskId=null,dragBarEl=null,barWasDragged=false
 let colResize={active:false,colIdx:-1,startX:0,startW:0}
@@ -358,14 +375,17 @@ function getPxPerDay(){
     // Fit-to-width: stretch each day so the whole timeline fills the available
     // Gantt panel instead of leaving empty space on the right. Never compress
     // below the floor, so long projects keep the old 3px/day + horizontal scroll.
+    // monthScale is the user's manual stretch factor: 1 = fill the panel exactly,
+    // >1 = longer (scrolls), <1 = shorter. Adjusted via the month-view slider.
+    const scale=state.monthScale||1
     const right=document.getElementById('right')
     const {min,max}=getMinMax()
     if(right&&min&&max){
       const totalDays=dBetween(min,max)+1
       const avail=right.clientWidth
-      if(totalDays>0&&avail>0)return Math.max(MONTH_MIN_PX_PER_DAY,avail/totalDays)
+      if(totalDays>0&&avail>0)return Math.max(MONTH_MIN_PX_PER_DAY,(avail/totalDays)*scale)
     }
-    return MONTH_MIN_PX_PER_DAY
+    return MONTH_MIN_PX_PER_DAY*scale
   }
   if(state.zoomLevel==='week')return 10;
   return 30;
@@ -734,6 +754,7 @@ function _setEmptyState(el,noProject,noResults,hasFilter){
 }
 function render(){
   renderCache=buildRenderCache()
+  syncZoomControls()
   const RH=getROW_H()
   document.documentElement.style.setProperty('--row-h',RH+'px')
   renderLegend()
