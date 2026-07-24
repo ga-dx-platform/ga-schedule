@@ -123,7 +123,7 @@
 | Meeting | `linear-gradient(90deg, #c05621, #d97706)` |
 | Parent bar | `linear-gradient(90deg, #0a0f1e, #0d1630)` height `8px` |
 | Cancelled | `rgba(0,0,0,.08)` + dashed border |
-| Milestone | `var(--nt-grad)` rotated 45° diamond + glow |
+| Milestone | `settings.milestoneColor` (default `#F59E0B`) rotated 45° diamond + glow — configurable in Settings → Theme |
 | Today line | `var(--red)` vertical gradient, `opacity: .7` |
 
 ### Status Badges (pill shape, `border-radius: 20px`, DM Mono)

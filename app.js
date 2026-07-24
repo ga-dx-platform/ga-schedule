@@ -182,7 +182,7 @@ async function initShareMode(token){
 }
 
 // === STATE ===
-const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter','Noto Sans Thai',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[],categories:[{name:'General',color:'#5B21B6'},{name:'Develop',color:'#059669'},{name:'Test',color:'#10B981'},{name:'Meeting',color:'#D97706'}]}
+const DEFAULT_SETTINGS={showTextOnBars:true,fontFamily:"'Inter','Noto Sans Thai',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",dateFmt:'DD/MM/YYYY',navBg:'#0F172A',parentColor:'#1E3A8A',childColor:'#4F46E5',milestoneColor:'#F59E0B',todayCol:'#DC2626',wkndBg:'#FEF2F2',wkndTxt:'#DC2626',gridLineCol:'#F3F4F6',holCol:'#FFFBEB',weekendDays:[0,6],statusOverrides:{'Not Started':{color:'#94a3b8',override:false},'In Progress':{color:'#4F46E5',override:false},'Completed':{color:'#059669',override:false},'Delayed':{color:'#D97706',override:false},'On Hold':{color:'#8b5cf6',override:false},'Cancelled':{color:'#DC2626',override:false}},holidays:[],categories:[{name:'General',color:'#5B21B6'},{name:'Develop',color:'#059669'},{name:'Test',color:'#10B981'},{name:'Meeting',color:'#D97706'}]}
 const DEFAULT_COL_WIDTHS=[28,20,200,58,58,62,36,44,86,68,60]
 let state={settings:Object.assign({},DEFAULT_SETTINGS),projects:[],currentProjectId:null,tasks:[],deps:[],baselines:[],taskLogs:{},comparedBaseline:null,zoom:1,zoomLevel:'day',collapsed:{},editingTaskId:null,holidays:[],colWidths:[...DEFAULT_COL_WIDTHS],colHidden:new Array(11).fill(false),searchQuery:'',filterStatus:'',filterCategory:'',filterAssignee:'',skipWeekends:false,currentView:'gantt',calendarYear:new Date().getFullYear(),calendarMonth:new Date().getMonth(),monthScale:1}
 let isSS=false,dragTaskId=null
@@ -1066,7 +1066,8 @@ function renderGantt(RH){
 
     if(t.type==='milestone'){
       if(bt?.type==='milestone'){const bms=document.createElement('div');bms.className='gms';const bsz=BMS,bbt2=mid-bsz/2,bx=dBetween(min,pd(bt.start_date))*DP;bms.style.cssText=`left:${bx-bsz/2}px;top:${rowTop+bbt2}px;width:${bsz}px;height:${bsz}px;background:rgba(100,116,139,.38);opacity:.65;pointer-events:none`;row.appendChild(bms)}
-      const ms=document.createElement('div');ms.className='gms';const sz=BMS,bbt2=mid-sz/2;ms.style.cssText=`left:${x-sz/2}px;top:${rowTop+bbt2}px;width:${sz}px;height:${sz}px;background:var(--nt-grad);box-shadow:var(--nt-glow)`;ms.title=tn;ms.onclick=()=>openEditModal(t.id);ms.id='bar-'+t.id
+      const msColor=state.settings.milestoneColor||DEFAULT_SETTINGS.milestoneColor
+      const ms=document.createElement('div');ms.className='gms';const sz=BMS,bbt2=mid-sz/2;ms.style.cssText=`left:${x-sz/2}px;top:${rowTop+bbt2}px;width:${sz}px;height:${sz}px;background:${msColor};box-shadow:0 2px 8px ${msColor}66,0 1px 3px ${msColor}40`;ms.title=tn;ms.onclick=()=>openEditModal(t.id);ms.id='bar-'+t.id
       const lbl=document.createElement('div');lbl.className='gb-txt';lbl.style.cssText=`position:absolute;font-size:9px;color:var(--txt2);left:${x+sz+3}px;top:${rowTop+bbt2}px;white-space:nowrap;font-family:var(--mono)`;lbl.textContent=tn
       row.appendChild(ms);row.appendChild(lbl)
     } else {
@@ -2252,6 +2253,7 @@ function openSettings(){
   document.getElementById('set-nav-bg').value=s.navBg||'#0a0f1e'
   document.getElementById('set-parent-color').value=s.parentColor||'#1e3a8a'
   document.getElementById('set-child-color').value=s.childColor||'#6366f1'
+  document.getElementById('set-milestone-color').value=s.milestoneColor||DEFAULT_SETTINGS.milestoneColor
   // Gantt Grid
   document.getElementById('set-today-col').value=s.todayCol||'#e11d48'
   document.getElementById('set-wknd-bg').value=s.wkndBg||'#fcf0f0'
@@ -2494,6 +2496,7 @@ function applySettings(){
   s.navBg=document.getElementById('set-nav-bg').value
   s.parentColor=document.getElementById('set-parent-color').value
   s.childColor=document.getElementById('set-child-color').value
+  s.milestoneColor=document.getElementById('set-milestone-color').value
   r.style.setProperty('--nav-bg',s.navBg)
   r.style.setProperty('--parent-task-color',s.parentColor)
   r.style.setProperty('--child-task-color',s.childColor)
