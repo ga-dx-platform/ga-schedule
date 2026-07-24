@@ -278,6 +278,19 @@ function taskEnd(t){
   return end
 }
 
+// Planned/expected progress for a task as of today, based on its calendar span
+// (same span the bar is drawn from). Linear: 0% on the start date rising to
+// 100% on the end date. Before it starts → 0; on/after the end date → 100.
+function expectedPct(t){
+  if(!t||!t.start_date)return 0
+  const start=pd(t.start_date),end=taskEnd(t)
+  const today=new Date();today.setHours(0,0,0,0)
+  if(today<=start)return 0
+  if(today>=end)return 100
+  const span=end-start
+  return span>0?Math.round((today-start)/span*100):100
+}
+
 function getHolidaySet(){
   if(!_holidaySet){
     _holidaySet=new Set([...(state.holidays||[]).map(h=>h.date),...((state.settings.holidays||[]).map(h=>h.date))])
@@ -1338,6 +1351,24 @@ function renderCalendar(){
     el.addEventListener('mouseout',_hideCalTooltip)
   })
 }
+// Progress vs. plan block for tooltips: actual fill + a marker at today's
+// expected %, plus an ahead/behind readout so you can see if a task is on track.
+function _progressVsPlanHtml(t,pct){
+  const exp=expectedPct(t)
+  const d=Math.round(pct-exp)
+  let dtxt,dcol
+  if(d>0){dtxt=`▲ ahead ${d}%`;dcol='#059669'}
+  else if(d<0){dtxt=`▼ behind ${-d}%`;dcol='#ef4444'}
+  else{dtxt='on schedule';dcol='var(--txt3)'}
+  return `<div style="margin-top:6px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-bottom:3px"><span>Progress</span><span>${pct}%</span></div>
+      <div style="position:relative;height:6px;background:#E5E7EB;border-radius:4px">
+        <div style="height:100%;width:${pct}%;background:var(--nt-grad90);border-radius:4px"></div>
+        <div title="Expected ${exp}% today" style="position:absolute;top:-2px;bottom:-2px;left:${exp}%;width:2px;background:var(--txt);transform:translateX(-1px);border-radius:1px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:4px"><span style="color:var(--txt3)">Expected ${exp}%</span><span style="color:${dcol};font-weight:600">${dtxt}</span></div>
+    </div>`
+}
 function _showCalTooltip(e,t){
   if(!t)return
   const tip=document.getElementById('cal-tooltip');if(!tip)return
@@ -1348,10 +1379,7 @@ function _showCalTooltip(e,t){
   tip.innerHTML=`<div style="font-weight:700;color:var(--txt);margin-bottom:6px;line-height:1.3;font-size:12px">${esc(t.name)}</div>
     <span class="sbadge ${sc}" style="${bs};font-size:10px">${esc(STATUS_LABELS[ds]||ds)}</span>
     <div style="color:var(--txt3);font-size:10px;margin-top:5px;font-family:var(--mono)">${fmtS(pd(t.start_date))} → ${fmtS(taskEnd(t))}</div>
-    <div style="margin-top:6px">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-bottom:3px"><span>Progress</span><span>${pct}%</span></div>
-      <div style="height:4px;background:#E5E7EB;border-radius:4px"><div style="height:100%;width:${pct}%;background:var(--nt-grad90);border-radius:4px"></div></div>
-    </div>`
+    ${_progressVsPlanHtml(t,pct)}`
   tip.classList.remove('hidden')
   _posCalTooltip(e)
 }
@@ -1377,10 +1405,7 @@ function _showTaskTooltip(e,taskId){
   tip.innerHTML=`<div style="font-weight:700;color:var(--txt);margin-bottom:6px;line-height:1.3;font-size:12px">${esc(t.name)}</div>
     <span class="sbadge ${sc}" style="${bs};font-size:10px">${esc(STATUS_LABELS[ds]||ds)}</span>
     <div style="color:var(--txt3);font-size:10px;margin-top:5px;font-family:var(--mono)">${fmtS(pd(t.start_date))} → ${fmtS(taskEnd(t))}</div>
-    <div style="margin-top:6px">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-bottom:3px"><span>Progress</span><span>${pct}%</span></div>
-      <div style="height:4px;background:#E5E7EB;border-radius:4px"><div style="height:100%;width:${pct}%;background:var(--nt-grad90);border-radius:4px"></div></div>
-    </div>
+    ${_progressVsPlanHtml(t,pct)}
     <div class="tl-tip-divider"></div>
     ${latestNote}`
   tip.classList.remove('hidden')
